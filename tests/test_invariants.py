@@ -76,6 +76,29 @@ def test_no_cypher_in_python_string_literals_outside_query_files():
     assert not offenders, f"Cypher belongs in api/graph/queries/*.cypher (rule 2): {offenders}"
 
 
+def _referenced_query_names() -> set[str]:
+    """String literals passed to ``<graph>.run("name", ...)`` or ``load_query("name")`` in api/."""
+    names: set[str] = set()
+    for path in (REPO / "api").rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if not (isinstance(node, ast.Call) and node.args):
+                continue
+            func = node.func
+            called = func.attr if isinstance(func, ast.Attribute) else getattr(func, "id", "")
+            first = node.args[0]
+            if called in {"run", "load_query"} and isinstance(first, ast.Constant):
+                if isinstance(first.value, str):
+                    names.add(first.value)
+    return names
+
+
+def test_every_referenced_query_exists_and_every_query_file_is_used():
+    files = {p.stem for p in (REPO / "api" / "graph" / "queries").glob("*.cypher")}
+    referenced = _referenced_query_names()
+    assert referenced <= files, f"code references missing queries: {sorted(referenced - files)}"
+    assert files <= referenced, f"unused query files (dead code?): {sorted(files - referenced)}"
+
+
 def test_agents_md_section_2_is_plan_section_4_verbatim():
     def block(path: Path) -> list[str]:
         out: list[str] = []
