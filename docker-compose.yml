@@ -1,4 +1,4 @@
-# P0: FalkorDB only. `api` is added in P3 and `mock-upstreams` in P9 (D-009).
+# P0: falkordb. P3 adds `api`. `mock-upstreams` is added in P9 (D-009).
 services:
   falkordb:
     # Pinned by digest to the exact image `make probe` passed on (D-012): graph module 42201,
@@ -8,3 +8,12 @@ services:
     ports:
       - "6379:6379" # database
       - "3000:3000" # FalkorDB Browser
+
+  api:
+    build: .
+    depends_on:
+      - falkordb
+    environment:
+      PW_FALKORDB_HOST: falkordb
+    ports:
+      - "8000:8000"
