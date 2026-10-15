@@ -1,0 +1,15 @@
+{
+  "calls": 240,
+  "completion_tokens": 10183,
+  "invalid_json": {
+    "B1": 0,
+    "B3": 0
+  },
+  "judgements": {
+    "B1": 120,
+    "B3": 120
+  },
+  "model": "groq/qwen/qwen3.8-27b",
+  "prompt_tokens": 122914,
+  "temperature": 0.0
+}

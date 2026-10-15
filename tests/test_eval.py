@@ -354,10 +354,11 @@ def test_summary_files_are_derived_from_results_csv_only_and_the_committed_ones_
     with (results / "results.csv").open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
     assert len(rows) == 120 * 7
-    summary = run_eval.summarise(rows)
     committed = json.loads((results / "summary.json").read_text(encoding="utf-8"))
     remediation = committed.pop("remediation")
-    assert committed == summary  # the defense numbers come from results.csv alone
+    llm_meta = committed.pop("llm_judges", None)
+    summary = run_eval.summarise(rows, llm_meta=llm_meta)
+    assert committed == {k: v for k, v in summary.items() if k != "llm_judges"}  # from results.csv
     assert (results / "summary.md").read_text(encoding="utf-8") == run_eval.render_markdown(
         {**summary, "remediation": remediation}
     )
@@ -365,9 +366,12 @@ def test_summary_files_are_derived_from_results_csv_only_and_the_committed_ones_
         assert r["optimum_cost"] <= r["best_candidate_cost"]
         assert r["gap"] == r["best_candidate_cost"] - r["optimum_cost"]
         assert all(c["verified"] for c in r["candidates"])
-    for name in ("B1", "B3"):
-        assert summary["defenses"][name] == {"status": "not_run"}
-    assert {r["decision"] for r in rows if r["defense"] in ("B1", "B3")} == {"not_run"}
+    judged = {r["decision"] for r in rows if r["defense"] in ("B1", "B3")}
+    if llm_meta is None:  # no recorded LLM answers: the judges are not_run
+        assert judged == {"not_run"}
+    else:  # recorded by `make eval-live`: every scenario has an answer from the named model
+        assert judged <= {"HOLD", "ALLOW"} and summary["llm_judges"]["model"]
+        assert all(summary["defenses"][n]["status"] == "run" for n in ("B1", "B3"))
 
 
 def test_b0_and_b2_numbers_follow_from_the_dataset_construction_not_from_typed_in_results():

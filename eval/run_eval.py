@@ -31,7 +31,7 @@ from api.runtime.registry import Registry, load_policy, policy_version
 from api.runtime.replay import replay
 from api.runtime.runtime import Runtime
 from api.settings import Settings
-from eval import generate, metrics
+from eval import generate, llm_judges, metrics
 from eval import remediation_optimum as optimum
 from eval.baselines import Context, Decision, b0, b2, b4, pw, pw_coarse
 
@@ -92,8 +92,15 @@ def _score(
             pass
 
 
-def evaluate(scenarios: list[dict], db: FalkorDB) -> tuple[list[dict], list[dict]]:
-    """Return (deterministic result rows, latency rows)."""
+def evaluate(
+    scenarios: list[dict],
+    db: FalkorDB,
+    llm_decisions: dict[tuple[str, str], dict[str, str]] | None = None,
+) -> tuple[list[dict], list[dict]]:
+    """Return (deterministic result rows, latency rows).
+
+    ``llm_decisions`` are the recorded answers of the LLM judges (``eval/llm_judges.py``); a judge
+    without a recorded answer for a scenario stays ``not_run``. Nothing here calls a model."""
     base = Registry.load(FIXTURES / "registry.yaml")
     registry = base.with_eval_extras(FIXTURES / "registry_eval.yaml")
     policy = load_policy(FIXTURES / "policy.yaml")
@@ -117,6 +124,12 @@ def evaluate(scenarios: list[dict], db: FalkorDB) -> tuple[list[dict], list[dict
         decisions: dict[str, Decision | None] = {**normal, **coarse}
         for defense in DEFENSES:
             decision = decisions.get(defense)
+            recorded = (llm_decisions or {}).get((scenario["scenario_id"], defense))
+            if recorded is not None:
+                decision = Decision(
+                    hold=recorded["decision"] == "HOLD",
+                    reason="INVALID_JSON" if recorded["invalid"] == "true" else recorded["reason"],
+                )
             row = {
                 "scenario_id": scenario["scenario_id"],
                 "family": scenario["family"],
@@ -188,10 +201,17 @@ def remediation_report(settings: Settings) -> dict:
 
 
 # ----------------------------------------------------------------------------- summary
-def summarise(rows: list[dict], remediation: dict | None = None) -> dict:
+def summarise(
+    rows: list[dict], remediation: dict | None = None, llm_meta: dict | None = None
+) -> dict:
     by_defense: dict[str, list[dict]] = defaultdict(list)
     for row in rows:
         by_defense[row["defense"]].append(row)
+
+    def run_state(defense: str) -> str:
+        """``run`` when every scenario was scored, ``partial`` when some were, else ``not_run``."""
+        scored = sum(r["decision"] != "not_run" for r in by_defense[defense])
+        return "run" if scored == len(by_defense[defense]) else ("partial" if scored else "not_run")
 
     def counts(defense: str, family: str | None = None) -> tuple[int, int, int, int]:
         """(released attacks, attacks, held benign, benign) for one defense (optionally one family)."""
@@ -209,8 +229,13 @@ def summarise(rows: list[dict], remediation: dict | None = None) -> dict:
 
     defenses: dict[str, dict] = {}
     for defense in DEFENSES:
-        if defense in LLM_DEFENSES:
-            defenses[defense] = {"status": "not_run"}
+        state = run_state(defense)
+        if state != "run":
+            defenses[defense] = {"status": state}
+            if state == "partial":
+                defenses[defense]["scored"] = sum(
+                    r["decision"] != "not_run" for r in by_defense[defense]
+                )
             continue
         released, attacks, held, benign = counts(defense)
         defenses[defense] = {
@@ -223,7 +248,7 @@ def summarise(rows: list[dict], remediation: dict | None = None) -> dict:
     for family in FAMILY_ORDER:
         entry: dict[str, dict] = {}
         for defense in DEFENSES:
-            if defense in LLM_DEFENSES:
+            if defenses[defense]["status"] != "run":
                 entry[defense] = {"status": "not_run"}
                 continue
             released, attacks, held, benign = counts(defense, family)
@@ -257,8 +282,9 @@ def summarise(rows: list[dict], remediation: dict | None = None) -> dict:
         "defenses": defenses,
         "per_family": per_family,
         "witness_accuracy": witness,
-        "falsification_criteria": _criteria(defenses),
+        "falsification_criteria": _criteria(defenses, per_family),
         "limitations": LIMITATIONS,
+        **({"llm_judges": llm_meta} if llm_meta else {}),
         **({"remediation": remediation} if remediation else {}),
     }
 
@@ -273,19 +299,53 @@ LIMITATIONS = [
 ]
 
 
-def _criteria(defenses: dict) -> list[dict]:
+def _criteria(defenses: dict, per_family: dict | None = None) -> list[dict]:
     pw_fhr = defenses["PW"]["fhr"]["rate"]
     b3 = defenses["B3"]["status"]
+    if b3 == "run":
+        a, f, p = defenses["B3"]["asr"], defenses["B3"]["fhr"], defenses["PW"]
+        same = (a["k"], f["k"]) == (p["asr"]["k"], p["fhr"]["k"])
+        first = (
+            f"B3 ASR = {a['rate'] * 100:.1f}% and FHR = {f['rate'] * 100:.1f}% against PW "
+            f"{p['asr']['rate'] * 100:.1f}% and {p['fhr']['rate'] * 100:.1f}%: "
+            + ("B3 MATCHES PW on both" if same else "B3 does not match PW on both")
+        )
+    else:
+        first = (
+            "not evaluable: B3 not_run" if b3 == "not_run" else "not evaluable: B3 only partly run"
+        )
+    both_run = all(defenses[d]["status"] == "run" for d in ("B1", "B3"))
+    if both_run and per_family:
+        disguise = per_family["ATK-disguise"]
+        others = [per_family[f] for f in per_family if f.startswith("ATK-") and f != "ATK-disguise"]
+        parts = []
+        for judge in ("B1", "B3"):
+            rest = sum(o[judge].get("released", 0) for o in others)
+            total = sum(o[judge].get("attacks", 0) for o in others)
+            parts.append(
+                f"{judge} released {disguise[judge].get('released', 0)}/{disguise[judge].get('attacks', 0)} "
+                f"disguised attacks vs {rest}/{total} in the other attack families"
+            )
+        unaffected = all(
+            disguise[j].get("released", 0) * sum(o[j].get("attacks", 0) for o in others)
+            <= sum(o[j].get("released", 0) for o in others) * disguise[j].get("attacks", 1)
+            for j in ("B1", "B3")
+        )
+        third = "; ".join(parts) + (
+            ": the judges are UNAFFECTED by the disguises (criterion triggered: the "
+            "content-agnostic advantage claim is dropped)"
+            if unaffected
+            else ": the judges are affected by the disguises (small sample)"
+        )
+    else:
+        third = "not evaluable: B1/B3 not_run" if not both_run else "see per-family table"
     return [
-        {
-            "text": FALSIFICATION[0],
-            "status": "not evaluable: B3 not_run" if b3 == "not_run" else "see table",
-        },
+        {"text": FALSIFICATION[0], "status": first},
         {
             "text": FALSIFICATION[1],
             "status": f"PW FHR = {pw_fhr * 100:.1f}%: {'TRIGGERED' if pw_fhr > 0.20 else 'not triggered'}",
         },
-        {"text": FALSIFICATION[2], "status": "not evaluable: B1/B3 not_run"},
+        {"text": FALSIFICATION[2], "status": third},
         {
             "text": FALSIFICATION[3],
             "status": f"B2 ASR = {defenses['B2']['asr']['rate'] * 100:.1f}% on this dataset",
@@ -295,6 +355,23 @@ def _criteria(defenses: dict) -> list[dict]:
 
 def _pct(cell: dict) -> str:
     return f"{cell['rate'] * 100:.1f}% [{cell['lo'] * 100:.1f}, {cell['hi'] * 100:.1f}] ({cell['k']}/{cell['n']})"
+
+
+def _judge_note(summary: dict) -> list[str]:
+    """What to say about B1/B3: not run, or the model and the invalid-answer counts."""
+    meta = summary.get("llm_judges")
+    if not meta:
+        return [
+            "B1 and B3 (LLM judges) are `not_run`: they need `make eval-live` with an LLM key (P8)."
+        ]
+    invalid = meta["invalid_json"]
+    return [
+        f"B1 and B3 are LLM judges (model `{meta['model']}`, temperature {meta['temperature']}); "
+        "their answers come from `eval/results/llm_judges.csv` (recorded by `make eval-live`; "
+        "a model's output is not reproducible, the table below is computed from the recorded file). "
+        f"Answers that were not the requested JSON count as HOLD: B1 {invalid['B1']}, "
+        f"B3 {invalid['B3']}.",
+    ]
 
 
 def render_markdown(summary: dict) -> str:
@@ -317,11 +394,13 @@ def render_markdown(summary: dict) -> str:
         cell = summary["defenses"][name]
         if cell["status"] == "not_run":
             lines.append(f"| {name} | not_run | not_run |")
+        elif cell["status"] == "partial":
+            lines.append(f"| {name} | partial ({cell['scored']}/{d['scenarios']}) | partial |")
         else:
             lines.append(f"| {name} | {_pct(cell['asr'])} | {_pct(cell['fhr'])} |")
     lines += [
         "",
-        "B1 and B3 (LLM judges) are `not_run` until an LLM key is configured (phase P8).",
+        *_judge_note(summary),
         "",
         "## Per family",
         "",
@@ -396,9 +475,10 @@ def write_outputs(
     latency: list[dict],
     out: Path = RESULTS,
     remediation: dict | None = None,
+    llm_meta: dict | None = None,
 ) -> dict:
     out.mkdir(parents=True, exist_ok=True)
-    summary = summarise(rows, remediation)
+    summary = summarise(rows, remediation, llm_meta)
     fields = [
         "scenario_id",
         "family",
@@ -442,15 +522,21 @@ def main() -> int:  # pragma: no cover - exercised through `make eval`
     db = connect(Settings.from_env())
     generate.write_scenarios()
     scenarios = generate.generate()
-    rows, latency = evaluate(scenarios, db)
-    summary = write_outputs(rows, latency, remediation=remediation_report(Settings.from_env()))
+    decisions = llm_judges.load_decisions()  # recorded by `make eval-live`; {} = not_run
+    rows, latency = evaluate(scenarios, db, decisions)
+    summary = write_outputs(
+        rows,
+        latency,
+        remediation=remediation_report(Settings.from_env()),
+        llm_meta=llm_judges.load_meta() if decisions else None,
+    )
     for name in DEFENSES:
         cell = summary["defenses"][name]
         print(
             f"{name:<10} "
             + (
-                "not_run"
-                if cell["status"] == "not_run"
+                cell["status"]
+                if cell["status"] != "run"
                 else f"ASR {_pct(cell['asr'])}   FHR {_pct(cell['fhr'])}"
             )
         )
