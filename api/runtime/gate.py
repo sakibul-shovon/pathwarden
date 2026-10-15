@@ -110,6 +110,13 @@ class Gate:
             return GateResult(action_id, Verdict.ALLOW, "SECRET_EGRESS_WARNING", untrusted, secret)
         return GateResult(action_id, Verdict.ALLOW, "CLEAN", untrusted, secret)
 
+    def witnesses(self, action_id: str) -> tuple[list[str], list[str]]:
+        """(untrusted, secret) witness paths, ignoring quarantine state (used by forensics)."""
+        return (
+            self._witness("q2a_untrusted_witness", action_id),
+            self._witness("q2b_secret_witness", action_id),
+        )
+
     def _witness(self, query: str, action_id: str) -> list[str]:
         rows = self._graph.run(query, action_id=action_id)
         return list(rows[0][0]) if rows else []

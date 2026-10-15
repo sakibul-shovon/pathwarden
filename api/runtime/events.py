@@ -14,6 +14,10 @@ class EventLog:
     def __init__(self, path: Path | None = None) -> None:
         self.path = path
         self._events: list[dict] = []
+        if path is not None and path.is_file():
+            self._events = [
+                json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line
+            ]
 
     def append(self, event: dict) -> None:
         self._events.append(event)
