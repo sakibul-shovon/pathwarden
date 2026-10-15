@@ -17,11 +17,11 @@ P5 (`/eval/summary`, generated results), P6 (remediation endpoints), P10a (shell
 Create: `web/src/tabs/{Remediate.tsx,Evaluation.tsx}` · `web/src/components/CapabilityGraph.tsx`. Modify: `web/src/api/{client.ts,types.ts}`, `web/src/App.tsx`, `docs/PROGRESS.md`.
 
 ## 5. Tasks
-- [ ] **P10c-T1 Types and client** for the remediation and eval endpoints.
-- [ ] **P10c-T2 Remediate tab:** topology selector (`enterprise12`, `tinyqueue3`); capability graph with toxic agents highlighted (Cytoscape, built-in layout); per-agent witness (`r7`) on click; candidate table C1–C4 (cost, cap ids, verified); **Apply** with confirmation (human action) → before/after toxic agents; **Reset**.
-- [ ] **P10c-T3 Evaluation tab:** results table, Wilson intervals, falsification criteria, link to `eval/results/` — all from `GET /api/eval/summary`; **nothing typed by hand** (rule 11). Show `not_run` for B1/B3 until P8 fills them.
-- [ ] **P10c-T4 Full-demo walkthrough** (below), recorded as Evidence; fix blocking defects found (log non-blocking ones in Known issues).
-- [ ] **P10c-T5 Production build** check: `npm run build`, serve the build and repeat the first three walkthrough steps.
+- [x] **P10c-T1 Types and client** for the remediation and eval endpoints.
+- [x] **P10c-T2 Remediate tab:** topology selector (`enterprise12`, `tinyqueue3`); capability graph with toxic agents highlighted (Cytoscape, built-in layout); per-agent witness (`r7`) on click; candidate table C1–C4 (cost, cap ids, verified); **Apply** with confirmation (human action) → before/after toxic agents; **Reset**.
+- [x] **P10c-T3 Evaluation tab:** results table, Wilson intervals, falsification criteria, link to `eval/results/` — all from `GET /api/eval/summary`; **nothing typed by hand** (rule 11). Show `not_run` for B1/B3 until P8 fills them.
+- [x] **P10c-T4 Full-demo walkthrough** (below), recorded as Evidence; fix blocking defects found (log non-blocking ones in Known issues).
+- [x] **P10c-T5 Production build** check: `npm run build`, serve the build and repeat the first three walkthrough steps.
 
 ## 6. Tests and validation
 `npm run build` exit 0 · CI `web` green · manual **full-demo checklist** (plan §22-P10):
@@ -43,3 +43,6 @@ Tasks ticked with evidence · G1, G3, G5, G6, G8, G10 · placeholder tabs gone �
 
 ## 10. Git checkpoints
 `P10c: feat(web): remediate tab` · `P10c: feat(web): evaluation tab` · `P10c: docs: full-demo walkthrough evidence` → PR → merge → tag.
+
+## 11. Outcome (2026-10-16)
+All five tasks done; evidence in `docs/PROGRESS.md` (P10c rows), decisions D-020 and D-021 in `docs/DECISIONS.md` Part B11. The full-demo checklist (8 steps) was driven in the real UI through headless Edge (DevTools protocol), on the dev server and again on the production build for steps 1-4; there was no human click-through.

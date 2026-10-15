@@ -208,6 +208,23 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **Deep link:** `?tab=time&t=N`. **Tooling in this session (not in the repo):** the real UI was driven in headless Edge over the DevTools protocol using Node's built-in WebSocket; no new dependency.
 - **Port note:** another project's dev server may already hold 5173; Vite then picks 5174 (the proxy to `localhost:8000` is unchanged).
 
+## Part B11 — P10c outcomes (2026-10-16)
+
+### D-020 — the API container mounts `eval/results` read-only (compose change)
+- **Status:** Accepted (agent) · **Phase:** P10c
+- **Gap:** the image copies only `api/`, `fixtures/` and `pyproject.toml`, so `GET /api/eval/summary` answered `eval_not_run` inside Docker and the Evaluation tab would have been empty in the containerised demo.
+- **Choice:** `docker-compose.yml` mounts `./eval/results:/app/eval/results:ro` on the `api` service. The tab always shows the latest `make eval` output without rebuilding the image; nothing is copied or edited. A hosted deployment (P11/P12) must provide the same directory.
+
+### D-021 — `limitations` is part of `summary.json`
+- **Status:** Accepted (agent) · **Phase:** P10c · **Touches:** `eval/run_eval.py`, `eval/results/summary.json`
+- **Why:** the honest reading of the results (synthetic scripted dataset; the gate and the dataset share one lineage model, so a perfect PW score shows conformance, not coverage of real attacks) lived only in `summary.md`. The UI must show the same caveat next to the numbers, and rule 11 forbids typing it there. One `LIMITATIONS` list now feeds both files. `results.csv` and `summary.md` are byte-identical to before; `summary.json` gained only this key.
+
+### Other P10c decisions and findings
+- **Remediate:** `GET /remediation/{topology}` and `suggest` supply everything; the candidate with the lowest verified cost is only *labelled* "cheapest verified" (the API already sorts candidates by cost). The brute-force optimum is read from the eval summary when present. Apply needs a confirm dialog; Reset restores the demo topology. Node kinds: sources are diamonds tagged [U]/[S]/[I], stores carry `[store]`, sinks are tag-shaped with `[external]`/`[internal]`, toxic agents get a warning sign and a double red border (never colour alone).
+- **Evaluation:** the defense list, families and criteria come from the response's keys and values; B1/B3 render as `not_run` until P8. The tab polls every 10 s.
+- **Tooling lessons (not in the repo):** a click helper that matches by text must exclude the navigation tab with the same label (it clicked the `Run` tab first); another project's dev server held port 5173 (Vite used 5174).
+- **Not done:** no human click-through; the live-mode toggle stays disabled with its reason until P8.
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.
