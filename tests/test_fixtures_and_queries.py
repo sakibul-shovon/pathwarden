@@ -83,9 +83,9 @@ def test_every_query_file_matches_the_verbatim_plan_text_used_by_the_probe():
         assert text in probe, f"{name}.cypher differs from the query the probe verified"
 
 
-def test_there_are_22_p1_query_files_and_all_load():
+def test_the_22_p1_and_3_p2_query_files_exist_and_all_load():
     names = available_queries()
-    assert len(names) == 22
+    assert len(names) >= 25  # grows with each phase; P1 added 22, P2 added q2a/q2b/q2c
     assert all(load_query(n) for n in names)
 
 
