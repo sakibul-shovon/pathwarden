@@ -141,10 +141,11 @@ Parallel work [MAY]: only with `git worktree add ../pathwarden-<slug> -b phase/p
 | stage explicit paths, commit on a non-main branch | ✔ (green gates; plan §4) | ✔ |
 | push a `phase/*`, `fix/*`, `docs/*` branch (never `main`, never forced, never tags) | ✔ standing authorisation (D-005), gates green; the prompt may withdraw it with `PUSH: no` | ✔ |
 | open a PR | only if the prompt says `PR: yes` (needs `gh`, otherwise human) | ✔ |
-| merge a PR (merge commit), create `phase-p<n>-done` tag, delete branches, change repo settings | **no** | ✔ |
-| push to `main` | **never** (bootstrap exception: human with `PW_ALLOW_MAIN=1`) | rarely |
+| merge a finished phase into `main` (local `--no-ff` merge commit) and create `phase-p<n>-done` | ✔ **delegated** (D-004/D-005): only when the phase is VERIFYING and all gates are green | ✔ |
+| push `main` + the tag | ✔ only that merge result, with `PW_ALLOW_MAIN=1` set for that one command; never forced | rarely |
+| delete branches, change repo settings, change visibility | **no** | ✔ |
 | force-push, `reset --hard`, `clean`, `checkout --`/`restore` of worktree files, `stash drop`, `branch -D`, rebase/amend of pushed commits, history rewrite | **no**, unless the human names the exact target in the current session | ✔ with care |
-| set `PW_ALLOW_MAIN` / `PW_ALLOW_FORCE`, use `--no-verify` | **never** | ✔ |
+| set `PW_ALLOW_FORCE`, use `--no-verify`; set `PW_ALLOW_MAIN` for anything except the phase-merge push | **never** | ✔ |
 
 `.claude/settings.json` denies or asks for the risky rows in Claude Code; `.githooks/` enforces commit/push rules for *every* agent. Neither is a security boundary — they catch the common forms. The rules above bind regardless.
 

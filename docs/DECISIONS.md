@@ -34,8 +34,13 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **Interpretation (confirm if wrong):** commit messages, PR text and branch names carry no `Co-Authored-By`, "Generated with …" or tool/model name, and commits are authored with the repo's configured identity. Claude Code's own attribution is disabled in `.claude/settings.json` (`attribution.commit` and `attribution.pr` empty, `sessionUrl` false — shape verified in the Claude Code settings reference).
 - **Kept on purpose:** the AI-assistance disclosure that plan §24.5/§24.6 requires (README + `docs/AI_ASSISTANCE.md`) and the tool/model column of the `docs/PROGRESS.md` session log, which is a committed file. If you want the session log anonymised too, say so.
 
+### D-016 — Merge, tag and `main` push delegated to the agent
+- **Status:** **Accepted (human, 2026-10-15: "tumi sob merge kore next phase start koro")** · **Phase:** all
+- **Decision:** because `gh` is not installed and the human does no manual steps, the agent merges each finished phase locally (`--no-ff`, merge commit), tags `phase-p<n>-done`, and pushes `main` and the tag with `PW_ALLOW_MAIN=1` for that one command. Preconditions: phase VERIFYING, gates G1–G9 green with evidence, branch pushed. Supersedes the "merge/tag = human" parts of D-004/D-005; everything else there stands (never force, never squash, no other pushes to `main`).
+- **Consequence:** CI results cannot be observed from here while the repo is private and `gh` is absent (gate G10 = "not verified"). A failed CI run would only be noticed on GitHub; record "CI not verified" in Evidence rather than claiming green.
+
 ### D-014 — Repository visibility
-- **Status:** Open · **Phase:** P0/P12
+- **Status:** **Decided: stays private until the project ends; the human makes it public** (2026-10-15). Reminder for P12-T6 · **Phase:** P0/P12
 - **Facts:** the human states the repo is **private** (2026-10-15). Plan §24.6 requires it to be public at submission.
 - **Consequences (my understanding of GitHub's plan limits — verify under Settings → Branches / Code security):** private repos on GitHub Free typically lack branch protection/rulesets, secret scanning and push protection. Until public, local hooks and the human-only merge rule are the only protection.
 - **Proposal:** make the repo public as soon as you are comfortable (it will contain only the plan, synthetic fixtures and code; no secrets by design) — this unlocks the protections for free and satisfies "incremental public commits". Otherwise flip it no later than P12-T6. Commit timestamps are unaffected by the flip.
@@ -70,7 +75,7 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **Decision:** `pyproject.toml` base dependencies = §6 core (FastAPI, Uvicorn, Pydantic v2, PyYAML, falkordb client, httpx, pytest). `litellm` goes in extra `llm` (added in P8) and `mcp` in extra `mcp` (added in P9), each after its probe (rule 13), so scripted mode installs light and rule 10 stays easy to verify.
 
 ### D-012 — Pin the FalkorDB image
-- **Status:** **Accepted (human: "approve all", 2026-10-15)** · **Phase:** P0
+- **Status:** **Accepted (human: "approve all") and DONE in P0** — pinned by digest in `docker-compose.yml` and `ci.yml`, see Part C · **Phase:** P0
 - **Context:** plan §6 uses `falkordb/falkordb:latest`; a moving tag can change Cypher or `algo.maxFlow` behaviour mid-hackathon.
 - **Decision:** after `make probe` passes, record the exact tag/digest here and pin it in `docker-compose.yml` and `ci.yml`.
 
@@ -82,7 +87,7 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 |---|---|---|---|---|
 | A-01 | §9 | `Runtime.__init__(graph_name, registry, clock, events)` has no `namespace`, but the text constructs `Runtime(graph=…, namespace=…)` and says the clock initialises from the graph | Constructor takes `graph_name`, `namespace`, `registry`, `events`; clock built internally from `q0_max_ts`. Record final signature. | P1 |
 | A-02 | §9 vs §10 | `Runtime.approve(action_id, approver)` must resolve the payload with `q2d`, which the plan files under the gate (P2) | Create `q2d` in P1; P2 adds its tests | P1 |
-| A-03 | §8.3, §10 | `policy.max_lineage_hops: 16` and `query_timeout_ms` are not wired to anything: Cypher bounds are literals (16; q4 uses 20) and no client timeout method is in §6 | Treat hop bounds as constants asserted equal to policy in a test; align q4 or document 20; add a P0 probe for a client query timeout *only if* the client documents one, else mark `query_timeout_ms` unenforced | P0/P2 |
+| A-03 (**Resolved in P0**, see Part C) | §8.3, §10 | `policy.max_lineage_hops: 16` and `query_timeout_ms` are not wired to anything: Cypher bounds are literals (16; q4 uses 20) and no client timeout method is in §6 | Treat hop bounds as constants asserted equal to policy in a test; align q4 or document 20; add a P0 probe for a client query timeout *only if* the client documents one, else mark `query_timeout_ms` unenforced | P0/P2 |
 | A-04 | §11 | `verdicts.jsonl` has a `policy_version` field that is never defined | Use sha256 of `fixtures/policy.yaml` bytes | P2 |
 | A-05 | §21, §24.6 | `make demo` is required to work but never specified | Runs the six §12.4 scenarios through the API/CLI and prints a verdict table; non-zero exit if any expectation differs | P3 |
 | A-06 | §18 vs §22 | `GET …/actions/{id}/explain` returns laundering + subgraph (q3, q6, q6b), but P4 owns q3 | Build q3/q6/q6b and `explain` in P3; P4 reuses | P3 |
@@ -92,15 +97,41 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 | A-10 | §13.5, §18 | Heal approval "re-runs Fixer and Release" — scripted or live? And `POST /forensics` accepts `mode:"llm"` before P8 exists | Heal re-run uses the same mode as the original run (scripted by default). `mode:"llm"` returns `{"error":"llm_not_configured"}` until P8. | P4/P8 |
 | A-11 | §8.8 vs §16.3, §5 | `gateway.yaml` says the gateway spawns upstreams as stdio subprocesses, yet compose lists a `mock-upstreams` service | Decide after `probe_mcp.py`; likely the service just hosts the code image / is unused for stdio | P9 |
 | A-12 | §17, §21 | Is `fixtures/api_keys.yaml` committed? Hosted keys must not be | Commit demo keys only (`pwdemo-…`, non-provider format); hosted keys via an env-selected file or env var | P11 |
-| A-13 | §6, §23 | API port, FalkorDB env var names not specified | Port 8000 (Uvicorn default); `PW_FALKORDB_HOST/PORT/PASSWORD` (see `.env.example`) | P0 |
+| A-13 (**Resolved in P0**) | §6, §23 | API port, FalkorDB env var names not specified | Port 8000 (Uvicorn default); `PW_FALKORDB_HOST/PORT/PASSWORD` (see `.env.example`) | P0 |
 | A-14 | §12.3, §24 | LLM provider and README license. **Provider = Groq** (human, 2026-10-15). **Still open: exact model, the key itself (goes only in the local `.env` as `PW_LLM_API_KEY`), and the license** | Via LiteLLM a Groq model is addressed as `groq/<model>` (to be confirmed by the P8 probe — rule 13; also confirm how the key is passed). Pick the model at P8 from Groq's current list. Free-tier rate/token limits may throttle the live study and the B3 full-trace judge (long prompts): measure in the probe, add backoff, reduce nothing silently. License: the human chooses (e.g. MIT or Apache-2.0) before P12-T6 | P8/P12 |
 | A-15 | §23 | Hosted FalkorDB (Cloud/Railway) support for `GRAPH.COPY` and `algo.maxFlow` is not stated | Run `make probe` against the hosted endpoint as soon as one exists (before P12) | P0 (local) / P12 |
 | A-16 | §6 | No frontend test tooling in the stack; UI cannot be regression-tested automatically | Gate UI with `npm run build` (strict TS) + a manual acceptance checklist with recorded evidence; ask before adding Vitest/Playwright | P10a |
 
-## Part C — Probe outcomes (P0 fills this in)
+## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
-| ⚠️ PROBE item (plan §6) | Result | Fallback chosen / syntax verified |
+Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.
+Verification of the probe itself: all 43 Cypher blocks of plan §10 are present verbatim in the probe (checked programmatically); a sabotaged copy (sanitized exclusion removed from q2a and q4) makes exactly the 3 relevant checks fail (A07, A12, B05), so the checks are not vacuous.
+
+| Probe item | Result | Verified syntax / fallback |
 |---|---|---|
-| _(P0-T6/T7 adds one row per item)_ | | |
+| connect + params, `ro_query` | PASS | `FalkorDB(host, port, password)`, `g.query(q, params)`, `g.ro_query(q)`; `ro_query` rejects writes |
+| **graph list / delete method names** | PASS, **plan §6 is wrong** | `db.list()` **does not exist** in client 1.8.0 → use `db.list_graphs()`. Delete is `Graph.delete()`. (`api/graph/client.py` already uses `list_graphs`.) |
+| `Graph.copy` | PASS | `g.copy(dest_name)`; copying onto an existing graph raises; delete the destination first |
+| index DDL (§7.5) | PASS | all 7 `CREATE INDEX FOR (x:L) ON (x.p)` statements run (`indices_created` = 7); `list_indices()` available |
+| multi-type variable-length `[:A\|B*1..16]` | PASS | no `UNION` fallback needed for q2a/q2b |
+| `none()` + `coalesce` over `nodes(path)` | PASS | q2a semantics verified incl. sanitized-only path → no witness |
+| list projection, list concatenation | PASS | `[1,2] + [3]`, `[n IN nodes(p) \| n.id]` |
+| `algo.maxFlow` docs example + edge property projection | PASS | A→B 10, A→C 5, B→C 8 ⇒ maxFlow 13 with flows A->B 8, A->C 5, B->C 8; **`edges[i].cap_id` projection works → r2 primary, no fallback**. `maxFlow` comes back as a **float** (e.g. `0.0` when nothing flows, and after revocation r2 returns one row `[0.0, [], []]`) — treat as float in P6 |
+| `UNWIND`+`CREATE`+`DELETE` of relationships (r3) | PASS | properties copied to `REVOKED_FLOW` |
+| list-of-maps parameters | PASS | |
+| `OPTIONAL MATCH … WHERE` keeps the outer row (q4) | PASS | root with only a sanitized descendant is returned with `descendants = []`; with an unsanitized descendant it is included, sanitized excluded |
+| `STARTS WITH` | PASS | **prefix `a-` also returns `a-sbx-0003`** → the exact-regex filter `^a-(\d+)$` in Python is mandatory (as plan §9 says) |
+| `ORDER BY` on a returned alias + `LIMIT` | PASS | `q1_lookup_key`; `count(a)` returns a row with 0 for an absent key |
+| property of a matched node inside `CREATE` | PASS | `agent_id: s.agent_id`, `task_ref: s.task_ref` copied; `''` stored (not null) |
+| `MERGE` on a node | PASS | idempotent |
+| empty `UNWIND` + `RETURN count(...)` | PASS | **returns a row with 0** (plan's "no rows" fallback not needed); the artifact created before the `UNWIND` still exists |
+| `q0_max_ts` on an empty graph | PASS | returns `[[None]]` → the runtime must start the clock at 1 (as plan §9 says) |
+| client query timeout | PASS | `g.query(q, params, timeout=ms)` exists and **is enforced** (raises `ResponseError`) |
+| every §10 query (q0–q8, r1–r7) smoke-run on an attack graph / capability graph built with the runtime's own `q1_*` queries | PASS | witnesses `[a-0006,a-0004,a-0001,src:issue:42]` (3 hops) and `[a-0006,a-0005,src:env:PAYMENT_API_KEY]` (2 hops); q3 names `team_convention:42` written Mon by triage; q4 preview = raw issue + memories + draft with the sanitized `task:42` excluded; q5 gives all-green Rule-of-Two letters; q6 = 11 edges; q8 flags the convention; quarantine is enforced on `q1_load`/`q1_lookup_key`/`q2c` and reversible (q4c/q4d); approval cuts both witnesses |
 
-FalkorDB image tested: _(tag / digest — D-012)_ · FalkorDB Python client version: _(…)_
+Consequences recorded: **A-03 Resolved** (a client `timeout` kwarg exists and is enforced → `policy.query_timeout_ms` can be wired; the hop bound is still a literal in the Cypher, so keep the test that asserts it equals `policy.max_lineage_hops`). **A-13 Resolved** (API port 8000; env names `PW_FALKORDB_HOST/PORT/PASSWORD`). Plan §6 should be corrected by the human: `names = db.list()` → `db.list_graphs()`.
+
+### D-015 — ruff must never touch Markdown (incident, 2026-10-15)
+- **Status:** Accepted · **Phase:** P0
+- **What happened:** the first `make fmt` ran `ruff format .`; ruff 0.17 formats Python code blocks inside Markdown, which rewrote 11 code blocks in `plan.md` (whitespace/line-breaks only; no content change). Detected from the "file changed on disk" notice, reverted with `git restore -- plan.md` (verified identical to HEAD).
+- **Fix:** `pyproject.toml` excludes `*.md`, `docs`, `plan.md`; the Makefile passes explicit folders (`api tests scripts`); `tests/test_invariants.py::test_formatter_and_linter_never_touch_markdown_or_the_plan` guards both.

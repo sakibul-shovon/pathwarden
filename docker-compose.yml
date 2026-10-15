@@ -1,0 +1,10 @@
+# P0: FalkorDB only. `api` is added in P3 and `mock-upstreams` in P9 (D-009).
+services:
+  falkordb:
+    # Pinned by digest to the exact image `make probe` passed on (D-012): graph module 42201,
+    # created 2026-10-14. To upgrade: pull, rerun `make probe` and `make test`, then update this
+    # digest and .github/workflows/ci.yml together.
+    image: falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a
+    ports:
+      - "6379:6379" # database
+      - "3000:3000" # FalkorDB Browser

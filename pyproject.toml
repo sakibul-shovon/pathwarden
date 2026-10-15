@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pathwarden"
+version = "0.0.0"
+description = "Graph-native lineage defence for multi-agent systems (hackathon project)"
+requires-python = ">=3.11"
+# Base dependencies = plan §6 core only (D-011). litellm -> extra `llm` (P8), mcp -> extra `mcp` (P9),
+# each added only after its probe (plan rule 13).
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pydantic>=2",
+  "pyyaml",
+  "falkordb",
+  "httpx",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "ruff",  # dev-only, approved in D-006
+]
+
+[tool.setuptools.packages.find]
+include = ["api*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# ruff >= 0.15 also formats Python code blocks inside Markdown, which silently rewrote plan.md
+# (the source of truth). Never let it touch documentation.
+extend-exclude = [".venv", "web", "node_modules", "*.md", "docs", "plan.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# The probe carries verbatim copies of plan §10 queries; long lines are intentional.
+"scripts/probe_falkordb.py" = ["E501"]

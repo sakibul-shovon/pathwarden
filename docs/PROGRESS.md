@@ -12,7 +12,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 | Phase | Name | Tier | Status | Branch | Needs | Last evidence | Notes |
 |---|---|---|---|---|---|---|---|
-| P0 | Probe and skeleton | 1 | NOT_STARTED | `phase/p0-skeleton` | human installs Python 3.11 + make (D-007/D-008), starts Docker Desktop; ruff approved (D-006) | — | |
+| P0 | Probe and skeleton | 1 | VERIFYING | `phase/p0-skeleton` | CI run (needs the branch pushed + a way to see Actions), GitHub settings (T11) | 35/35 probe, 14 tests, lint clean (2026-10-15) | open: T9 CI run unverified, T11 repo settings, T12 n/a |
 | P1 | Graph layer, runtime, replay | 1 | NOT_STARTED | `phase/p1-runtime` | P0 | — | |
 | P2 | Gate | 1 | NOT_STARTED | `phase/p2-gate` | P1 | — | cross-agent review recommended |
 | P3 | Scripted agents, demo scenarios, core API | 1 | NOT_STARTED | `phase/p3-scripted-api` | P2 | — | |
@@ -45,7 +45,19 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 
 | date-time | task | command | exit | result (real counts) | agent |
 |---|---|---|---|---|---|
-| | | | | | |
+| 2026-10-15 18:5x | P0-T1 | `git ls-remote https://github.com/sakibul-shovon/pathwarden.git` | 0 | no refs: remote reachable and empty | Claude Code |
+| 2026-10-15 18:5x | P0-T1 | `sh scripts/scan_secrets.sh` on the staged root commit; negative tests with runtime-built `ghp_…`/`gsk_…` strings and a `.env` in a subfolder | 0 / refused | clean index passes; leaks and `.env` refused; index restored (no leftovers) | Claude Code |
+| 2026-10-15 18:5x | P0-T1 | `sh .githooks/commit-msg <file>` ×7 | — | accepts `P0: chore: …`, `P10a: fix(web): …`, `P3: feat(api): …`, `Merge …`; rejects `fix stuff`, `P13: …`, `P2: wip: …` | Claude Code |
+| 2026-10-15 18:5x | P0-T1 | `sh .githooks/pre-commit` on `main` after root commit; `.githooks/pre-push` with crafted ref lines ×5 | 1 / 1,0,0,1,1 | commit on main refused; push to main refused, allowed with human override; new branch ok; delete refused; rewritten remote refused | Claude Code |
+| 2026-10-15 18:5x | P0-T1 | root commit `38cf308` then `PW_ALLOW_MAIN=1 git push -u origin main` (human asked for the push) | 0 | `git ls-remote origin refs/heads/main` = local HEAD `38cf308…`; author Shovon, no trailer | Claude Code |
+| 2026-10-15 | P0-T2 | `py -3.11 -m venv .venv`; `python --version` | 0 | Python 3.11.9 (installed via winget `Python.Python.3.11`) | Claude Code |
+| 2026-10-15 | P0-T5 | `make up`; `docker compose ps` | 0 | FalkorDB up on 6379/3000 from the digest-pinned image | Claude Code |
+| 2026-10-15 | P0-T7 | `make probe` (first run, `:latest` image) and again on the pinned digest | 0 | **35 passed, 0 NOTE, 0 FAILED** both times | Claude Code |
+| 2026-10-15 | P0-T7 | programmatic diff of plan §10 vs probe; sabotaged copy of the probe | — | 43/43 plan Cypher blocks present verbatim; sabotage → exactly A07, A12, B05 FAIL (32 passed, 3 failed) | Claude Code |
+| 2026-10-15 | P0-T6/T9 | `make test` | 0 | **14 passed** (health ×2 incl. real DB, settings ×5, invariants ×7) | Claude Code |
+| 2026-10-15 | P0-T3/T9 | `make lint` and `make fmt` | 0 | ruff: All checks passed, 10 files already formatted; `plan.md` unchanged afterwards | Claude Code |
+| 2026-10-15 | P0-T6 | `uvicorn api.main:create_app --factory --port 8000` + `curl /api/health` | 0 | `{"falkordb":"ok","graphs":[]}` | Claude Code |
+| 2026-10-15 | P0-T10 | clean venv (py 3.11) `pip install -c constraints.txt -e ".[dev]"`, then `make test` / `make lint` with it | 0 | 14 passed; lint clean — equivalent to the CI steps (CI itself not yet run) | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 
@@ -64,4 +76,5 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | date-time (+06) | tool / model | phase / tasks | outcome | HEAD at stop |
 |---|---|---|---|---|
 | 2026-10-15 18:15–… | Claude Code / Sonnet 5.5 | setup | read plan.md; wrote workflow blueprint (no application code) | no git repo yet |
-| 2026-10-15 (later) | Claude Code / Sonnet 5.5 | setup | applied human answers: ruff approved, push allowed without agent names (D-005/D-013), repo private (D-014), provider Groq, cut line confirmed; verified winget ids and the Claude Code `attribution` setting | no git repo yet |
+| 2026-10-15 19:0x | Claude Code / Sonnet 5.5 | P0-T1…T10 | approvals recorded; root commit pushed to `main`; Python 3.11 + make installed; P0 skeleton, probe (35/35), tests, lint, image pinned; **incident:** `make fmt` rewrote plan.md code blocks → restored, fixed (D-015) | see HANDOFF |
+| 2026-10-15 (earlier) | Claude Code / Sonnet 5.5 | setup | applied human answers: ruff approved, push allowed without agent names (D-005/D-013), repo private (D-014), provider Groq, cut line confirmed; verified winget ids and the Claude Code `attribution` setting | no git repo yet |
