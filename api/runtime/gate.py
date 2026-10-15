@@ -57,11 +57,16 @@ class Gate:
         self._policy_version = policy_version
         self._verdict_log = verdict_log
 
-    def decide(self, action_id: str) -> GateResult:
-        """Evaluate ``action_id``, record status + reason on the Action and in the verdict log."""
+    def evaluate(self, action_id: str) -> GateResult:
+        """Compute the verdict without recording anything (to display an action's current state)."""
         started = time.perf_counter()
         result = self._evaluate(action_id)
         result.latency_ms = (time.perf_counter() - started) * 1000.0
+        return result
+
+    def decide(self, action_id: str) -> GateResult:
+        """Evaluate ``action_id``, record status + reason on the Action and in the verdict log."""
+        result = self.evaluate(action_id)
 
         self._graph.run(
             "q1_set_action_status",
