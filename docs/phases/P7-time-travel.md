@@ -17,10 +17,10 @@ Create: `api/graph/queries/q7_graph_at_time.cypher`, `q7b_actions_at_time.cypher
 Modify: `tests/test_invariants.py` (no `.content` in q7/q7b), `docs/DECISIONS.md` (A-09).
 
 ## 5. Tasks
-- [ ] **P7-T1 Queries** `q7`, `q7b` verbatim; `q6b` for node metadata (already from P3).
-- [ ] **P7-T2 Endpoints:** `GET /ws/{ws}/timeline/max` → `{"t": int}` (current logical clock) and `GET /ws/{ws}/graph-at?t=` returning nodes (with metadata), edges and actions at time `t` (q7 + q7b + q6b). Reject non-integer / negative `t` with the §18 error shape.
-- [ ] **P7-T3 Markers (after A-09):** "poisoned memory written" = earliest `created_at` of a `team_memory` artifact with an unsanitized untrusted origin (from `q8` + `q6b`); "draft doubly tainted" = earliest `t` at which some draft's lineage within the returned edges reaches both an untrusted and a secret source (BFS in Python over `q7` edges, trust from `q6b`). Document that `quarantined` reflects **current** state, not history.
-- [ ] **P7-T4 Tests** (below).
+- [x] **P7-T1 Queries** `q7`, `q7b` verbatim; `q6b` for node metadata (already from P3).
+- [x] **P7-T2 Endpoints:** `GET /ws/{ws}/timeline/max` → `{"t": int}` (current logical clock) and `GET /ws/{ws}/graph-at?t=` returning nodes (with metadata), edges and actions at time `t` (q7 + q7b + q6b). Reject non-integer / negative `t` with the §18 error shape.
+- [x] **P7-T3 Markers (after A-09):** "poisoned memory written" = earliest `created_at` of a `team_memory` artifact with an unsanitized untrusted origin (from `q8` + `q6b`); "draft doubly tainted" = earliest `t` at which some draft's lineage within the returned edges reaches both an untrusted and a secret source (BFS in Python over `q7` edges, trust from `q6b`). Document that `quarantined` reflects **current** state, not history.
+- [x] **P7-T4 Tests** (below).
 
 ## 6. Tests and validation
 Using `attack_sleeper_44`: at the logical time of Monday's `team_convention:42` write, the graph shows the convention but **no** draft; at the final time it shows the doubly tainted draft and both markers; `edges(t1) ⊆ edges(t2)` for `t1 < t2` · `t = 0` is empty · `t` beyond max equals max · actions at `t` only include actions created `<= t` · invalid `t` → error JSON · no `content` in any response.
@@ -42,3 +42,6 @@ Tasks ticked with evidence · G1, G2, G4, G5, G6, G8, G10 · A-09 Resolved · tr
 
 ## 10. Git checkpoints
 `P7: feat(queries): graph and actions at time` · `P7: feat(api): timeline and graph-at endpoints` · `P7: feat(api): taint and memory markers` · `P7: test(timetravel): sleeper replay` → PR → merge → tag.
+
+## 11. Outcome (2026-10-16)
+All four tasks done; evidence in `docs/PROGRESS.md` (P7 rows) and decisions in `docs/DECISIONS.md` Part B9. Tests live in `tests/test_timetravel.py` (13 tests) instead of `tests/timetravel/*`.
