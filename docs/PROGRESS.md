@@ -12,7 +12,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 | Phase | Name | Tier | Status | Branch | Needs | Last evidence | Notes |
 |---|---|---|---|---|---|---|---|
-| P0 | Probe and skeleton | 1 | IN_PROGRESS | `phase/p0-skeleton` | CI run (needs the branch pushed + a way to see Actions), GitHub settings (T11) | 35/35 probe, 14 tests, lint clean (2026-10-15) | open: T9 CI run unverified, T11 repo settings, T12 n/a |
+| P0 | Probe and skeleton | 1 | VERIFYING | `phase/p0-skeleton` | CI run (needs the branch pushed + a way to see Actions), GitHub settings (T11) | 35/35 probe, 14 tests, lint clean (2026-10-15) | open: T9 CI run unverified, T11 repo settings, T12 n/a |
 | P1 | Graph layer, runtime, replay | 1 | NOT_STARTED | `phase/p1-runtime` | P0 | — | |
 | P2 | Gate | 1 | NOT_STARTED | `phase/p2-gate` | P1 | — | cross-agent review recommended |
 | P3 | Scripted agents, demo scenarios, core API | 1 | NOT_STARTED | `phase/p3-scripted-api` | P2 | — | |

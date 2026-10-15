@@ -34,8 +34,13 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **Interpretation (confirm if wrong):** commit messages, PR text and branch names carry no `Co-Authored-By`, "Generated with …" or tool/model name, and commits are authored with the repo's configured identity. Claude Code's own attribution is disabled in `.claude/settings.json` (`attribution.commit` and `attribution.pr` empty, `sessionUrl` false — shape verified in the Claude Code settings reference).
 - **Kept on purpose:** the AI-assistance disclosure that plan §24.5/§24.6 requires (README + `docs/AI_ASSISTANCE.md`) and the tool/model column of the `docs/PROGRESS.md` session log, which is a committed file. If you want the session log anonymised too, say so.
 
+### D-016 — Merge, tag and `main` push delegated to the agent
+- **Status:** **Accepted (human, 2026-10-15: "tumi sob merge kore next phase start koro")** · **Phase:** all
+- **Decision:** because `gh` is not installed and the human does no manual steps, the agent merges each finished phase locally (`--no-ff`, merge commit), tags `phase-p<n>-done`, and pushes `main` and the tag with `PW_ALLOW_MAIN=1` for that one command. Preconditions: phase VERIFYING, gates G1–G9 green with evidence, branch pushed. Supersedes the "merge/tag = human" parts of D-004/D-005; everything else there stands (never force, never squash, no other pushes to `main`).
+- **Consequence:** CI results cannot be observed from here while the repo is private and `gh` is absent (gate G10 = "not verified"). A failed CI run would only be noticed on GitHub; record "CI not verified" in Evidence rather than claiming green.
+
 ### D-014 — Repository visibility
-- **Status:** Open · **Phase:** P0/P12
+- **Status:** **Decided: stays private until the project ends; the human makes it public** (2026-10-15). Reminder for P12-T6 · **Phase:** P0/P12
 - **Facts:** the human states the repo is **private** (2026-10-15). Plan §24.6 requires it to be public at submission.
 - **Consequences (my understanding of GitHub's plan limits — verify under Settings → Branches / Code security):** private repos on GitHub Free typically lack branch protection/rulesets, secret scanning and push protection. Until public, local hooks and the human-only merge rule are the only protection.
 - **Proposal:** make the repo public as soon as you are comfortable (it will contain only the plan, synthetic fixtures and code; no secrets by design) — this unlocks the protections for free and satisfies "incremental public commits". Otherwise flip it no later than P12-T6. Commit timestamps are unaffected by the flip.
