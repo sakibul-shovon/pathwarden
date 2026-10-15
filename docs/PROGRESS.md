@@ -5,7 +5,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 - **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** P6 (VERIFYING); P0-P5 and P10a DONE
+- **Active phase:** P7 (VERIFYING, merged by D-016 right after this commit); P0-P6 and P10a DONE. Work stopped here on the human's instruction.
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -19,8 +19,8 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 | P4 | Forensic Agent, quarantine, healing, memory API | 1 | DONE | `phase/p4-forensics` | - | 165 tests, probe 36/36, 4 sabotage checks; merged `e6f2588`, tag `phase-p4-done` | **D-017 awaiting human review**; no independent review; CI not observed |
 | P10a | UI: scaffold, Run, Investigate | 1 | DONE | `phase/p10a-ui-run-investigate` | - | strict tsc build, verified in headless Edge; merged `0f8de3b`, tag `phase-p10a-done` | CI not observed; no human click-through |
 | P5 | Evaluation (non-LLM defenses) | 2 | DONE | `phase/p5-eval` | - | 190 tests; make eval byte-identical; 6 sabotage checks; merged `cf95f5a`, tag `phase-p5-done` | B1/B3 not_run; no independent review; CI not observed |
-| P6 | Remediation (max-flow) | 2 | VERIFYING | `phase/p6-remediation` | P0 | 418 tests; 6 sabotage checks (2 escapes found and closed) | **D-018 (seed queries) awaiting review** |
-| P7 | Time travel | 2 | NOT_STARTED | `phase/p7-timetravel` | P3 | — | needs A-09 decision |
+| P6 | Remediation (max-flow) | 2 | DONE | `phase/p6-remediation` | P0 | 418 tests; 6 sabotage checks (2 escapes found and closed); merged `7295aca`, tag `phase-p6-done` | **D-018 (seed queries) awaiting review** |
+| P7 | Time travel | 2 | VERIFYING | `phase/p7-timetravel` | P3 | 431 tests; 4 sabotage checks (2 escapes found and closed); tag `phase-p7-done` after the merge | A-09 Resolved (markers computed in Python, no new Cypher) |
 | P10b | UI: Memory, Time travel | 2 | NOT_STARTED | `phase/p10b-ui-memory-time` | P4, P7, P10a | — | |
 | P10c | UI: Remediate, Evaluation, full demo | 2 | NOT_STARTED | `phase/p10c-ui-remediate-eval` | P5, P6, P10a | — | |
 | P8 | Live LLM mode | 3 | NOT_STARTED | `phase/p8-live-llm` | P4, P5, Groq model + key (A-14) | — | |
@@ -114,3 +114,7 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-15 18:15–… | Claude Code / Sonnet 5.5 | setup | read plan.md; wrote workflow blueprint (no application code) | no git repo yet |
 | 2026-10-15 19:0x | Claude Code / Sonnet 5.5 | P0-T1…T10 | approvals recorded; root commit pushed to `main`; Python 3.11 + make installed; P0 skeleton, probe (35/35), tests, lint, image pinned; **incident:** `make fmt` rewrote plan.md code blocks → restored, fixed (D-015) | see HANDOFF |
 | 2026-10-15 (earlier) | Claude Code / Sonnet 5.5 | setup | applied human answers: ruff approved, push allowed without agent names (D-005/D-013), repo private (D-014), provider Groq, cut line confirmed; verified winget ids and the Claude Code `attribution` setting | no git repo yet |
+| 2026-10-16 | P7-T1/T2 | `q7` verbatim (`q7_graph_at_time.cypher`), `q7b` from P3, `q6b` for node metadata; `GET /api/ws/{ws}/timeline/max`, `GET /api/ws/{ws}/graph-at?t=` | 0 | negative `t` -> 400 `bad_request`, non-integer or missing -> 422 `validation_error`, unknown workspace -> `unknown_workspace` | Claude Code |
+| 2026-10-16 | P7-T3 | markers computed in Python over the `q7` edges + `q6b` details + `q8` (A-09, no new Cypher) | 0 | measured on `attack_sleeper_44`: max t = 18; `poisoned_memory_written` t=4 (`issue_summary:42`); `draft_doubly_tainted` t=16 (`changelog:44`); at t=15 no draft exists, at t=16 the draft is visible and marked | Claude Code |
+| 2026-10-16 | P7-T4 | `make test` | 0 | **431 passed** (13 new): graph at the Monday memory write shows the convention and no draft; final graph shows the doubly tainted draft and both markers; markers derived from data; graph only grows with t, t=0 empty, t beyond max == max; actions only after they were proposed; benign runs never produce a marker; no `content` in any response; invalid `t` shapes; two crafted cases for the sanitizer boundary (rule 7) | Claude Code |
+| 2026-10-16 | P7-T4 | sabotage S1-S4 (restored byte-identical): `<` instead of `<=` in q7; untrusted BFS ignores the sanitizer; sanitized also cuts SECRET paths; actions ignore t | - | **first run: 2 escapes** (S2, S3: the scenario tests never put a sanitized artifact on a path to a draft that also had a secret). Added two crafted tests (untrusted only via the sanitizer -> not doubly tainted; secret via a sanitized artifact + untrusted path -> still doubly tainted); re-run: 4/4 CAUGHT | Claude Code |
