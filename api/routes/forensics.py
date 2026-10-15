@@ -31,7 +31,9 @@ def run_forensics(ws: Ws, action_id: str, body: ForensicsRequest | None = None) 
         return ws.forensics(action_id, body.mode).model_dump()
     except LlmModeUnavailableError:
         raise ApiError(
-            501, "llm_not_configured", "the LLM forensic mode arrives in phase P8"
+            501,
+            "llm_not_configured",
+            "the LLM forensic mode needs a language model (PW_LLM_API_KEY)",
         ) from None
 
 
