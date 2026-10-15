@@ -123,6 +123,16 @@ class Runtime:
             self._counters[kind] += 1
             self._clock.tick()
 
+    def resync(self) -> None:
+        """Re-read the clock and the id counters from the graph.
+
+        Needed when several processes write to one graph (one MCP gateway process per agent): a
+        long-lived runtime would otherwise reuse ids another process has already taken.
+        """
+        with self._lock:
+            self._clock = LogicalClock(self._initial_clock())
+            self._counters = {kind: self._initial_counter(p) for kind, p in self._prefix.items()}
+
     # ------------------------------------------------------------------ small helpers
     def _context(self, session_id: str) -> list[str]:
         return [row[0] for row in self._graph.run("q1_session_context", session_id=session_id)]
@@ -228,6 +238,19 @@ class Runtime:
                 latest[key] = (artifact_id, created_at)
             ordered = sorted(latest.values(), key=lambda item: item[1])
             return [(aid, self.load(session_id, tool, aid)) for aid, _ in ordered]
+
+    def find_key(self, tool: str, key: str) -> tuple[str | None, bool]:
+        """Look up ``key`` in the tool's store without loading it.
+
+        Returns ``(id of the latest non-quarantined version or None, whether any version exists)``.
+        """
+        definition = self._registry.tool_of_class(tool, "load")
+        with self._lock:
+            rows = self._graph.run("q1_lookup_key", store=definition.store, key=key)
+            if rows:
+                return rows[0][0], True
+            existing = self._graph.run("q1_key_exists", store=definition.store, key=key)
+        return None, bool(existing and existing[0][0] > 0)
 
     # ------------------------------------------------------------------ writes
     def write(
