@@ -183,6 +183,18 @@ WHERE coalesce(q.quarantined, false)
 RETURN coalesce(p.quarantined, false) AS payload_quarantined,
        collect(DISTINCT q.id) AS quarantined_ancestors
 """
+# DEVIATION D-017 (not in the plan): q2c ignores quarantined ancestors that are reached THROUGH a
+# sanitized artifact, consistent with q2a/q4/rule 7 (sanitized is the declassification boundary for
+# untrusted taint). Without it a healed draft derived from the sanitized task is BLOCKED forever,
+# because the raw issue behind the task is (correctly) quarantined.
+Q["q2c_sanitized_boundary"] = """
+MATCH (a:Action {id: $action_id})-[:PAYLOAD]->(p:Artifact)
+OPTIONAL MATCH qp = (p)-[:DERIVED_FROM*1..16]->(q:Artifact)
+WHERE coalesce(q.quarantined, false)
+  AND none(n IN nodes(qp) WHERE coalesce(n.sanitized, false) AND n.id <> q.id)
+RETURN coalesce(p.quarantined, false) AS payload_quarantined,
+       collect(DISTINCT q.id) AS quarantined_ancestors
+"""
 Q["q2d"] = """
 MATCH (a:Action {id: $action_id})
 OPTIONAL MATCH (a)-[:PAYLOAD]->(p:Artifact)
@@ -1168,6 +1180,52 @@ def b13(c: Ctx) -> str:
     eq(rows(g, "q2a", {"action_id": "act-0001"}), [], "untrusted witness cut by approval")
     eq(rows(g, "q2b", {"action_id": "act-0001"}), [], "secret witness cut by approval")
     return "human approval declassifies the payload for both queries (rule 7)"
+
+
+@check("B14", "q2c deviation D-017: sanitized artifacts bound the quarantine check")
+def b14(c: Ctx) -> str:
+    def build(shape: str):
+        g = c.graph("b14")
+        g.query(
+            """
+            CREATE (x:Action {id:'act-1'})-[:PAYLOAD]->(d:Artifact {id:'d', quarantined:false}),
+                   (d)-[:DERIVED_FROM]->(s:Artifact {id:'s', sanitized:true, quarantined:false}),
+                   (s)-[:DERIVED_FROM]->(r:Artifact {id:'r', quarantined:true})
+            """
+        )
+        if shape == "plain_ancestor":
+            g.query(
+                "MATCH (d:Artifact {id:'d'}) "
+                "CREATE (d)-[:DERIVED_FROM]->(:Artifact {id:'m', quarantined:true})"
+            )
+        if shape == "sanitized_itself":
+            g.query("MATCH (s:Artifact {id:'s'}) SET s.quarantined = true")
+        return g
+
+    params = {"action_id": "act-1"}
+    g = build("behind_sanitized")
+    plan = g.query(Q["q2c"], params).result_set
+    eq(plan, [[False, ["r"]]], "plan q2c blocks on a quarantined root behind a sanitized task")
+    eq(
+        g.query(Q["q2c_sanitized_boundary"], params).result_set,
+        [[False, []]],
+        "deviation passes it",
+    )
+
+    g = build("plain_ancestor")
+    row = g.query(Q["q2c_sanitized_boundary"], params).result_set[0]
+    eq(
+        (row[0], sorted(row[1])),
+        (False, ["m"]),
+        "a quarantined non-sanitized ancestor still blocks",
+    )
+
+    g = build("sanitized_itself")
+    row = g.query(Q["q2c_sanitized_boundary"], params).result_set[0]
+    eq((row[0], sorted(row[1])), (False, ["s"]), "a quarantined sanitized artifact still blocks")
+    return (
+        "plan q2c blocks the healed draft; deviation allows it but keeps real quarantines blocking"
+    )
 
 
 # --------------------------------------------------------------------------------------------

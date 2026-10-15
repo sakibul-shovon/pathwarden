@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import secrets
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -19,25 +17,6 @@ from tests.conftest import FIXTURES
 BASE = "/api/ws/tinyqueue"
 SECRET = "PWDEMO-SECRET-7f3a9c21-NOT-A-REAL-KEY"
 EDGES = "MATCH (a)-[r:DERIVED_FROM|ORIGINATES_FROM]->(b) RETURN a.id, b.id, type(r)"
-
-
-@pytest.fixture
-def manager(db, settings, tmp_path):
-    name = f"pw_test_{secrets.token_hex(4)}"
-    mgr = WorkspaceManager(
-        settings.model_copy(update={"state_dir": tmp_path}), graph_names={"tinyqueue": name}
-    )
-    yield mgr
-    try:
-        db.select_graph(name).delete()
-    except Exception:  # noqa: BLE001
-        pass
-
-
-@pytest.fixture
-def client(manager, settings, tmp_path) -> TestClient:
-    app = create_app(settings.model_copy(update={"state_dir": tmp_path}), manager)
-    return TestClient(app, raise_server_exceptions=False)
 
 
 def run(client, name, guard=True, **extra):
@@ -213,7 +192,7 @@ def test_an_already_executed_benign_action_cannot_be_approved_again(client):
 
 
 # -------------------------------------------------- artifacts, sinks, reset
-def test_artifacts_are_served_with_content_for_the_ui_and_the_sandbox_is_not_yet_available(client):
+def test_artifacts_are_served_with_content_for_the_ui_and_the_sandbox_needs_forensics_first(client):
     result = run(client, "attack_pipeline_42")
     action = result["actions"][-1]["id"]
     payload = next(
@@ -226,7 +205,8 @@ def test_artifacts_are_served_with_content_for_the_ui_and_the_sandbox_is_not_yet
 
     assert artifact.status_code == 200 and SECRET in artifact.json()["content"]
     sandbox = client.get(f"{BASE}/artifacts/{payload}?graph=sandbox")
-    assert (sandbox.status_code, sandbox.json()["error"]) == (501, "sandbox_not_available")
+    # no sandbox exists before forensics has run, and there is no fallback to the main graph
+    assert (sandbox.status_code, sandbox.json()["error"]) == (404, "not_found")
     assert client.get(f"{BASE}/artifacts/a-9999").json()["error"] == "not_found"
 
 

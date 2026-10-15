@@ -365,6 +365,52 @@ class Runtime:
         if not rows:
             raise NotFoundError(f"action {old_action_id!r} or {new_action_id!r} not found")
 
+    def node_details(self, ids: list[str]) -> list[dict]:
+        """Metadata (never content) of nodes by id (``q6b``)."""
+        columns = (
+            "id",
+            "label",
+            "kind",
+            "trust",
+            "sanitized",
+            "approved",
+            "quarantined",
+            "agent_id",
+            "session_id",
+            "key",
+            "created_at",
+        )
+        rows = self._graph.run("q6b_node_details", ids=sorted(set(ids)))
+        return [dict(zip(columns, row, strict=True)) for row in rows]
+
+    def apply_quarantine(self, source_id: str, artifact_ids: list[str], by: str) -> tuple[str, int]:
+        """Mark ``artifact_ids`` quarantined and record a ``Quarantine`` audit node (reversible)."""
+        ids = sorted(set(artifact_ids))
+        if len(self.node_details(ids)) != len(ids):
+            raise NotFoundError("some artifacts to quarantine do not exist")
+        with self._alloc("quarantine") as (qid, ts):
+            rows = self._graph.run(
+                "q4c_quarantine_apply",
+                qid=qid,
+                source_id=source_id,
+                ts=ts,
+                by=by,
+                artifact_ids=ids,
+            )
+            count = rows[0][0] if rows else 0
+            if count != len(ids):
+                raise ProvenanceError(f"{qid}: quarantined {count} of {len(ids)} artifacts")
+        return qid, count
+
+    def release_quarantine(self, quarantine_id: str) -> int:
+        """Human undo: un-quarantine everything covered by ``quarantine_id`` (``q4d``)."""
+        with self._lock:
+            rows = self._graph.run("q4d_quarantine_release", qid=quarantine_id)
+        released = rows[0][0] if rows else 0
+        if released == 0:  # count() returns a row even for an unknown id
+            raise NotFoundError(f"quarantine {quarantine_id!r} not found")
+        return released
+
     def action_context(self, action_id: str) -> dict:
         """Payload, sink and external flag of an action (``q2d``); ids only, never content."""
         rows = self._graph.run("q2d_action_context", action_id=action_id)

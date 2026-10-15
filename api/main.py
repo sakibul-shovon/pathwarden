@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from api.api_errors import install_error_handlers
 from api.graph.client import connect, list_graph_names
-from api.routes import actions, workspace
+from api.routes import actions, forensics, workspace
 from api.settings import Settings, load_dotenv
 from api.workspace import WorkspaceManager
 
@@ -31,6 +31,7 @@ def create_app(
     install_error_handlers(app)
     app.include_router(workspace.router)
     app.include_router(actions.router)
+    app.include_router(forensics.router)
 
     @app.get("/api/health")
     def health() -> JSONResponse:
