@@ -147,6 +147,30 @@ def run_scenario(
         else:
             raise ValueError(f"unknown step agent {step.agent!r}")
 
+    return build_result(
+        scenario.name,
+        guard=orchestrator.guard,
+        runtime=runtime,
+        graph=graph,
+        sessions=sessions,
+        actions=actions,
+        first_event=first_event,
+        gate_entries=gate_entries,
+    )
+
+
+def build_result(
+    name: str,
+    *,
+    guard: bool,
+    runtime: Runtime,
+    graph: NamedGraph,
+    sessions: list[SessionInfo],
+    actions: list[dict],
+    first_event: int,
+    gate_entries: list[tuple[int, dict]],
+) -> dict:
+    """Assemble a ``RunResult`` (plan §18): sessions with badges, a timeline, the actions."""
     agent_of: dict[str, str] = {}
     rows: list[dict] = []
     events = runtime.events.events[first_event:]
@@ -168,17 +192,15 @@ def run_scenario(
                 "detail": _detail(event),
             }
         )
-    timeline = [{"t": i, **row} for i, row in enumerate(rows, start=1)]
-
     return {
-        "scenario": scenario.name,
-        "guard": orchestrator.guard,
+        "scenario": name,
+        "guard": guard,
         "mode": "scripted",
         "sessions": [
             {"id": s.id, "agent": s.agent, "day": s.day, "rule_of_two": rule_of_two(graph, s.id)}
             for s in sessions
         ],
-        "timeline": timeline,
+        "timeline": [{"t": i, **row} for i, row in enumerate(rows, start=1)],
         "actions": actions,
     }
 

@@ -13,19 +13,25 @@ from pathlib import Path
 from falkordb import FalkorDB
 
 from api.agents.scripted import Fixtures, ScriptedAgents
+from api.forensics.agent import ForensicAgent, LlmModeUnavailableError
+from api.forensics.report import ForensicReport
+from api.forensics.tools import ForensicTools, Sandbox
 from api.graph.client import NamedGraph, connect
 from api.graph.schema import main_graph_name, reset_graph
-from api.runtime.errors import NotFoundError
+from api.runtime.errors import ActionStateError, NotFoundError, ProvenanceError
 from api.runtime.events import EventLog
 from api.runtime.gate import Gate
 from api.runtime.orchestrator import Orchestrator
 from api.runtime.registry import Registry, load_policy, policy_version
 from api.runtime.runtime import Runtime
 from api.runtime.sinks import SinkWriter
-from api.scenarios.demo import SCENARIOS, run_scenario
+from api.scenarios.demo import SCENARIOS, build_result, run_scenario
 from api.settings import Settings
 
 FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
+
+
+__all__ = ["LiveModeUnavailableError", "LlmModeUnavailableError", "Workspace", "WorkspaceManager"]
 
 
 class LiveModeUnavailableError(Exception):
@@ -51,6 +57,7 @@ class Workspace:
         self._policy_version = policy_version(fixtures_dir / "policy.yaml")
         self.graph_name = graph_name or main_graph_name(name)  # override: test isolation only
         self.graph = NamedGraph(db, self.graph_name, self.policy.query_timeout_ms)
+        self.sandbox_graph_name = self.graph_name + "__sbx"  # plan 7.1: pw_<ws>__sbx
         self.state_dir = state_dir / name
         self.sinks = SinkWriter(self.state_dir / "sinks")
         self.lock = threading.RLock()
@@ -114,6 +121,105 @@ class Workspace:
                 orchestrator=self.orchestrator(guard=guard),
                 graph=self.graph,
             )
+
+    # ------------------------------------------------------------------ forensics and healing
+    def make_sandbox(self) -> Sandbox:
+        """Delete any previous sandbox, copy the main graph to ``pw_<ws>__sbx`` and open a runtime
+        there (id namespace ``sbx``; the mock sinks are never touched)."""
+        if self.sandbox_graph_name in self._db.list_graphs():
+            self._db.select_graph(self.sandbox_graph_name).delete()
+        self._db.select_graph(self.graph_name).copy(self.sandbox_graph_name)
+        graph = NamedGraph(self._db, self.sandbox_graph_name, self.policy.query_timeout_ms)
+        runtime = Runtime(graph, self.registry, namespace="sbx")
+        gate = Gate(graph, self.policy, policy_version=self._policy_version)
+        return Sandbox(
+            self.sandbox_graph_name, graph, runtime, gate, ScriptedAgents(runtime, self.fixtures)
+        )
+
+    def _tools(self) -> ForensicTools:
+        return ForensicTools(
+            graph=self.graph,
+            runtime=self.runtime,
+            gate=self.gate,
+            make_sandbox=self.make_sandbox,
+        )
+
+    def forensics(self, action_id: str, mode: str = "scripted") -> ForensicReport:
+        """Investigate a held/blocked action, quarantine its source, replay in the sandbox."""
+        with self.lock:
+            self.runtime.get_action(action_id)  # NotFoundError for unknown actions
+            return ForensicAgent(self._tools()).run(action_id, mode)
+
+    def heal_approve(self, action_id: str, approver: str) -> dict:
+        """Human approval of the healed release: re-run Fixer and Release in the MAIN graph with a
+        fresh runtime (quarantine already applied), gate, execute, and supersede the held action."""
+        with self.lock:
+            old = self.runtime.get_action(action_id)
+            if old["status"] not in ("held", "blocked"):
+                raise ActionStateError(f"action {action_id} is {old['status']}; nothing to heal")
+            task_ref = self._tools().task_ref_of(action_id)
+            if task_ref is None:
+                raise ProvenanceError(f"cannot derive the task of {action_id}")
+            issue = int(task_ref.split(":")[1])
+
+            # a fresh runtime proves ids continue from the graph state (it shares the event log)
+            self._runtime = Runtime(self.graph, self.registry, events=self.runtime.events)
+            runtime = self._runtime
+            agents = ScriptedAgents(runtime, self.fixtures)
+            first_event = len(runtime.events.events)
+
+            fixer_session = agents.fixer(issue, "Heal")
+            release_session, new_action = agents.release(issue, "Heal")
+            outcome = self.orchestrator().submit(new_action)
+            superseded = outcome.status == "executed"
+            if superseded:
+                runtime.supersede(action_id, new_action)
+
+            gate_row = {
+                "session": release_session.id,
+                "agent": "gate",
+                "op": "gate",
+                "detail": f"{new_action} {outcome.status} {outcome.reason}",
+            }
+            old_row = {
+                "id": action_id,
+                "status": "superseded" if superseded else old["status"],
+                "reason": f"SUPERSEDED_BY {new_action}" if superseded else "",
+            }
+            result = build_result(
+                "heal",
+                guard=True,
+                runtime=runtime,
+                graph=self.graph,
+                sessions=[fixer_session, release_session],
+                actions=[
+                    {"id": new_action, "status": outcome.status, "reason": outcome.reason},
+                    old_row,
+                ],
+                first_event=first_event,
+                gate_entries=[(len(runtime.events.events), gate_row)],
+            )
+            result["approver"] = approver
+            result["superseded"] = superseded
+            return result
+
+    def release_quarantine(self, quarantine_id: str) -> int:
+        with self.lock:
+            return self.runtime.release_quarantine(quarantine_id)
+
+    def memory_inventory(self) -> list[dict]:
+        return self._tools().list_memory_inventory()
+
+    def sandbox_artifact(self, artifact_id: str) -> dict:
+        """Artifact (with content) from the SANDBOX graph only; no fallback between graphs."""
+        if self.sandbox_graph_name not in self._db.list_graphs():
+            raise NotFoundError("no sandbox graph exists yet; run forensics first")
+        sandbox = Runtime(
+            NamedGraph(self._db, self.sandbox_graph_name, self.policy.query_timeout_ms),
+            self.registry,
+            namespace="sbx",
+        )
+        return sandbox.get_artifact(artifact_id)
 
 
 class WorkspaceManager:

@@ -67,7 +67,7 @@ def artifact(
 ) -> dict:
     """Full artifact including ``content`` (UI only; the gate and forensics never read it)."""
     if graph == "sandbox":
-        raise ApiError(501, "sandbox_not_available", "the sandbox graph arrives in phase P4")
+        return ws.sandbox_artifact(artifact_id)
     return ws.runtime.get_artifact(artifact_id)
 
 
