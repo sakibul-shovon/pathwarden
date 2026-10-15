@@ -10,8 +10,10 @@ from fastapi.responses import JSONResponse
 
 from api.api_errors import install_error_handlers
 from api.graph.client import connect, list_graph_names
+from api.remediation.capability_graph import CapabilityService
 from api.routes import actions, forensics, workspace
 from api.routes import eval as eval_routes
+from api.routes import remediation as remediation_routes
 from api.settings import Settings, load_dotenv
 from api.workspace import WorkspaceManager
 
@@ -19,7 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 def create_app(
-    settings: Settings | None = None, workspaces: WorkspaceManager | None = None
+    settings: Settings | None = None,
+    workspaces: WorkspaceManager | None = None,
+    remediation: CapabilityService | None = None,
 ) -> FastAPI:
     """Application factory; tests pass explicit ``settings`` (and a ``workspaces`` manager)."""
     if settings is None:
@@ -29,11 +33,13 @@ def create_app(
     app = FastAPI(title="Pathwarden")
     app.state.settings = settings
     app.state.workspaces = workspaces or WorkspaceManager(settings)
+    app.state.remediation = remediation or CapabilityService(settings)
     install_error_handlers(app)
     app.include_router(workspace.router)
     app.include_router(actions.router)
     app.include_router(forensics.router)
     app.include_router(eval_routes.router)
+    app.include_router(remediation_routes.router)
 
     @app.get("/api/health")
     def health() -> JSONResponse:
