@@ -1,0 +1,3 @@
+strict: false              # true → TRIFECTA becomes BLOCK instead of HOLD
+max_lineage_hops: 16
+query_timeout_ms: 2000

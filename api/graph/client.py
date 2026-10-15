@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from falkordb import FalkorDB
 
+from api.graph.loader import READ_ONLY_QUERIES, load_query
 from api.settings import Settings
 
 
@@ -24,3 +25,19 @@ def connect(settings: Settings) -> FalkorDB:
 def list_graph_names(db: FalkorDB) -> list[str]:
     """Names of all graphs (GRAPH.LIST)."""
     return sorted(db.list_graphs())
+
+
+class NamedGraph:
+    """One graph plus "run a query by name". The only way application code talks to Cypher."""
+
+    def __init__(self, db: FalkorDB, name: str, timeout_ms: int | None = None) -> None:
+        self._db = db
+        self.name = name
+        self._timeout_ms = timeout_ms
+
+    def run(self, query: str, **params: object) -> list[list]:
+        """Run ``api/graph/queries/<query>.cypher`` with ``params``; return the result rows."""
+        text = load_query(query)
+        graph = self._db.select_graph(self.name)
+        send = graph.ro_query if query in READ_ONLY_QUERIES else graph.query
+        return send(text, params, timeout=self._timeout_ms).result_set
