@@ -316,6 +316,30 @@ def test_a_quarantined_ancestor_blocks(runtime, graph, gate, cypher):
     assert action_state(cypher, graph, action) == ["blocked", "QUARANTINED_LINEAGE"]
 
 
+def test_a_quarantined_root_behind_the_sanitized_task_does_not_block_the_healed_draft(
+    runtime, graph, gate, cypher
+):
+    """D-017: the raw issue is quarantined (it is the root of the contamination) but the draft only
+    reaches it THROUGH the sanitized task, which is the declassification boundary."""
+    ids = replay(runtime, pipeline(convention=False, env_key="src:env:PORT"))
+    cypher(graph)("MATCH (a:Artifact {id: $id}) SET a.quarantined = true", id=ids["R1"])
+
+    result = gate.decide(ids["ACT"])
+
+    assert (result.verdict, result.reason) == (Verdict.ALLOW, "CLEAN")
+    assert result.quarantined_ancestors == []
+
+
+def test_a_quarantined_sanitized_artifact_itself_still_blocks(runtime, graph, gate, cypher):
+    ids = replay(runtime, pipeline(convention=False, env_key="src:env:PORT"))
+    cypher(graph)("MATCH (a:Artifact {id: $id}) SET a.quarantined = true", id=ids["R2"])
+
+    result = gate.decide(ids["ACT"])
+
+    assert (result.verdict, result.reason) == (Verdict.BLOCK, "QUARANTINED_LINEAGE")
+    assert result.quarantined_ancestors == [ids["R2"]]
+
+
 def test_a_quarantined_payload_blocks(runtime, graph, gate, cypher):
     action = run(runtime, pipeline())
     cypher(graph)("MATCH (a:Artifact {id: 'a-0005'}) SET a.quarantined = true")

@@ -74,13 +74,29 @@ def probe_queries() -> dict[str, str]:
     return module.Q
 
 
-def test_every_query_file_matches_the_verbatim_plan_text_used_by_the_probe():
-    probe = {norm(text) for text in probe_queries().values()}
+# Query files that intentionally differ from plan section 10. Each entry maps the file to the probe
+# key holding the exact deviating text, and must be justified in docs/DECISIONS.md.
+DEVIATIONS = {"q2c_quarantine_check": "q2c_sanitized_boundary"}  # D-017
+
+
+def test_every_query_file_matches_the_verbatim_plan_text_except_documented_deviations():
+    probe_q = probe_queries()
+    probe = {norm(text) for text in probe_q.values()}
     plan_blocks = {norm(b) for b in re.findall(r"```cypher\n(.*?)```", PLAN, re.S)}
     for name in available_queries():
         text = norm(load_query(name))
+        if name in DEVIATIONS:
+            assert text == norm(probe_q[DEVIATIONS[name]]), f"{name}: differs from the probed text"
+            assert text not in plan_blocks, f"{name}: no longer deviates; remove it from DEVIATIONS"
+            continue
         assert text in plan_blocks, f"{name}.cypher is not a verbatim plan §10 block"
         assert text in probe, f"{name}.cypher differs from the query the probe verified"
+
+
+def test_the_plans_own_q2c_is_still_kept_in_the_probe_as_the_reference():
+    assert norm(probe_queries()["q2c"]) in {
+        norm(b) for b in re.findall(r"```cypher\n(.*?)```", PLAN, re.S)
+    }
 
 
 def test_the_22_p1_and_3_p2_query_files_exist_and_all_load():

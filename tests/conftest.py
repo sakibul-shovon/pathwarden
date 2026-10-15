@@ -8,12 +8,15 @@ from pathlib import Path
 
 import pytest
 from falkordb import FalkorDB
+from fastapi.testclient import TestClient
 
 from api.graph.client import NamedGraph, connect
 from api.graph.schema import reset_graph
+from api.main import create_app
 from api.runtime.registry import Registry
 from api.runtime.runtime import Runtime
 from api.settings import Settings
+from api.workspace import WorkspaceManager
 
 
 @pytest.fixture(scope="session")
@@ -102,3 +105,24 @@ def graph_name(db: FalkorDB) -> Iterator[str]:
         db.select_graph(name).delete()
     except Exception:  # noqa: BLE001 - graph may never have been created
         pass
+
+
+@pytest.fixture
+def manager(db: FalkorDB, settings: Settings, tmp_path: Path) -> Iterator[WorkspaceManager]:
+    """A workspace manager on a throw-away graph (and its sandbox), with state in tmp_path."""
+    name = f"pw_test_{secrets.token_hex(4)}"
+    mgr = WorkspaceManager(
+        settings.model_copy(update={"state_dir": tmp_path}), graph_names={"tinyqueue": name}
+    )
+    yield mgr
+    for graph in (name, name + "__sbx"):
+        try:
+            db.select_graph(graph).delete()
+        except Exception:  # noqa: BLE001
+            pass
+
+
+@pytest.fixture
+def client(manager: WorkspaceManager, settings: Settings, tmp_path: Path) -> TestClient:
+    app = create_app(settings.model_copy(update={"state_dir": tmp_path}), manager)
+    return TestClient(app, raise_server_exceptions=False)
