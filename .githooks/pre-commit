@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+# Pathwarden pre-commit. Enable once per clone:  git config core.hooksPath .githooks
+# 1. No commits directly on main/master (except the very first, root commit).
+# 2. No secrets: runs scripts/scan_secrets.sh against the index.
+# Human-only override for (1): PW_ALLOW_MAIN=1 git commit ...   (agents must never set this)
+set -eu
+
+branch=$(git symbolic-ref --short -q HEAD || echo "")
+case "$branch" in
+  main|master)
+    if git rev-parse --verify -q HEAD >/dev/null 2>&1 && [ "${PW_ALLOW_MAIN:-}" != "1" ]; then
+      echo "pre-commit: refusing to commit on '$branch'. Create a branch: git switch -c phase/p<n>-<slug>" >&2
+      echo "            (see docs/WORKFLOW.md section 6)" >&2
+      exit 1
+    fi
+    ;;
+esac
+
+root=$(git rev-parse --show-toplevel)
+if [ -f "$root/scripts/scan_secrets.sh" ]; then
+  sh "$root/scripts/scan_secrets.sh"
+fi

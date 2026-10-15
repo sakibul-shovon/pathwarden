@@ -1,0 +1,8 @@
+# Force LF everywhere. CRLF breaks shell hooks, the Makefile and byte-identical evaluation outputs on Windows.
+* text=auto eol=lf
+*.sh text eol=lf
+.githooks/* text eol=lf
+Makefile text eol=lf
+*.cypher text eol=lf
+*.csv text eol=lf
+*.jsonl text eol=lf

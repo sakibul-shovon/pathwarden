@@ -1,0 +1,37 @@
+#!/usr/bin/env sh
+# Pathwarden pre-push (client-side guard; GitHub branch protection is the server-side one).
+#  - refuses pushes to main/master        (human override: PW_ALLOW_MAIN=1)
+#  - refuses non-fast-forward / forced pushes and remote branch deletion (human override: PW_ALLOW_FORCE=1)
+# Agents must never set either variable.
+set -eu
+
+zero=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master)
+      if [ "${PW_ALLOW_MAIN:-}" != "1" ]; then
+        echo "pre-push: refusing to push to '$remote_ref'. Push a phase/* branch and merge via pull request." >&2
+        exit 1
+      fi
+      ;;
+  esac
+
+  if [ "$local_sha" = "$zero" ]; then
+    if [ "${PW_ALLOW_FORCE:-}" != "1" ]; then
+      echo "pre-push: refusing to delete remote ref '$remote_ref'." >&2
+      exit 1
+    fi
+    continue
+  fi
+
+  if [ "$remote_sha" != "$zero" ] && [ "${PW_ALLOW_FORCE:-}" != "1" ]; then
+    if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+      echo "pre-push: '$remote_ref' would not be a fast-forward (history rewrite or unfetched remote commits)." >&2
+      echo "          Run 'git fetch origin' and merge, or ask the human to authorise a force push." >&2
+      exit 1
+    fi
+  fi
+done
+
+exit 0

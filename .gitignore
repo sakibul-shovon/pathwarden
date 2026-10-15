@@ -1,0 +1,44 @@
+# --- secrets and local config (NEVER commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- agent / editor local state ---
+.claude/settings.local.json
+CLAUDE.local.md
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# --- Node / web ---
+node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
+# --- runtime output (plan §9: state/<ws>/events.jsonl, verdicts.jsonl, sinks/) ---
+/state/
+*.log
+
+# --- docker local overrides ---
+docker-compose.override.yml
+
+# --- scratch ---
+/tmp/
+/scratch/
