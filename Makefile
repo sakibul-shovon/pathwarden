@@ -9,10 +9,18 @@ else
 endif
 PY ?= $(if $(wildcard $(VENV_PY)),$(VENV_PY),python)
 
-.PHONY: up down probe probe-mcp test test-auth lint fmt hooks api demo demo-mcp eval eval-live web mcp-server gateway
+.PHONY: setup up down probe probe-mcp test test-auth lint fmt hooks api demo demo-mcp eval eval-live web mcp-server gateway
 
+# One-time: a virtualenv with the pinned dependencies (no API key, no account needed).
+BOOT_PY ?= python
+setup:
+	$(BOOT_PY) -m venv .venv
+	$(VENV_PY) -m pip install -c constraints.txt -e ".[dev,mcp]"
+
+# FalkorDB + the API in Docker, then wait until the database really answers (stdlib script).
 up:
 	docker compose up -d --build
+	$(PY) scripts/wait_for_db.py
 
 down:
 	docker compose down
