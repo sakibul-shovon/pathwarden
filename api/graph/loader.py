@@ -33,6 +33,7 @@ READ_ONLY_QUERIES = frozenset(
         "q5_session_facts",
         "q6_lineage_subgraph",
         "q6b_node_details",
+        "q7_graph_at_time",
         "q7b_actions_at_time",
         "r1_all_edges",
         "r2_maxflow",
