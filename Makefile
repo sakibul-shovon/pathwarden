@@ -59,8 +59,11 @@ demo:
 eval:
 	$(PY) -m eval.run_eval
 
+# SPENDS TOKENS (needs PW_LLM_API_KEY in the environment or .env): the LLM judges B1/B3 over the 120
+# scenarios (resumable), then the live-agent study. Afterwards `make eval` fills B1/B3 from the file.
 eval-live:
-	@echo "make eval-live: not implemented until P8 (docs/phases/P8-live-llm.md)" && exit 1
+	$(PY) -m eval.llm_judges
+	$(PY) -m eval.live_study
 
 web:
 	cd web && npm run dev
