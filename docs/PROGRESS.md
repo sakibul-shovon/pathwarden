@@ -5,7 +5,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 - **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** P1 (VERIFYING); P0 DONE
+- **Active phase:** P2 (IN_PROGRESS); P0, P1 DONE
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -13,8 +13,8 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 | Phase | Name | Tier | Status | Branch | Needs | Last evidence | Notes |
 |---|---|---|---|---|---|---|---|
 | P0 | Probe and skeleton | 1 | DONE | `phase/p0-skeleton` | — | probe 35/35, 14 tests; merged `3632e9c`, tag `phase-p0-done` | exceptions: CI run not observed (repo private, no gh); T11 GitHub settings deferred until the repo is public (D-014) |
-| P1 | Graph layer, runtime, replay | 1 | VERIFYING | `phase/p1-runtime` | P0 | 69 tests pass, lint clean (2026-10-15) | A-01, A-02 resolved; one real bug found and fixed (see Evidence) |
-| P2 | Gate | 1 | NOT_STARTED | `phase/p2-gate` | P1 | — | cross-agent review recommended |
+| P1 | Graph layer, runtime, replay | 1 | DONE | `phase/p1-runtime` | — | 69 tests, lint clean; merged `4610b64`, tag `phase-p1-done` | A-01, A-02 resolved; CI not observed |
+| P2 | Gate | 1 | IN_PROGRESS | `phase/p2-gate` | P1 | — | cross-agent review recommended |
 | P3 | Scripted agents, demo scenarios, core API | 1 | NOT_STARTED | `phase/p3-scripted-api` | P2 | — | |
 | P4 | Forensic Agent, quarantine, healing, memory API | 1 | NOT_STARTED | `phase/p4-forensics` | P3 | — | cross-agent review recommended |
 | P10a | UI: scaffold, Run, Investigate | 1 | NOT_STARTED | `phase/p10a-ui-run-investigate` | P4 | — | |
