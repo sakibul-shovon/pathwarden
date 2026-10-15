@@ -19,7 +19,8 @@ import type {
 } from "./types";
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
-const WS = "tinyqueue";
+// `?ws=tinyqueue-mcp` shows the lineage written by the MCP gateway (P9); default: the main workspace
+const WS = new URLSearchParams(window.location.search).get("ws") ?? "tinyqueue";
 export const PUBLIC_PAGE_SINK = "sink:public_release_page";
 
 /** An error answered by the API in the documented `{"error", "detail"}` shape. */

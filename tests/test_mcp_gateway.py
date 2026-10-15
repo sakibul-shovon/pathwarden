@@ -263,14 +263,22 @@ def test_a_missing_argument_for_the_source_template_is_refused(world):
     assert result.is_error and "missing argument" in text(result)
 
 
-def test_an_upstream_error_is_returned_unchanged_and_nothing_is_recorded(world, graph, cypher):
-    async def scenario():
-        async with world("fixer") as gateway:
-            return await call(gateway, "env__get_env", key="PORT" + "X")  # not in the registry
+def test_an_upstream_error_is_returned_and_nothing_is_recorded(world, graph, cypher):
+    failing = MCPServer("failing_github")
 
-    refused = run(scenario())
-    assert refused.is_error
+    @failing.tool()
+    def get_issue(number: int) -> str:
+        raise ValueError("the tracker is down")
+
+    async def scenario():
+        async with world("triage", servers={"github": failing}) as gateway:
+            return await call(gateway, "github__get_issue", number=42)  # a registered source
+
+    result = run(scenario())
+
+    assert result.is_error and "get_issue" in text(result)
     assert count(cypher, graph, "MATCH (a:Artifact) RETURN count(a)") == 0
+    assert count(cypher, graph, "MATCH (:Session) RETURN count(*)") == 1  # the session itself
 
 
 # -------------------------------------------------- write and load by key
@@ -402,6 +410,24 @@ def test_memory_list_omits_quarantined_entries_and_loads_only_the_rest(
         "MATCH (:Session {agent_id:'fixer'})-[:LOADED]->(a:Artifact) RETURN a.key"
     )
     assert loaded == [["team_convention:43"]]
+
+
+def test_memory_list_drops_an_entry_whose_content_differs_from_the_recorded_lineage(
+    world, upstream_state
+):
+    async def scenario():
+        async with world("triage") as writer:
+            await call(writer, "memory__memory_write", key="team_convention:1", content="good")
+            await call(writer, "memory__memory_write", key="team_convention:2", content="fine")
+        data = json.loads((upstream_state / "memory.json").read_text())
+        data["team_convention:1"] = "tampered"
+        (upstream_state / "memory.json").write_text(json.dumps(data))
+        async with world("fixer") as reader:
+            return await call(reader, "memory__memory_list", prefix="team_convention:")
+
+    listed = json.loads(text(run(scenario())))
+
+    assert listed == [{"key": "team_convention:2", "content": "fine"}]
 
 
 def test_memory_list_records_unmanaged_entries_and_keeps_them(world, graph, cypher, upstream_state):
@@ -614,3 +640,26 @@ def test_the_gateway_process_serves_an_sdk_client_over_stdio(
         "MATCH (:Agent {id:'triage'})-[:RAN]->(s:Session)-[:PRODUCED]->(a:Artifact) RETURN count(a)"
     )
     assert rows.result_set[0][0] == 1
+
+
+# -------------------------------------------------- the UI/API view of the gateway's lineage
+def test_the_api_serves_the_gateway_graph_as_the_workspace_tinyqueue_mcp(
+    settings, tmp_path, graph_name
+):
+    from fastapi.testclient import TestClient
+
+    from api.main import create_app
+    from api.workspace import WorkspaceManager
+
+    state = settings.model_copy(update={"state_dir": tmp_path / "api-state"})
+    manager = WorkspaceManager(state, graph_names={"tinyqueue-mcp": graph_name})
+    client = TestClient(create_app(state, manager), raise_server_exceptions=False)
+
+    assert manager.get("tinyqueue-mcp").graph_name == graph_name
+    assert WorkspaceManager(state).get("tinyqueue-mcp").graph_name == "pw_mcp_tinyqueue"
+    ran = client.post(
+        "/api/ws/tinyqueue-mcp/scenarios/attack_pipeline_42/run", json={"guard": True}
+    )
+    assert ran.status_code == 200 and ran.json()["actions"][-1]["status"] == "held"
+    assert client.get("/api/ws/tinyqueue-mcp/actions").json()[0]["status"] == "held"
+    assert client.get("/api/ws/nowhere-mcp/actions").json()["error"] == "unknown_workspace"
