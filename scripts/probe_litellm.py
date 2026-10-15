@@ -1,7 +1,7 @@
 """P8 probe (plan rule 13): LiteLLM and the Groq model as they behave NOW, before any agent code.
 
 Needs a real key in the environment or in ``.env`` (``PW_LLM_API_KEY``); the key is never printed.
-Checks, with ``PW_LLM_MODEL`` (default ``groq/openai/gpt-oss-120b``):
+Checks, with ``PW_LLM_MODEL`` (default ``groq/qwen/qwen3.8-27b``):
   1. one plain completion: the response shape (``choices[0].message.content``, ``usage``),
   2. a JSON-only reply to a system prompt of the kind the live agents use,
   3. temperature 0 is accepted,
@@ -32,7 +32,7 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 def main() -> int:
     load_dotenv(Path(".env"))
     key = os.environ.get("PW_LLM_API_KEY", "")
-    model = os.environ.get("PW_LLM_MODEL") or "groq/openai/gpt-oss-120b"
+    model = os.environ.get("PW_LLM_MODEL") or "groq/qwen/qwen3.8-27b"
     if not key:
         print("no PW_LLM_API_KEY: nothing to probe (this is the only key-dependent script)")
         return 2
@@ -73,7 +73,6 @@ def main() -> int:
         api_key=key,
         temperature=0,
         max_tokens=1024,
-        reasoning_effort="low",
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": "Start."},

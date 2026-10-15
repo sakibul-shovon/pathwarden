@@ -445,7 +445,7 @@ def test_without_a_key_live_mode_and_the_llm_forensic_mode_answer_501(client):
 def test_make_llm_returns_none_without_a_key_and_the_model_default_is_groq():
     assert make_llm(Settings()) is None
     model = make_llm(Settings(llm_api_key="gsk_" + "a" * 40))
-    assert isinstance(model, LiteLlm) and model.model == "groq/openai/gpt-oss-120b"
+    assert isinstance(model, LiteLlm) and model.model == "groq/qwen/qwen3.8-27b"
 
 
 # -------------------------------------------------- the provider seam
@@ -469,8 +469,8 @@ def test_litellm_is_called_with_the_probed_arguments_and_usage_is_counted(monkey
 
     assert llm.complete([{"role": "user", "content": "hi"}]) == "hello"
 
-    assert captured["model"] == "groq/openai/gpt-oss-120b" and captured["temperature"] == 0.0
-    assert captured["reasoning_effort"] == "low" and captured["max_tokens"] >= 1024
+    assert captured["model"] == "groq/qwen/qwen3.8-27b" and captured["temperature"] == 0.0
+    assert "reasoning_effort" not in captured and captured["max_tokens"] >= 1024
     assert llm.stats.as_dict() == {"calls": 1, "prompt_tokens": 7, "completion_tokens": 3}
 
 
@@ -496,7 +496,9 @@ def test_rate_limits_are_retried_then_reported_without_the_key(monkeypatch, capl
     with pytest.raises(LlmError) as raised:
         llm.complete([{"role": "user", "content": "hi"}])
 
-    assert len(attempts) == 4  # RETRIES
+    from api.llm import RETRIES
+
+    assert len(attempts) == RETRIES
     assert key not in str(raised.value) and key not in caplog.text
     assert "RateLimitError" in str(raised.value)
 

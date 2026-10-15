@@ -1,14 +1,16 @@
 """The one seam to a language model (plan §12.3): ``Llm.complete(messages) -> str``.
 
 * ``LiteLlm`` talks to the provider through LiteLLM (verified by ``scripts/probe_litellm.py``;
-  default model ``groq/openai/gpt-oss-120b``). The key comes from settings only and is never
+  default model ``groq/qwen/qwen3.8-27b``). The key comes from settings only and is never
   logged or echoed.
 * ``FakeLlm`` is the deterministic stand-in for tests.
 
-Probe findings that shape this file: gpt-oss is a *reasoning* model, so ``max_tokens`` must leave
-room for reasoning tokens (an answer cut off at 200 tokens came back empty) and ``reasoning_effort``
-is set to ``low``; a wrong key raises ``BadRequestError`` (not an authentication error) and the
-message does not contain the key.
+Probe findings that shape this file (D-033): on Groq the gpt-oss models answered the JSON-only
+prompts with their own tool-call format (a ``tool_use_failed`` BadRequest), came back empty when
+``max_tokens`` was too small for their reasoning tokens, or answered ``{"done": true}`` at once;
+``qwen/qwen3.8-27b`` returned the requested JSON on the first turn of all three agents, so it is
+the default. A wrong key raises ``BadRequestError`` (not an authentication error) and the message
+does not contain the key.
 """
 
 from __future__ import annotations
@@ -23,9 +25,10 @@ from api.settings import Settings
 
 log = logging.getLogger("pathwarden.llm")
 
-DEFAULT_MODEL = "groq/openai/gpt-oss-120b"
+DEFAULT_MODEL = "groq/qwen/qwen3.8-27b"
 MAX_TOKENS = 2048
-RETRIES = 4
+RETRIES = 8  # a free tier answers 429 for tens of seconds: wait it out, never silently give up
+MAX_WAIT_S = 60.0
 
 
 class LlmError(Exception):
@@ -63,7 +66,10 @@ class LiteLlm:
             raise LlmNotConfiguredError("PW_LLM_API_KEY is not set")
         self._key = settings.llm_api_key
         self.model = settings.llm_model or DEFAULT_MODEL
-        self._temperature = settings.llm_temperature
+        self.temperature = settings.llm_temperature
+        # gpt-oss models need reasoning room, but they also answer JSON-only prompts with the
+        # provider's own tool-call format (Groq rejects that): see D-033, the default is qwen
+        self._extra = {"reasoning_effort": "medium"} if "gpt-oss" in self.model else {}
         self.stats = LlmStats()
 
     def complete(self, messages: list[dict[str, str]]) -> str:
@@ -76,9 +82,9 @@ class LiteLlm:
                 response = litellm.completion(
                     model=self.model,
                     api_key=self._key,
-                    temperature=self._temperature,
+                    temperature=self.temperature,
                     max_tokens=MAX_TOKENS,
-                    reasoning_effort="low",
+                    **self._extra,
                     messages=messages,
                 )
             except Exception as exc:  # noqa: BLE001 - provider errors vary; keep type, drop text
@@ -93,7 +99,7 @@ class LiteLlm:
                 log.warning("llm call failed (%s), attempt %d", last, attempt + 1)
                 if not retryable or attempt == RETRIES - 1:
                     break
-                time.sleep(min(2.0 * 2**attempt, 20.0))
+                time.sleep(min(4.0 * 2**attempt, MAX_WAIT_S))
                 continue
             usage = response.usage
             self.stats.calls += 1
