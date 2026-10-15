@@ -93,9 +93,11 @@ Acceptance criteria each verified with evidence · gates G1–G10 pass (`docs/WO
 
 | Command | Purpose |
 |---|---|
-| `make up` / `make down` | start / stop FalkorDB (+ API, mock upstreams once they exist) |
-| `make probe` | `scripts/probe_falkordb.py` — PASS/FAIL per ⚠️ PROBE item |
-| `make test` | full pytest suite incl. static invariants (needs FalkorDB) |
+| `make setup` | once: `.venv` with the pinned dependencies (incl. the `mcp` extra) |
+| `make up` / `make down` | start (and wait for) / stop FalkorDB + the API in Docker |
+| `make probe` / `make probe-mcp` | `scripts/probe_falkordb.py` (PASS/FAIL per ⚠️ PROBE item; run it against a hosted DB with `PW_FALKORDB_*`) / `scripts/probe_mcp.py` |
+| `make test` / `make test-auth` | full pytest suite incl. static invariants (needs FalkorDB) / the same with `PW_AUTH=on` (hosted mode); run both |
+| `make demo-mcp` | the three-agent attack through the MCP gateway (`docs/MCP.md`) |
 | `make lint` / `make fmt` | lint / format (tool per `docs/DECISIONS.md` D-006) |
 | `make demo` · `make eval` · `make eval-live` | demo run · deterministic evaluation · LLM evaluation (costs money — ask first) |
 | `make api` · `make web` · `make mcp-server` · `make gateway` | run services |
