@@ -27,6 +27,7 @@ class Settings(BaseModel):
     llm_model: str | None = None
     llm_api_key: str | None = Field(default=None, repr=False)
     llm_temperature: float = 0.0
+    llm_tpm: int = 0  # optional tokens-per-minute budget (PW_LLM_TPM); 0 = no client-side pacing
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -56,6 +57,8 @@ class Settings(BaseModel):
             values["llm_model"] = model
         if (llm_key := get("PW_LLM_API_KEY")) is not None:
             values["llm_api_key"] = llm_key
+        if (tpm := get("PW_LLM_TPM")) is not None:
+            values["llm_tpm"] = int(tpm)
         if (temperature := get("PW_LLM_TEMPERATURE")) is not None:
             values["llm_temperature"] = float(temperature)
         return cls(**values)

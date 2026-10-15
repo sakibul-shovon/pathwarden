@@ -71,12 +71,27 @@ class LiteLlm:
         # provider's own tool-call format (Groq rejects that): see D-033, the default is qwen
         self._extra = {"reasoning_effort": "medium"} if "gpt-oss" in self.model else {}
         self.stats = LlmStats()
+        self._tpm = settings.llm_tpm
+        self._window: list[tuple[float, int]] = []  # (time, tokens) of recent calls
+
+    def _pace(self, messages: list[dict[str, str]]) -> None:
+        """Stay under a tokens-per-minute budget instead of burning retries on 429s."""
+        if not self._tpm:
+            return
+        estimate = sum(len(m["content"]) for m in messages) // 3 + 300
+        while True:
+            now = time.monotonic()
+            self._window = [(t, n) for t, n in self._window if now - t < 60]
+            if sum(n for _, n in self._window) + estimate <= self._tpm or not self._window:
+                return
+            time.sleep(max(1.0, 60 - (now - self._window[0][0])))
 
     def complete(self, messages: list[dict[str, str]]) -> str:
         import litellm
 
         litellm.suppress_debug_info = True
         last = ""
+        self._pace(messages)
         for attempt in range(RETRIES):
             try:
                 response = litellm.completion(
@@ -102,6 +117,12 @@ class LiteLlm:
                 time.sleep(min(4.0 * 2**attempt, MAX_WAIT_S))
                 continue
             usage = response.usage
+            self._window.append(
+                (
+                    time.monotonic(),
+                    int(usage.prompt_tokens or 0) + int(usage.completion_tokens or 0),
+                )
+            )
             self.stats.calls += 1
             self.stats.prompt_tokens += int(getattr(usage, "prompt_tokens", 0) or 0)
             self.stats.completion_tokens += int(getattr(usage, "completion_tokens", 0) or 0)

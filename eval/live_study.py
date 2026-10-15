@@ -152,12 +152,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--runs", type=int, default=10)
     parser.add_argument("--temperature", type=float, default=None)
+    parser.add_argument("--tpm", type=int, default=5500, help="tokens-per-minute budget (0 = none)")
     args = parser.parse_args(argv)
 
     load_dotenv(ROOT / ".env")
     settings = Settings.from_env()
     if args.temperature is not None:
         settings = settings.model_copy(update={"llm_temperature": args.temperature})
+    settings = settings.model_copy(update={"llm_tpm": settings.llm_tpm or args.tpm})
     llm = make_llm(settings)
     if llm is None:
         print("no PW_LLM_API_KEY: the live study cannot run", file=sys.stderr)

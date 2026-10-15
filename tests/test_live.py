@@ -560,3 +560,36 @@ def test_json_replies_may_be_wrapped_in_one_code_fence():
 
 def test_the_prompt_folder_is_part_of_the_package_files():
     assert Path(PROMPTS / "forensic.txt").is_file()
+
+
+def test_a_token_budget_paces_calls_instead_of_burning_retries(monkeypatch):
+    import litellm
+
+    clock = {"now": 1000.0}
+    sleeps: list[float] = []
+
+    class Big(_Response):
+        def __init__(self):
+            super().__init__("ok")
+            self.usage = type("U", (), {"prompt_tokens": 900, "completion_tokens": 50})()
+
+    def advance(seconds):
+        sleeps.append(seconds)
+        clock["now"] += seconds
+
+    monkeypatch.setattr(litellm, "completion", lambda **kw: Big())
+    monkeypatch.setattr("api.llm.time.sleep", advance)
+    monkeypatch.setattr("api.llm.time.monotonic", lambda: clock["now"])
+    llm = LiteLlm(Settings(llm_api_key="gsk_" + "a" * 40, llm_tpm=1000))
+
+    llm.complete([{"role": "user", "content": "x" * 30}])  # empty window: no wait
+    assert sleeps == []
+    llm.complete([{"role": "user", "content": "x" * 30}])  # 950 tokens used in the last minute
+
+    assert sleeps and sleeps[0] >= 1.0 and sum(sleeps) <= 61
+    assert llm.stats.calls == 2
+
+
+def test_the_tpm_setting_comes_from_the_environment():
+    assert Settings.from_env({"PW_LLM_TPM": "5500"}).llm_tpm == 5500
+    assert Settings().llm_tpm == 0
