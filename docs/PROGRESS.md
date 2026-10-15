@@ -4,16 +4,16 @@
 Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `docs/phases/P*.md`.
 
 - **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
-- **Overall:** workflow blueprint written, **awaiting human approval**; no application code exists yet; `G:\Projects\Pathwarden` is not yet a git repository.
-- **Active phase:** none (start with P0 after approval)
+- **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
+- **Active phase:** P1 (VERIFYING); P0 DONE
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
 
 | Phase | Name | Tier | Status | Branch | Needs | Last evidence | Notes |
 |---|---|---|---|---|---|---|---|
-| P0 | Probe and skeleton | 1 | VERIFYING | `phase/p0-skeleton` | CI run (needs the branch pushed + a way to see Actions), GitHub settings (T11) | 35/35 probe, 14 tests, lint clean (2026-10-15) | open: T9 CI run unverified, T11 repo settings, T12 n/a |
-| P1 | Graph layer, runtime, replay | 1 | NOT_STARTED | `phase/p1-runtime` | P0 | — | |
+| P0 | Probe and skeleton | 1 | DONE | `phase/p0-skeleton` | — | probe 35/35, 14 tests; merged `3632e9c`, tag `phase-p0-done` | exceptions: CI run not observed (repo private, no gh); T11 GitHub settings deferred until the repo is public (D-014) |
+| P1 | Graph layer, runtime, replay | 1 | VERIFYING | `phase/p1-runtime` | P0 | 69 tests pass, lint clean (2026-10-15) | A-01, A-02 resolved; one real bug found and fixed (see Evidence) |
 | P2 | Gate | 1 | NOT_STARTED | `phase/p2-gate` | P1 | — | cross-agent review recommended |
 | P3 | Scripted agents, demo scenarios, core API | 1 | NOT_STARTED | `phase/p3-scripted-api` | P2 | — | |
 | P4 | Forensic Agent, quarantine, healing, memory API | 1 | NOT_STARTED | `phase/p4-forensics` | P3 | — | cross-agent review recommended |
@@ -58,6 +58,11 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-15 | P0-T3/T9 | `make lint` and `make fmt` | 0 | ruff: All checks passed, 10 files already formatted; `plan.md` unchanged afterwards | Claude Code |
 | 2026-10-15 | P0-T6 | `uvicorn api.main:create_app --factory --port 8000` + `curl /api/health` | 0 | `{"falkordb":"ok","graphs":[]}` | Claude Code |
 | 2026-10-15 | P0-T10 | clean venv (py 3.11) `pip install -c constraints.txt -e ".[dev]"`, then `make test` / `make lint` with it | 0 | 14 passed; lint clean — equivalent to the CI steps (CI itself not yet run) | Claude Code |
+| 2026-10-15 | P1-T10 | `make test` | 0 | **69 passed** (14 from P0 + 55 new: lineage, fail-closed, id/clock restart, sandbox namespace, registry, schema, fixtures/queries verbatim, replay incl. export→replay round trip); run twice, identical | Claude Code |
+| 2026-10-15 | P1-T7 | first `make test` of P1 | 1 | 2 failed: (a) test used tool `memory_list`, which is not in registry.yaml (test bug); (b) **real bug**: `runtime.write` on a nonexistent session returned an id for an artifact that was never created, because `q1_write` ends in `count()` and returns `[[0]]` even when its MATCH found nothing (plan §9's `derived_edges == len(context)` check cannot see it). Fixed by verifying the artifact with `q1_get_artifact` | Claude Code |
+| 2026-10-15 | P1-T5/T7 | sabotage checks on a backup of runtime.py, restored byte-identical each time | — | exact-namespace regex broken → `test_a_sandbox_runtime_creates_only_namespaced_ids` FAILS; write-existence check removed → `test_unknown_agent_session_source_and_payload_fail_closed` FAILS. (A first sabotage attempt whose `sed` did not match was discarded, not counted.) | Claude Code |
+| 2026-10-15 | P1-T1/T2 | `tests/test_fixtures_and_queries.py` | 0 | 9 fixtures and all 22 query files are verbatim copies of plan.md blocks and equal to the queries the probe verified | Claude Code |
+| 2026-10-15 | P1-T10 | `make lint` / `make fmt` | 0 | all checks passed, 23 files formatted; plan.md unchanged | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 
