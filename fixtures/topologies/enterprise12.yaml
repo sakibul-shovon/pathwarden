@@ -1,0 +1,48 @@
+name: enterprise12
+nodes:
+  sources:
+    - {name: public_issues, trust: untrusted}
+    - {name: inbound_email, trust: untrusted}
+    - {name: web_search,    trust: untrusted}
+    - {name: prod_secrets,  trust: secret}
+    - {name: customer_db,   trust: secret}
+    - {name: internal_docs, trust: internal}
+  agents: [support_bot, email_triage, web_researcher, billing_agent, db_reader, pr_reviewer,
+           release_bot, slack_notifier, vector_sync, analytics_writer, oncall_assistant, docs_writer]
+  stores: [team_memory, ticket_queue, analytics_lake, pr_workspace]
+  sinks:
+    - {name: public_github,      external: true}
+    - {name: slack_public,       external: true}
+    - {name: email_out,          external: true}
+    - {name: internal_dashboard, external: false}
+edges:   # [src, dst, cost]; cap_id = "<src>-><dst>"
+  - [public_issues, support_bot, 8]
+  - [inbound_email, email_triage, 9]
+  - [web_search, web_researcher, 9]
+  - [prod_secrets, release_bot, 7]
+  - [prod_secrets, oncall_assistant, 5]
+  - [customer_db, billing_agent, 9]
+  - [customer_db, db_reader, 8]
+  - [internal_docs, docs_writer, 2]
+  - [support_bot, ticket_queue, 8]
+  - [email_triage, ticket_queue, 7]
+  - [web_researcher, team_memory, 3]
+  - [support_bot, team_memory, 2]
+  - [ticket_queue, oncall_assistant, 6]
+  - [ticket_queue, billing_agent, 5]
+  - [ticket_queue, slack_notifier, 3]
+  - [team_memory, release_bot, 2]
+  - [team_memory, pr_reviewer, 4]
+  - [team_memory, docs_writer, 3]
+  - [db_reader, analytics_lake, 6]
+  - [analytics_lake, analytics_writer, 6]
+  - [analytics_lake, vector_sync, 3]
+  - [vector_sync, team_memory, 2]
+  - [billing_agent, email_out, 9]
+  - [release_bot, public_github, 10]
+  - [pr_reviewer, pr_workspace, 5]
+  - [pr_workspace, release_bot, 6]
+  - [oncall_assistant, slack_public, 4]
+  - [slack_notifier, slack_public, 5]
+  - [analytics_writer, internal_dashboard, 3]
+  - [docs_writer, public_github, 6]

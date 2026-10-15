@@ -166,6 +166,22 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **Falsification criteria (§20.7)** are evaluated in the summary where possible: PW's FHR is below 20% (not triggered); the B3-related criteria are "not evaluable".
 - **New files not in the layout:** `eval/metrics.py`, `api/routes/eval.py`, `eval/baselines/__init__.py` (shared `Decision`/`Context`), `eval/results/summary.json`.
 
+## Part B8 — P6 outcomes (2026-10-16)
+
+### D-018 — two capability-graph seed queries are not in plan §10 (needs the human's review)
+- **Status:** **Implemented by the agent, awaiting the human's confirmation** · **Phase:** P6
+- **Gap:** plan §10 gives r1-r7 (read, max-flow, revoke, toxicity, witness) but no query that *creates* the capability graph (plan §7.6 only describes the model). Rule 1 forbids ad-hoc Cypher, so the smallest additions were made in the exact style of `q1_seed_*`: `r0_seed_nodes.cypher` (`UNWIND $rows ... CREATE (:CapNode {...})`) and `r0_seed_edges.cypher` (`UNWIND ... MATCH (a),(b) CREATE (a)-[:CAN_FLOW {...}]->(b)`). Their text is pinned in `tests/test_fixtures_and_queries.py::ADDITIONS` (and must not appear in the plan). The two `CREATE`s mirror constructs that the probe already verified (list-of-maps parameters, `UNWIND`+`MATCH`+`CREATE`).
+- **To revert/replace:** delete the two files and load the graph another way; only `CapabilityService.reset` uses them.
+
+### Other P6 decisions and findings
+- **Candidates:** exactly §15.2 (C1 U->K, C2 S->K, C3 U->T_S, C4 S->T_U with T_S/T_U computed from `r5`/`r6`). Each is a complete fix by construction and is **verified on a temporary copy** of the graph (`Graph.copy` to `<graph>__verify`, apply `r3`, `r4` must be empty, deleted in `finally`). If the source or target set is empty, no cut is needed (cost 0). `cut cost != maxFlow` marks a candidate invalid (tolerance 1e-6; FalkorDB returns flows as floats).
+- **Measured (2026-10-16, not predicted):** tinyqueue3: C1=3, C2=6, C3=3, C4=6, best 3, optimum 3, gap 0. enterprise12: C1=17, C2=22, C3=16, C4=23, best 16, **optimum 14, gap 2**: a cheaper mixed cut exists that no single candidate finds. This is reported as-is in `eval/results/summary.md` (a new Remediation section; `make eval` computes it, deterministically).
+- **Optimum:** depth-first search over edge subsets (size <= 6, cheapest edges first, cost pruning seeded with the best candidate cost), independent of FalkorDB and of the max-flow code; verified equal to an exhaustive search on tinyqueue3. Reports `None` if no toxic-free set of at most 6 edges exists.
+- **Description property** of `CAN_FLOW` edges: generated text "`<src> may send data to <dst>`" (the YAML has no descriptions).
+- **API:** `GET /api/remediation/{topology}` (nodes with `toxic` flags, edges with `revoked` flags), `POST …/reset`, `POST …/suggest`, `POST …/apply {cap_ids}`, `GET …/witness/{agent}`. These graphs are global demo data (not tenant-scoped, A-07); **`apply` and `reset` are unauthenticated until P11** (G-002). `r2`/`r4`-`r7` run through `ro_query` (verified: `algo.maxFlow` works read-only).
+- **Lessons for later sabotage checks:** (1) a property test can miss a code path that only a crafted case exercises (the backward residual step); (2) a mutation can be an *equivalent mutant* for property tests (a wrong definition that still yields a complete fix), so definitions need their own pinning test.
+- **New files:** `api/remediation/{capability_graph,mincut}.py`, `api/routes/remediation.py`, `eval/remediation_optimum.py`, `fixtures/topologies/*.yaml` (verbatim), queries `r0_seed_nodes`, `r0_seed_edges`, `r1`-`r7`.
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.

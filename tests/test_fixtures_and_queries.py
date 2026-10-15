@@ -78,6 +78,20 @@ def probe_queries() -> dict[str, str]:
 # key holding the exact deviating text, and must be justified in docs/DECISIONS.md.
 DEVIATIONS = {"q2c_quarantine_check": "q2c_sanitized_boundary"}  # D-017
 
+# Query files the plan never wrote (D-018): seeding the capability graph, in the style of q1_seed_*.
+# Their exact text is pinned here; they must NOT appear in plan section 10.
+ADDITIONS = {
+    "r0_seed_nodes": (
+        "UNWIND $rows AS r "
+        "CREATE (:CapNode {name: r.name, kind: r.kind, trust: r.trust, external: r.external})"
+    ),
+    "r0_seed_edges": (
+        "UNWIND $rows AS r "
+        "MATCH (a:CapNode {name: r.src}), (b:CapNode {name: r.dst}) "
+        "CREATE (a)-[:CAN_FLOW {cap_id: r.cap_id, cost: r.cost, description: r.description}]->(b)"
+    ),
+}
+
 
 def test_every_query_file_matches_the_verbatim_plan_text_except_documented_deviations():
     probe_q = probe_queries()
@@ -85,6 +99,12 @@ def test_every_query_file_matches_the_verbatim_plan_text_except_documented_devia
     plan_blocks = {norm(b) for b in re.findall(r"```cypher\n(.*?)```", PLAN, re.S)}
     for name in available_queries():
         text = norm(load_query(name))
+        if name in ADDITIONS:
+            assert text == norm(ADDITIONS[name]), f"{name}: differs from the documented text"
+            assert text not in plan_blocks, (
+                f"{name}: now appears in the plan; remove it from ADDITIONS"
+            )
+            continue
         if name in DEVIATIONS:
             assert text == norm(probe_q[DEVIATIONS[name]]), f"{name}: differs from the probed text"
             assert text not in plan_blocks, f"{name}: no longer deviates; remove it from DEVIATIONS"

@@ -3,18 +3,18 @@
 Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the real repository (git state, `make test`) before trusting it. Keep it factual; no history — that belongs in `PROGRESS.md`.
 
 ## Header
-- **Written:** 2026-10-16 ~03:15 (+06) · **Agent / tool / model:** Claude Code / Sonnet 5.5
+- **Written:** 2026-10-16 ~04:30 (+06) · **Agent / tool / model:** Claude Code / Sonnet 5.5
 - **Takeover notes** (filled by the next agent: what differed from this file):
   -
 
 ## Git state at stop
-- Branch: `phase/p5-eval` (from `main` = `0f8de3b`, P10a merged, tag `phase-p10a-done`). After this handoff is committed the agent merges P5 (D-016): then `main` carries tag `phase-p5-done`. Verify with `git log --oneline -8`, `git tag -l 'phase-*'`, `git status -sb`.
+- Branch: `phase/p6-remediation` (from `main` = `cf95f5a`, P5 merged, tag `phase-p5-done`). After this handoff is committed the agent merges P6 (D-016): then `main` carries tag `phase-p6-done`. Verify with `git log --oneline -8`, `git tag -l 'phase-*'`, `git status -sb`.
 - Remote: `origin` = `https://github.com/sakibul-shovon/pathwarden.git` (private until the project ends, D-014).
 
 ## Where the project stands
-- **P0-P4 and P10a DONE. P5 VERIFYING → merged next.** Next (recommended order, D-009): **P6 — Remediation (max-flow)** (`docs/phases/P6-remediation.md`), then P7, P10b, P10c, P8, P9, P11, P12.
-- `make eval` (about 20 s) regenerates `eval/scenarios/` (120 files) and `eval/results/` (results.csv, summary.json, summary.md are committed and byte-identical across runs; latency files are gitignored). Browser UI: `make up`, `make web`. The full story: attack held → `POST /forensics/{id}` (quarantine + sandbox ALLOW) → `POST /heal/{id}/approve` (clean release, original superseded) → `GET /memory`, `POST /quarantine/{qid}/release`.
-- **Needs the human's review: D-017** — `q2c` deliberately deviates from plan §10 (see `docs/DECISIONS.md` Part B5): the plan's queries taken literally make the heal flow impossible. It is a one-line change, tested, and easy to revert.
+- **P0-P5 and P10a DONE. P6 VERIFYING → merged next.** Next (recommended order, D-009): **P7 — Time travel** (`docs/phases/P7-time-travel.md`; needs the human's OK for A-09, already approved in 'approve all'), then P10b, P10c, P8, P9, P11, P12.
+- Remediation: `GET/POST /api/remediation/{topology}…` (enterprise12, tinyqueue3); `make eval` also reports best-candidate vs brute-force optimum. The full story: attack held → `POST /forensics/{id}` (quarantine + sandbox ALLOW) → `POST /heal/{id}/approve` (clean release, original superseded) → `GET /memory`, `POST /quarantine/{qid}/release`.
+- **Needs the human's review (the only two deviations from plan §10):** **D-017** (`q2c` treats sanitized artifacts as the quarantine boundary; the plan's queries taken literally make the heal flow impossible) and **D-018** (two capability-graph seed queries the plan never wrote). Both are tested, small and easy to revert (`docs/DECISIONS.md` Part B5 / B8).
 - Environment: Python 3.11.9 in `.venv`; GNU Make 4.4.1 is **not on PATH in the agent's Git Bash** until `export PATH="$PATH:/c/Users/shovon/AppData/Local/Microsoft/WinGet/Packages/ezwinports.make_Microsoft.Winget.Source_8wekyb3d8bbwe/bin"`; Docker Desktop running; containers `pathwarden-falkordb-1`, `pathwarden-api-1` up (rebuild the API image with `make up` after code changes — the container still runs the P3 code until then).
 
 ## Verification so far (real results, 2026-10-16)
@@ -28,7 +28,7 @@ Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the r
 - `plan.md` §6: `db.list()` does not exist, use `db.list_graphs()`. Never run `ruff` on the repo root (D-015).
 - Scenario runs reset the workspace by default (`"reset": true`); witness ties between equal-distance secrets are possible.
 - Unauthenticated approve/reject/reset/run/heal/quarantine-release until P11 (G-002). LLM forensic mode returns 501 until P8 (G-003).
-- Evaluation: PW's perfect score is conformance with its own model (the dataset shares it); see `summary.md` Limitations. B1/B3 are `not_run` until P8. A pipeline `RELAY`/`CURATOR` agent name must exist in `registry_eval.yaml` (use the eval registry for replay).
+- Sabotage lesson: a mutation can be an *equivalent mutant* for property tests; pin definitions separately. Also check that a crafted case exercises rarely-taken branches.
 - Tool-call hygiene: pass long Python or quoted text to Bash via files (heredocs containing `'''` broke the shell twice).
 
 ## Blocked / questions for the human
@@ -36,4 +36,4 @@ Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the r
 2. Still open: Groq model + key + license (A-14, P8/P12); making the repo public at the end (D-014).
 
 ## Next action (exactly one)
-Start **P6** on `phase/p6-remediation` from the merged `main`: read `docs/phases/P6-remediation.md` and plan §7.6, §8.6, §8.7, §10 (r1-r7), §15, §18 (remediation endpoints); first task P6-T1 (topology fixtures verbatim from §8.6/§8.7 and the loader).
+Start **P7** on `phase/p7-timetravel` from the merged `main`: read `docs/phases/P7-time-travel.md` and plan §14, §10 (q6b, q7, q7b, q8), §12.4 (attack_sleeper_44), §18 (timeline/max, graph-at); first task P7-T1 (queries q7 and q7b verbatim; q7b already exists since P3).

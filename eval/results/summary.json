@@ -410,6 +410,90 @@
       }
     }
   },
+  "remediation": {
+    "enterprise12": {
+      "best_candidate_cost": 16,
+      "candidates": [
+        {
+          "flows": 5,
+          "id": "C1",
+          "total_cost": 17,
+          "verified": true
+        },
+        {
+          "flows": 4,
+          "id": "C2",
+          "total_cost": 22,
+          "verified": true
+        },
+        {
+          "flows": 4,
+          "id": "C3",
+          "total_cost": 16,
+          "verified": true
+        },
+        {
+          "flows": 4,
+          "id": "C4",
+          "total_cost": 23,
+          "verified": true
+        }
+      ],
+      "gap": 2,
+      "optimum_cap_ids": [
+        "oncall_assistant->slack_public",
+        "support_bot->team_memory",
+        "ticket_queue->billing_agent",
+        "web_researcher->team_memory"
+      ],
+      "optimum_cost": 14,
+      "toxic_agents_before": [
+        "billing_agent",
+        "docs_writer",
+        "oncall_assistant",
+        "pr_reviewer",
+        "release_bot"
+      ]
+    },
+    "tinyqueue3": {
+      "best_candidate_cost": 3,
+      "candidates": [
+        {
+          "flows": 1,
+          "id": "C1",
+          "total_cost": 3,
+          "verified": true
+        },
+        {
+          "flows": 1,
+          "id": "C2",
+          "total_cost": 6,
+          "verified": true
+        },
+        {
+          "flows": 1,
+          "id": "C3",
+          "total_cost": 3,
+          "verified": true
+        },
+        {
+          "flows": 1,
+          "id": "C4",
+          "total_cost": 6,
+          "verified": true
+        }
+      ],
+      "gap": 0,
+      "optimum_cap_ids": [
+        "triage->team_memory"
+      ],
+      "optimum_cost": 3,
+      "toxic_agents_before": [
+        "fixer",
+        "release"
+      ]
+    }
+  },
   "witness_accuracy": {
     "correct": 60,
     "n": 60,

@@ -34,6 +34,12 @@ READ_ONLY_QUERIES = frozenset(
         "q6_lineage_subgraph",
         "q6b_node_details",
         "q7b_actions_at_time",
+        "r1_all_edges",
+        "r2_maxflow",
+        "r4_toxic_agents",
+        "r5_reachable_agents",
+        "r6_agents_reaching_external",
+        "r7_toxic_witness",
     }
 )
 

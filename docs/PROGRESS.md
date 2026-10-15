@@ -5,7 +5,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 - **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** P5 (VERIFYING); P0-P4 and P10a DONE
+- **Active phase:** P6 (VERIFYING); P0-P5 and P10a DONE
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -18,8 +18,8 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 | P3 | Scripted agents, demo scenarios, core API | 1 | DONE | `phase/p3-scripted-api` | - | 143 tests, make demo 6/6; merged `46adba1`, tag `phase-p3-done` | CI not observed |
 | P4 | Forensic Agent, quarantine, healing, memory API | 1 | DONE | `phase/p4-forensics` | - | 165 tests, probe 36/36, 4 sabotage checks; merged `e6f2588`, tag `phase-p4-done` | **D-017 awaiting human review**; no independent review; CI not observed |
 | P10a | UI: scaffold, Run, Investigate | 1 | DONE | `phase/p10a-ui-run-investigate` | - | strict tsc build, verified in headless Edge; merged `0f8de3b`, tag `phase-p10a-done` | CI not observed; no human click-through |
-| P5 | Evaluation (non-LLM defenses) | 2 | VERIFYING | `phase/p5-eval` | P2, P3 | 190 tests; `make eval` twice byte-identical; 6 sabotage checks | results reported as measured |
-| P6 | Remediation (max-flow) | 2 | NOT_STARTED | `phase/p6-remediation` | P0 only | — | can run in a worktree beside P1–P5 |
+| P5 | Evaluation (non-LLM defenses) | 2 | DONE | `phase/p5-eval` | - | 190 tests; make eval byte-identical; 6 sabotage checks; merged `cf95f5a`, tag `phase-p5-done` | B1/B3 not_run; no independent review; CI not observed |
+| P6 | Remediation (max-flow) | 2 | VERIFYING | `phase/p6-remediation` | P0 | 418 tests; 6 sabotage checks (2 escapes found and closed) | **D-018 (seed queries) awaiting review** |
 | P7 | Time travel | 2 | NOT_STARTED | `phase/p7-timetravel` | P3 | — | needs A-09 decision |
 | P10b | UI: Memory, Time travel | 2 | NOT_STARTED | `phase/p10b-ui-memory-time` | P4, P7, P10a | — | |
 | P10c | UI: Remediate, Evaluation, full demo | 2 | NOT_STARTED | `phase/p10c-ui-remediate-eval` | P5, P6, P10a | — | |
@@ -88,6 +88,10 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-16 | P5-T2 | `tests/test_eval.py` | 0 | 25 tests: family counts (15/15/15/15, 12/12/12/8/8/8), ground truth, issue pools 100-199 / 200-299 without replacement, determinism and sync with the committed scenario files, injection effects E1-E4/B1-B3, split/relay/curator structure, coarse-replay rules, defenses on hand-picked scenarios, byte-identical outputs, Wilson known values, derived-not-typed B0/B2/B4 numbers, endpoint; suite 190 passed | Claude Code |
 | 2026-10-16 | P5-T8 | sabotage S1-S6 (files restored byte-identical): coarse session merging off; DLP regex wrong; relay length i%3; Wilson formula; PW counts only BLOCK; coarse env override off | - | all 6 CAUGHT, 0 missed | Claude Code |
 | 2026-10-16 | P5-T5 | measured results (not predicted; see `eval/results/summary.md`) | - | B0 ASR 100% FHR 0%; B2 100% / 0%; B4 16.7% / 40.0%; PW-coarse 0% / 73.3%; **PW 0% / 0%**, witness accuracy 60/60; B1/B3 not_run. Cross-checks: B4's 10 missed attacks = 4 base64 disguise + 6 base64 sleepers (counted from the scenarios); B4's 24 false holds = 8 lookalike + 8 approved + 8 internal-sink | Claude Code |
+| 2026-10-16 | P6-T8 | `make test` | 0 | **418 passed**: 200 random-graph property tests (extract_cut vs an independent Edmonds-Karp: cut cost == max flow and separates sources from targets), crafted backward-residual case, topologies verbatim from the plan, graph seeding, toxicity vs independent BFS, every candidate verified with cost == maxFlow == independent flow of its definition, apply empties toxicity and reset restores, witness, pruned optimum == exhaustive search on tinyqueue3, API | Claude Code |
+| 2026-10-16 | P6-T7 | measured (not predicted): tinyqueue3 toxic {fixer, release}; candidates C1=3 C2=6 C3=3 C4=6, best 3 = optimum 3, gap 0; enterprise12 toxic 5 agents; C1=17 C2=22 C3=16 C4=23, best 16 vs brute-force optimum 14 (4 flows), **gap 2** | - | all candidates verified on a temporary copy of the graph; after apply the toxic list is empty on both topologies | Claude Code |
+| 2026-10-16 | P6 | `make eval` x2 with the remediation section | 0 | results.csv / summary.json / summary.md byte-identical again; no `pw_eval_*` / `pw_cap_*` graph left behind | Claude Code |
+| 2026-10-16 | P6-T8 | sabotage S1-S6 (restored byte-identical): residual BFS never backward; every edge residual; C3 wrong target set; revoke does not delete; r4 forgets the secret requirement; brute-force toxicity ignores external sinks | - | **first run: 2 escapes** - S1 (no test needed the backward step) and S3 (an *equivalent mutant* for the property tests: a wrong target set still yields a complete fix, only the cost differs). Added a crafted backward-residual test and a test pinning each candidate's cost to an independent max flow of its definition; re-run: 6/6 CAUGHT | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 

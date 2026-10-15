@@ -356,8 +356,16 @@ def test_summary_files_are_derived_from_results_csv_only_and_the_committed_ones_
         rows = list(csv.DictReader(handle))
     assert len(rows) == 120 * 7
     summary = run_eval.summarise(rows)
-    assert json.loads((results / "summary.json").read_text(encoding="utf-8")) == summary
-    assert (results / "summary.md").read_text(encoding="utf-8") == run_eval.render_markdown(summary)
+    committed = json.loads((results / "summary.json").read_text(encoding="utf-8"))
+    remediation = committed.pop("remediation")
+    assert committed == summary  # the defense numbers come from results.csv alone
+    assert (results / "summary.md").read_text(encoding="utf-8") == run_eval.render_markdown(
+        {**summary, "remediation": remediation}
+    )
+    for r in remediation.values():  # properties only, never typed-in numbers (rule 11)
+        assert r["optimum_cost"] <= r["best_candidate_cost"]
+        assert r["gap"] == r["best_candidate_cost"] - r["optimum_cost"]
+        assert all(c["verified"] for c in r["candidates"])
     for name in ("B1", "B3"):
         assert summary["defenses"][name] == {"status": "not_run"}
     assert {r["decision"] for r in rows if r["defense"] in ("B1", "B3")} == {"not_run"}
