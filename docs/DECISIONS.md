@@ -271,6 +271,16 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **FastAPI 0.143 detail:** included routers are wrapped in private objects, so `app.routes` cannot be walked; the route invariant walks `api/routes/*.py` and asserts that every module is included in `api/main.py`.
 - **Known gaps after P11:** the MCP tool server and gateway are not authenticated (local stdio processes); `X-PW-Human` is not authentication; no CORS/TLS/rate limiting (non-goals).
 
+## Part B14 — P12 outcomes (2026-10-16)
+
+### D-031 — what the README claims, and what was deliberately not done
+- **Status:** Accepted (agent), needs the owner's confirmation where marked.
+- The README states plainly: results come from scripted agents; B1/B3 are `not_run`; no live mode; no independent review; no license; not deployed; `X-PW-Human` is not authentication. The plan's draft disclosure (§24.5) said the author reviewed every Cypher query by hand and the author can explain every component; **that was not what happened** (the owner delegated everything), so it was replaced by what is true (`docs/AI_ASSISTANCE.md`), with two statements marked for the owner to confirm. Making a claim the owner cannot stand behind would cost more than the gap.
+- **No license file was added**: the choice is the owner's (A-14). Until then the README says no rights are granted.
+- **Results in the README are guarded** against drift by `tests/test_docs.py` (the table is the generated one; numbers in prose are compared with `summary.json`).
+- **`make setup` and `scripts/wait_for_db.py`** were added so the plan's quickstart `make up && make demo` works from a clean clone: without a virtualenv `make demo` had no dependencies, and `make up` returned before the database accepted commands. Both were found by running the clean-clone test, not by reading.
+- **Deployment is not done**: it needs the owner's accounts, and the FalkorDB capability probe must run against the chosen host first (A-15, `docs/DEPLOY.md`).
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.
