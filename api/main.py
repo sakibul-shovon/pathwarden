@@ -1,4 +1,4 @@
-"""FastAPI application. P0 provides only ``GET /api/health`` (plan §18); routers come later."""
+"""FastAPI application (plan §18). Routers: workspace-level and action-level endpoints."""
 
 from __future__ import annotations
 
@@ -8,20 +8,29 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+from api.api_errors import install_error_handlers
 from api.graph.client import connect, list_graph_names
+from api.routes import actions, workspace
 from api.settings import Settings, load_dotenv
+from api.workspace import WorkspaceManager
 
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
-    """Application factory; tests pass explicit ``settings``."""
+def create_app(
+    settings: Settings | None = None, workspaces: WorkspaceManager | None = None
+) -> FastAPI:
+    """Application factory; tests pass explicit ``settings`` (and a ``workspaces`` manager)."""
     if settings is None:
         load_dotenv(Path(".env"))
         settings = Settings.from_env()
 
     app = FastAPI(title="Pathwarden")
     app.state.settings = settings
+    app.state.workspaces = workspaces or WorkspaceManager(settings)
+    install_error_handlers(app)
+    app.include_router(workspace.router)
+    app.include_router(actions.router)
 
     @app.get("/api/health")
     def health() -> JSONResponse:
