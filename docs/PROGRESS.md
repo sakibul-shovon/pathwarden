@@ -5,7 +5,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 - **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** P4 (VERIFYING); P0-P3 DONE
+- **Active phase:** P10a (VERIFYING); P0-P4 DONE
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -16,8 +16,8 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 | P1 | Graph layer, runtime, replay | 1 | DONE | `phase/p1-runtime` | — | 69 tests, lint clean; merged `4610b64`, tag `phase-p1-done` | A-01, A-02 resolved; CI not observed |
 | P2 | Gate | 1 | DONE | `phase/p2-gate` | - | 86 tests, 4 sabotage checks; merged `bce8e9b`, tag `phase-p2-done` | no independent review (G-001); CI not observed |
 | P3 | Scripted agents, demo scenarios, core API | 1 | DONE | `phase/p3-scripted-api` | - | 143 tests, make demo 6/6; merged `46adba1`, tag `phase-p3-done` | CI not observed |
-| P4 | Forensic Agent, quarantine, healing, memory API | 1 | VERIFYING | `phase/p4-forensics` | P3 | 164 tests, probe 36/36, 4 sabotage checks | **deviation D-017 (q2c)** - please review; A-10 partly resolved |
-| P10a | UI: scaffold, Run, Investigate | 1 | NOT_STARTED | `phase/p10a-ui-run-investigate` | P4 | — | |
+| P4 | Forensic Agent, quarantine, healing, memory API | 1 | DONE | `phase/p4-forensics` | - | 165 tests, probe 36/36, 4 sabotage checks; merged `e6f2588`, tag `phase-p4-done` | **D-017 awaiting human review**; no independent review; CI not observed |
+| P10a | UI: scaffold, Run, Investigate | 1 | VERIFYING | `phase/p10a-ui-run-investigate` | P3, P4 | strict tsc build ok; verified in a real browser (headless Edge) | A-16 resolved; CI `web` job enabled |
 | P5 | Evaluation (non-LLM defenses) | 2 | NOT_STARTED | `phase/p5-eval` | P3 (+P2) | — | cross-agent review recommended |
 | P6 | Remediation (max-flow) | 2 | NOT_STARTED | `phase/p6-remediation` | P0 only | — | can run in a worktree beside P1–P5 |
 | P7 | Time travel | 2 | NOT_STARTED | `phase/p7-timetravel` | P3 | — | needs A-09 decision |
@@ -76,6 +76,13 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-15 | P4 | `make probe` | 0 | **36 passed** (new B14 proves the q2c deviation: plan q2c blocks a quarantined root behind a sanitized task; the deviation does not, but still blocks a quarantined non-sanitized ancestor and a quarantined sanitized artifact) | Claude Code |
 | 2026-10-15 | P4 | smoke of the whole story (`PYTHONPATH=. python p4_smoke.py`): **first run exposed the plan's q2c/q4 inconsistency** (healed draft BLOCKED/QUARANTINED_LINEAGE although clean) | - | after the D-017 fix: attack HOLD -> forensics APPROVE_HEALED_RELEASE (sandbox ALLOW/CLEAN, healed content clean) -> heal: act-0002 executed, act-0001 superseded, public page got only the clean release | Claude Code |
 | 2026-10-15 | P4-T7 | sabotage S1-S4 (backed-up files restored byte-identical; suite 164 passed) | - | S1 q4 also quarantines sanitized descendants -> 10 FAIL; S2 q4 reaches only direct descendants -> 2 FAIL; S3 q2c back to the plan text -> 5 FAIL; S4 apply_quarantine not idempotent -> 1 FAIL; 0 mutations missed | Claude Code |
+| 2026-10-16 | P10a-T1 | `cd web && npm run build` | 0 | `tsc --noEmit` (strict, TypeScript 7.0.2) and `vite build` (Vite 8.3.4, React 18.3, cytoscape 3.34.3) pass: 22 modules, 596 kB JS (cytoscape) / 6 kB CSS | Claude Code |
+| 2026-10-16 | P10a-T7 | headless Edge against the real API (dev server + container): Run tab, attack, guard ON | 0 | banner `HELD act-0001: TRIFECTA`; 3 badges `Rule of Two OK`, 0 violated; public page 'Nothing has been posted'; 0 error markers in the DOM | Claude Code |
+| 2026-10-16 | P10a-T7 | same, guard OFF | 0 | banner `LEAKED`; the fake secret rendered on the public page; 3 highlighted leak lines | Claude Code |
+| 2026-10-16 | P10a-T7 | benign_43 | 0 | banner `POSTED` (green) | Claude Code |
+| 2026-10-16 | P10a-T7 | Investigate with `?autoforensics=1` + screenshot (`docs/img/investigate-attack.png`) | 0 | verdict card (decision 2 ms, LLM calls 0), lineage graph with untrusted witness (orange, thick, via the convention) and secret witness (dotted), `task:42` dashed, quarantined nodes grey, sources as diamonds; laundering table; report `APPROVE_HEALED_RELEASE`; held-vs-healed diff; Approve button. **Screenshot exposed a defect** (witness paths vanished after quarantine because the verdict became BLOCK): fixed (`explain` returns witnesses independent of quarantine) + test; re-shot, highlights present | Claude Code |
+| 2026-10-16 | P10a-T7 | `?autoforensics=1&autoheal=1` (the full browser flow) | 0 | banner `Healed release act-0002 executed; act-0001 is superseded`; API: act-0001 superseded, act-0002 executed; public page has 1 entry and no secret | Claude Code |
+| 2026-10-16 | P10a-T6 | page inside a 400 px iframe (Edge enforces a minimum window width, so a plain 420 px window crops) | 0 | no horizontal overflow; tabs wrap; cards stack | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 

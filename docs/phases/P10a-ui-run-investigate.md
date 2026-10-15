@@ -18,13 +18,13 @@ Create: `web/{package.json,package-lock.json,tsconfig.json,vite.config.ts,index.
 Modify: `Makefile` (`web`), `.github/workflows/ci.yml` (enable the `web` job, then add `web` to required checks), `api/main.py` (CORS for the Vite dev origin — record the decision), `docs/DECISIONS.md` (A-16), `docs/PROGRESS.md` (manual UI checklist evidence).
 
 ## 5. Tasks
-- [ ] **P10a-T1 Scaffold** Vite + React 18 + TypeScript (`strict: true`) + `cytoscape` (built-in `breadthfirst` layout only). Dependencies are the standard template plus cytoscape and its types — anything else needs approval. `VITE_API_BASE`. Enable the CI `web` job (`npm ci`, `npm run build` where `build` includes `tsc`).
-- [ ] **P10a-T2 Typed API client** mirroring §18 (no `any`), the `{"error","detail"}` error shape, and a small polling hook (polling only — no websockets).
-- [ ] **P10a-T3 Tab shell** with the six tab labels; tabs not built yet are visibly disabled with "arrives in P10b/P10c" (no fake content).
-- [ ] **P10a-T4 Run tab:** scenario dropdown, guard toggle, mode toggle (live disabled until P8), Run; three agent cards with A/B/C letters and the Rule-of-Two badge from `/sessions/{id}/rule-of-two`; timeline from `RunResult`; "Public release page" panel from `/sinks/{id}` showing what was posted.
-- [ ] **P10a-T5 Investigate tab:** action list; verdict card (verdict, reason, latency, **LLM calls 0**); Cytoscape lineage graph from `explain` (untrusted witness and secret witness in different colours *and* line styles, sanitized nodes dashed, quarantined greyed, sources as diamonds); read-only `q2a`/`q2b` query text; "Run forensics" (scripted); report view; side-by-side payload diff via `artifacts/{id}?graph=main|sandbox`; "Approve healed release".
-- [ ] **P10a-T6 Styling:** plain CSS, light/dark via `prefers-color-scheme`; information never conveyed by colour alone.
-- [ ] **P10a-T7 Manual acceptance run** per the checklist below, results recorded as Evidence (what you clicked, what you saw).
+- [x] **P10a-T1 Scaffold** Vite + React 18 + TypeScript (`strict: true`) + `cytoscape` (built-in `breadthfirst` layout only). Dependencies are the standard template plus cytoscape and its types — anything else needs approval. `VITE_API_BASE`. Enable the CI `web` job (`npm ci`, `npm run build` where `build` includes `tsc`).
+- [x] **P10a-T2 Typed API client** mirroring §18 (no `any`), the `{"error","detail"}` error shape, and a small polling hook (polling only — no websockets).
+- [x] **P10a-T3 Tab shell** with the six tab labels; tabs not built yet are visibly disabled with "arrives in P10b/P10c" (no fake content).
+- [x] **P10a-T4 Run tab:** scenario dropdown, guard toggle, mode toggle (live disabled until P8), Run; three agent cards with A/B/C letters and the Rule-of-Two badge from `/sessions/{id}/rule-of-two`; timeline from `RunResult`; "Public release page" panel from `/sinks/{id}` showing what was posted.
+- [x] **P10a-T5 Investigate tab:** action list; verdict card (verdict, reason, latency, **LLM calls 0**); Cytoscape lineage graph from `explain` (untrusted witness and secret witness in different colours *and* line styles, sanitized nodes dashed, quarantined greyed, sources as diamonds); read-only `q2a`/`q2b` query text; "Run forensics" (scripted); report view; side-by-side payload diff via `artifacts/{id}?graph=main|sandbox`; "Approve healed release".
+- [x] **P10a-T6 Styling:** plain CSS, light/dark via `prefers-color-scheme`; information never conveyed by colour alone.
+- [x] **P10a-T7 Manual acceptance run** per the checklist below, results recorded as Evidence (what you clicked, what you saw).
 
 ## 6. Tests and validation
 `npm run build` (strict TypeScript) exit 0 · CI `web` job green · manual checklist (A-16 — there is no UI test tooling in the plan's stack; adding Vitest/Playwright needs human approval).
