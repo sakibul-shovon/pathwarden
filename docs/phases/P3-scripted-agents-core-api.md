@@ -18,16 +18,16 @@ Create: `api/agents/{schema.py,scripted.py,render.py}` · `api/runtime/{orchestr
 Modify: `api/main.py` (routers, error handler `{"error","detail"}`, per-workspace write lock), `docker-compose.yml` (add `api`), `Makefile` (`api`, `demo`), `tests/test_invariants.py`.
 
 ## 5. Tasks
-- [ ] **P3-T1 `TaskSchema` and scripted extractor** (§12.1/§12.2 rules for component/severity/kind). Invalid → **no** sanitized artifact, error recorded in the session (fail closed).
-- [ ] **P3-T2 `render_changelog(title, n, env_values, conventions, cite_doc) -> str`** — one pure function in `render.py` (Deployment diagnostics, base64 Checksum, doc citation exactly per §12.2). P5 reuses it; never duplicate.
-- [ ] **P3-T3 Scripted Triage / Fixer / Release** per §12.2 including flags `disable_compromise` and `cite_security_guide`, the env-key selection rule (named keys → only those; mentions `.env` → all four; else `PORT`), `load_by_prefix("team_convention:")`, Release payload = latest non-quarantined `changelog:N`.
-- [ ] **P3-T4 Orchestrator and sinks.** After `propose` call `gate.decide`; ALLOW → append payload to `state/<ws>/sinks/<sink_id>.jsonl`, status `executed`; guard off → execute with reason `GUARD_OFF`; sandbox runtime → sinks are no-ops. Gate exception ⇒ not executed. One writer per workspace (lock) so counters cannot race.
-- [ ] **P3-T5 Demo scenarios** (§12.4, six of them) as data + runner; expected verdicts are the plan's literal table, **not** computed from the system.
-- [ ] **P3-T6 Queries and services:** `q3`, `q5` (A/B/C logic in Python: `A='untrusted' in trusts`, `B='secret' in trusts`, `C = True in sink_external or state_writes>0`, green iff A+B+C ≤ 2), `q6`, `q6b`; `explain` returns GateResult, laundering, subgraph, query texts (A-06).
-- [ ] **P3-T7 Endpoints:** `/health`, `/ws/{ws}/reset`, `/scenarios`, `/scenarios/{name}/run` (`RunResult` per §18), `/actions`, `/actions/{id}`, `/actions/{id}/explain`, `/actions/{id}/approve`, `/actions/{id}/reject`, `/artifacts/{id}?graph=main` (a `graph=sandbox` request returns a clear "not available until P4" error code), `/sessions/{id}/rule-of-two`, `/sinks/{sink_id}`. Error format per §18.
-- [ ] **P3-T8 Export / replay round-trip:** export a demo run as a §20.1 scenario and replay it; edge sets must be equal.
-- [ ] **P3-T9 `make api`, `make demo`** (A-05: runs the six scenarios, prints a verdict table, exits non-zero on any mismatch) and the compose `api` service.
-- [ ] **P3-T10 Determinism (G7):** reset + run each scenario twice → identical `RunResult` (ignoring latency).
+- [x] **P3-T1 `TaskSchema` and scripted extractor** (§12.1/§12.2 rules for component/severity/kind). Invalid → **no** sanitized artifact, error recorded in the session (fail closed).
+- [x] **P3-T2 `render_changelog(title, n, env_values, conventions, cite_doc) -> str`** — one pure function in `render.py` (Deployment diagnostics, base64 Checksum, doc citation exactly per §12.2). P5 reuses it; never duplicate.
+- [x] **P3-T3 Scripted Triage / Fixer / Release** per §12.2 including flags `disable_compromise` and `cite_security_guide`, the env-key selection rule (named keys → only those; mentions `.env` → all four; else `PORT`), `load_by_prefix("team_convention:")`, Release payload = latest non-quarantined `changelog:N`.
+- [x] **P3-T4 Orchestrator and sinks.** After `propose` call `gate.decide`; ALLOW → append payload to `state/<ws>/sinks/<sink_id>.jsonl`, status `executed`; guard off → execute with reason `GUARD_OFF`; sandbox runtime → sinks are no-ops. Gate exception ⇒ not executed. One writer per workspace (lock) so counters cannot race.
+- [x] **P3-T5 Demo scenarios** (§12.4, six of them) as data + runner; expected verdicts are the plan's literal table, **not** computed from the system.
+- [x] **P3-T6 Queries and services:** `q3`, `q5` (A/B/C logic in Python: `A='untrusted' in trusts`, `B='secret' in trusts`, `C = True in sink_external or state_writes>0`, green iff A+B+C ≤ 2), `q6`, `q6b`; `explain` returns GateResult, laundering, subgraph, query texts (A-06).
+- [x] **P3-T7 Endpoints:** `/health`, `/ws/{ws}/reset`, `/scenarios`, `/scenarios/{name}/run` (`RunResult` per §18), `/actions`, `/actions/{id}`, `/actions/{id}/explain`, `/actions/{id}/approve`, `/actions/{id}/reject`, `/artifacts/{id}?graph=main` (a `graph=sandbox` request returns a clear "not available until P4" error code), `/sessions/{id}/rule-of-two`, `/sinks/{sink_id}`. Error format per §18.
+- [x] **P3-T8 Export / replay round-trip:** export a demo run as a §20.1 scenario and replay it; edge sets must be equal.
+- [x] **P3-T9 `make api`, `make demo`** (A-05: runs the six scenarios, prints a verdict table, exits non-zero on any mismatch) and the compose `api` service.
+- [x] **P3-T10 Determinism (G7):** reset + run each scenario twice → identical `RunResult` (ignoring latency).
 
 ## 6. Tests and validation
 API tests with `httpx` against the app and real FalkorDB. Expected results come from §12.4:
