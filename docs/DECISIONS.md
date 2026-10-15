@@ -95,7 +95,7 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 | A-08 (**Resolved in P5**, Part B7) | §20.4–20.5 | Decision latency p50/p95 is wall-clock, but "non-LLM defenses must be byte-identical across runs" and `make eval` twice must give identical files | Write latency to a separate non-deterministic file (e.g. `eval/results/latency.csv`, gitignored or excluded from the identity check); `results.csv`/`summary.md` hold only deterministic columns | P5 |
 | A-09 (**Resolved in P7**, see Part B9) | §14 | The two time-travel markers ("poisoned memory written", "draft doubly tainted") need artifact-level taint, but rule 1 forbids new Cypher and §10 has no such query | Compute in Python from existing `q7` edges + `q6b` details (BFS over the returned subgraph). No new Cypher. Needs human OK because rule 1 says ask. | P7 |
 | A-10 (**Partly resolved in P4**, Part B5; finished in P8) | §13.5, §18 | Heal approval "re-runs Fixer and Release" — scripted or live? And `POST /forensics` accepts `mode:"llm"` before P8 exists | Heal re-run uses the same mode as the original run (scripted by default). `mode:"llm"` returns `{"error":"llm_not_configured"}` until P8. | P4/P8 |
-| A-11 | §8.8 vs §16.3, §5 | `gateway.yaml` says the gateway spawns upstreams as stdio subprocesses, yet compose lists a `mock-upstreams` service | Decide after `probe_mcp.py`; likely the service just hosts the code image / is unused for stdio | P9 |
+| A-11 (**Resolved in P9**, see Part B12) | §8.8 vs §16.3, §5 | `gateway.yaml` says the gateway spawns upstreams as stdio subprocesses, yet compose lists a `mock-upstreams` service | Decide after `probe_mcp.py`; likely the service just hosts the code image / is unused for stdio | P9 |
 | A-12 | §17, §21 | Is `fixtures/api_keys.yaml` committed? Hosted keys must not be | Commit demo keys only (`pwdemo-…`, non-provider format); hosted keys via an env-selected file or env var | P11 |
 | A-13 (**Resolved in P0**) | §6, §23 | API port, FalkorDB env var names not specified | Port 8000 (Uvicorn default); `PW_FALKORDB_HOST/PORT/PASSWORD` (see `.env.example`) | P0 |
 | A-14 | §12.3, §24 | LLM provider and README license. **Provider = Groq** (human, 2026-10-15). **Still open: exact model, the key itself (goes only in the local `.env` as `PW_LLM_API_KEY`), and the license** | Via LiteLLM a Groq model is addressed as `groq/<model>` (to be confirmed by the P8 probe — rule 13; also confirm how the key is passed). Pick the model at P8 from Groq's current list. Free-tier rate/token limits may throttle the live study and the B3 full-trace judge (long prompts): measure in the probe, add backoff, reduce nothing silently. License: the human chooses (e.g. MIT or Apache-2.0) before P12-T6 | P8/P12 |
@@ -224,6 +224,33 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **Evaluation:** the defense list, families and criteria come from the response's keys and values; B1/B3 render as `not_run` until P8. The tab polls every 10 s.
 - **Tooling lessons (not in the repo):** a click helper that matches by text must exclude the navigation tab with the same label (it clicked the `Run` tab first); another project's dev server held port 5173 (Vite used 5174).
 - **Not done:** no human click-through; the live-mode toggle stays disabled with its reason until P8.
+
+## Part B12 — P9 outcomes (2026-10-16)
+
+### A-11 — Resolved: upstreams are stdio subprocesses; no compose service
+- `gateway.yaml` is used verbatim: the gateway spawns each upstream as `python -m mock_upstreams.<name>` (`python` is replaced by the running interpreter, cwd = repo root). The probe showed the SDK client spawning stdio servers works, so no `mock-upstreams` container is needed and `docker-compose.yml` is unchanged. The upstream state lives in JSON files (`state/<ws>-mcp/upstreams/`) so it survives across the gateway processes of a demo (one process per agent).
+
+### D-022 — MCP SDK is 2.x
+- **Status:** Accepted · extra `mcp>=2,<3`; exact versions in `constraints.txt`. The memory-based API (`FastMCP`) does not exist any more: server = `mcp.server.mcpserver.MCPServer` (tool errors via `ToolError`; any other exception becomes a generic `Error executing tool <name>`), client = `mcp.Client`, proxying = the low-level `mcp.server.lowlevel.Server` with `on_list_tools` / `on_call_tool`. `scripts/probe_mcp.py` (`make probe-mcp`) is the record.
+
+### D-023 — a synthetic registry tool for unmanaged reads (needs the human's review)
+- **Status:** **Implemented by the agent, awaiting the human's confirmation** · plan §16.2 says a read of a key never written through the gateway is recorded with `read_source` on `src:unmanaged:<store>` (trust `untrusted`, `q1_add_source` on first use), but `Runtime.read_source` needs a registry read tool whose `source_prefix` matches, and the registry has none for that prefix. The gateway therefore uses an in-memory copy of the registry with one extra tool `gateway_unmanaged_read: {class: read, source_prefix: "src:unmanaged:"}` (`gateway_registry()`); `registry.yaml` is untouched, trust is fixed in code and never comes from a model. Revert: give `registry.yaml` the tool and delete the helper.
+
+### D-024 — payload key, lineage vs upstream content, draft store
+- **External payload key:** the draft written for an `external` call is stored under `changelog:<N>` when `PW_TASK_REF` is `issue:<N>` (otherwise `external:<server>.<tool>`), in the `workspace` store. The Forensic Agent derives the task from that key, so forensics and healing also work on the gateway graph.
+- **Lineage vs upstream content (not in the plan):** for a key load the gateway compares the upstream's value with the recorded artifact and refuses on a difference (`differs from the recorded lineage`); `memory_list` drops such entries. Reason: `q1_lookup_key` returns the latest *non-quarantined* version, but an upstream returns its latest version, so a quarantined newer version could otherwise be read while the lineage records the older clean one. Fail closed.
+- **Unmanaged entries in `memory_list`:** kept and recorded as unmanaged reads (the plan says "resolve each key as above").
+- **Forward then record:** a write or read is forwarded first and recorded only if the upstream succeeded (an upstream error records nothing). If the forwarded `external` call fails after ALLOW the action stays `proposed`.
+
+### D-025 — several gateway processes share one graph
+- Each process has its own `Runtime` counters, so every graph operation takes a file lock (`state/<ws>-mcp/gateway.lock`, stdlib `msvcrt`/`fcntl`) and calls the new `Runtime.resync()` first (clock and id counters re-read from the graph). `Runtime.find_key()` (lookup without loading) was added for the load classes. Sabotage S6 shows the interleaving test fails without the resync.
+
+### D-026 — `<workspace>-mcp` workspace view and the `ws` UI parameter
+- `WorkspaceManager.get("tinyqueue-mcp")` serves the graph `pw_mcp_tinyqueue` with the registry of `tinyqueue` and its own state folder; `?ws=tinyqueue-mcp` makes the UI read it. Resetting that workspace (also done by `make demo-mcp`) clears the graph, the gateway state and the mock upstream state. The "Review at" link of a held call points at this view.
+
+### D-027 — tool server notes
+- `pathwarden_forensics` runs the scripted mode (LLM mode arrives with P8) and quarantines automatically (risk-reducing, rule 8). Domain errors are `ToolError`s with a readable message. `Workspace.quarantine_preview()` was added (a thin wrapper of the existing forensic tool); no new Cypher anywhere in P9.
+- **Known gaps:** the gateway has no `sanitize` class (nothing is ever marked sanitized through it); the live-LLM three-agent demo needs P8; no authentication on the tool server (P11, G-002); no human click-through of the UI.
 
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
