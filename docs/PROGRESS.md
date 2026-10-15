@@ -5,7 +5,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 - **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** P3 (VERIFYING); P0, P1, P2 DONE
+- **Active phase:** P4 (VERIFYING); P0-P3 DONE
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -15,8 +15,8 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 | P0 | Probe and skeleton | 1 | DONE | `phase/p0-skeleton` | — | probe 35/35, 14 tests; merged `3632e9c`, tag `phase-p0-done` | exceptions: CI run not observed (repo private, no gh); T11 GitHub settings deferred until the repo is public (D-014) |
 | P1 | Graph layer, runtime, replay | 1 | DONE | `phase/p1-runtime` | — | 69 tests, lint clean; merged `4610b64`, tag `phase-p1-done` | A-01, A-02 resolved; CI not observed |
 | P2 | Gate | 1 | DONE | `phase/p2-gate` | - | 86 tests, 4 sabotage checks; merged `bce8e9b`, tag `phase-p2-done` | no independent review (G-001); CI not observed |
-| P3 | Scripted agents, demo scenarios, core API | 1 | VERIFYING | `phase/p3-scripted-api` | P2 | 143 tests, `make demo` ok, container API verified | A-05, A-06 resolved |
-| P4 | Forensic Agent, quarantine, healing, memory API | 1 | NOT_STARTED | `phase/p4-forensics` | P3 | — | cross-agent review recommended |
+| P3 | Scripted agents, demo scenarios, core API | 1 | DONE | `phase/p3-scripted-api` | - | 143 tests, make demo 6/6; merged `46adba1`, tag `phase-p3-done` | CI not observed |
+| P4 | Forensic Agent, quarantine, healing, memory API | 1 | VERIFYING | `phase/p4-forensics` | P3 | 164 tests, probe 36/36, 4 sabotage checks | **deviation D-017 (q2c)** - please review; A-10 partly resolved |
 | P10a | UI: scaffold, Run, Investigate | 1 | NOT_STARTED | `phase/p10a-ui-run-investigate` | P4 | — | |
 | P5 | Evaluation (non-LLM defenses) | 2 | NOT_STARTED | `phase/p5-eval` | P3 (+P2) | — | cross-agent review recommended |
 | P6 | Remediation (max-flow) | 2 | NOT_STARTED | `phase/p6-remediation` | P0 only | — | can run in a worktree beside P1–P5 |
@@ -72,6 +72,10 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-15 | P3-T9 | `make up` (builds the api image); `curl /api/health`; POST attack_pipeline_42 against the CONTAINER | 0 | falkordb ok; action held/TRIFECTA, all three badges green | Claude Code |
 | 2026-10-15 | P3 | sabotage S1: orchestrator executes on HOLD | - | 10 API tests FAIL | Claude Code |
 | 2026-10-15 | P3 | sabotage S2: Fixer ignores team conventions (first attempt's mutation did not apply and was discarded) | - | 12+ tests FAIL; files restored byte-identical; suite 143 passed | Claude Code |
+| 2026-10-15 | P4-T8 | `make test` | 0 | **164 passed** (21 new forensics/heal/quarantine/memory tests + 2 gate tests for D-017): report content, quarantine reach keeps task:42, sleeper + disguise healed, sandbox ids `-sbx-` and no fallback between graphs, main untouched by replay, idempotent re-run, heal executes a clean release and supersedes, ids continue and never collide, heal without forensics is held again, quarantine release, llm mode 501, no `content` key in any tool output | Claude Code |
+| 2026-10-15 | P4 | `make probe` | 0 | **36 passed** (new B14 proves the q2c deviation: plan q2c blocks a quarantined root behind a sanitized task; the deviation does not, but still blocks a quarantined non-sanitized ancestor and a quarantined sanitized artifact) | Claude Code |
+| 2026-10-15 | P4 | smoke of the whole story (`PYTHONPATH=. python p4_smoke.py`): **first run exposed the plan's q2c/q4 inconsistency** (healed draft BLOCKED/QUARANTINED_LINEAGE although clean) | - | after the D-017 fix: attack HOLD -> forensics APPROVE_HEALED_RELEASE (sandbox ALLOW/CLEAN, healed content clean) -> heal: act-0002 executed, act-0001 superseded, public page got only the clean release | Claude Code |
+| 2026-10-15 | P4-T7 | sabotage S1-S4 (backed-up files restored byte-identical; suite 164 passed) | - | S1 q4 also quarantines sanitized descendants -> 10 FAIL; S2 q4 reaches only direct descendants -> 2 FAIL; S3 q2c back to the plan text -> 5 FAIL; S4 apply_quarantine not idempotent -> 1 FAIL; 0 mutations missed | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 
@@ -84,7 +88,8 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | id | what | where | how it fails | filled in |
 |---|---|---|---|---|
 | G-001 | Independent cross-agent review of P2 (recommended by the phase file) was not possible: only one agent is available | P2 | n/a — process gap; the 4 sabotage checks partly compensate | when a second agent reviews (optional) |
-| G-002 | `Runtime.approve*` and the gate have no caller authentication | api layer | by design until P11 (human-only endpoints) | P11 |
+| G-002 | No caller authentication on approve/reject/reset/run, heal-approve and quarantine release | api layer | by design until P11 (human-only endpoints) | P11 |
+| G-003 | LLM forensic mode (`mode:"llm"`) answers 501 `llm_not_configured` | `POST /forensics` | fails loudly | P8 |
 
 ## Session log (append-only: one line per work session)
 
