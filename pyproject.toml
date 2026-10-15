@@ -19,6 +19,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+llm = [
+  "litellm",  # P8; probed by scripts/probe_litellm.py (Groq via `groq/<model>`)
+]
 mcp = [
   "mcp>=2,<3",  # P9; the 2.x API differs from 1.x (FastMCP renamed), see scripts/probe_mcp.py
 ]
