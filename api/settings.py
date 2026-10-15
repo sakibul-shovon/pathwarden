@@ -19,6 +19,10 @@ class Settings(BaseModel):
     falkordb_password: str | None = None
     auth: Literal["on", "off"] = "off"
     state_dir: Path = Path("state")
+    # hosted mode (PW_AUTH=on): where the workspace keys come from (A-12). `api_keys` (the value of
+    # PW_API_KEYS, "key=workspace,key2=workspace2") wins over the file; neither is ever logged.
+    api_keys_file: Path | None = None
+    api_keys: str | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -40,6 +44,10 @@ class Settings(BaseModel):
             values["auth"] = auth
         if (state_dir := get("PW_STATE_DIR")) is not None:
             values["state_dir"] = Path(state_dir)
+        if (keys_file := get("PW_API_KEYS_FILE")) is not None:
+            values["api_keys_file"] = Path(keys_file)
+        if (keys := get("PW_API_KEYS")) is not None:
+            values["api_keys"] = keys
         return cls(**values)
 
 

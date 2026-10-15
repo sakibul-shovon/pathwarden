@@ -48,13 +48,19 @@ class Workspace:
         fixtures_dir: Path = FIXTURES_DIR,
         graph_name: str | None = None,
         registry_workspace: str | None = None,
+        tenant: bool = False,
     ):
         self.name = name
         self._db = db
         self.fixtures = Fixtures(fixtures_dir)
         self.registry = Registry.load(fixtures_dir / "registry.yaml")
-        if self.registry.workspace != (registry_workspace or name):
-            raise NotFoundError(f"workspace {name!r}")
+        wanted = registry_workspace or name
+        if self.registry.workspace != wanted:
+            if not tenant:
+                raise NotFoundError(f"workspace {name!r}")
+            # hosted tenants (P11) share the agents, sources and sinks of the demo registry but each
+            # gets its own graphs, state folder and keys
+            self.registry = self.registry.model_copy(update={"workspace": wanted})
         self.policy = load_policy(fixtures_dir / "policy.yaml")
         self._policy_version = policy_version(fixtures_dir / "policy.yaml")
         self.graph_name = graph_name or main_graph_name(name)  # override: test isolation only
@@ -244,10 +250,17 @@ class Workspace:
 
 
 class WorkspaceManager:
-    """Lazily creates workspaces; only the one declared in the registry exists (P11 adds more)."""
+    """Lazily creates workspaces: the one declared in the registry and, in hosted mode, the tenants
+    named by the API keys (each with its own graphs). Any other name does not exist."""
 
-    def __init__(self, settings: Settings, graph_names: dict[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        graph_names: dict[str, str] | None = None,
+        tenants: frozenset[str] = frozenset(),
+    ) -> None:
         self._settings = settings
+        self._tenants = tenants
         self._graph_names = graph_names or {}
         self._db: FalkorDB | None = None
         self._workspaces: dict[str, Workspace] = {}
@@ -267,5 +280,6 @@ class WorkspaceManager:
                     self._settings.state_dir,
                     graph_name=self._graph_names.get(name) or default_graph,
                     registry_workspace=base,
+                    tenant=base in self._tenants,
                 )
             return self._workspaces[name]

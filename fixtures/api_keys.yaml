@@ -1,0 +1,8 @@
+# DEMO API keys only (A-12): non-provider format, committed on purpose so `PW_AUTH=on` can be tried
+# locally and in tests. A hosted deployment MUST NOT use these: point PW_API_KEYS_FILE at a file kept
+# outside the repository, or set PW_API_KEYS="key=workspace,key2=workspace2".
+# Format: keys: {<key>: <workspace>}; one workspace = one tenant = its own graphs.
+keys:
+  pwdemo-key-tinyqueue-0001: tinyqueue
+  pwdemo-key-tenant-a-0002: tenant-a
+  pwdemo-key-tenant-b-0003: tenant-b

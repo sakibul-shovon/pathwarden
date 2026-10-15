@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from api.api_errors import install_error_handlers
+from api.auth import ApiKeys
 from api.graph.client import connect, list_graph_names
 from api.remediation.capability_graph import CapabilityService
 from api.routes import actions, forensics, timetravel, workspace
@@ -32,7 +33,10 @@ def create_app(
 
     app = FastAPI(title="Pathwarden")
     app.state.settings = settings
-    app.state.workspaces = workspaces or WorkspaceManager(settings)
+    # hosted mode: the keys decide who a tenant is; no usable keys = no start (fail closed)
+    app.state.api_keys = ApiKeys.load(settings) if settings.auth == "on" else None
+    tenants = app.state.api_keys.workspaces if app.state.api_keys else frozenset()
+    app.state.workspaces = workspaces or WorkspaceManager(settings, tenants=tenants)
     app.state.remediation = remediation or CapabilityService(settings)
     install_error_handlers(app)
     app.include_router(workspace.router)
@@ -52,6 +56,8 @@ def create_app(
                 status_code=503,
                 content={"error": "falkordb_unavailable", "detail": type(exc).__name__},
             )
+        if app.state.settings.auth == "on":  # hosted: never list graph (= tenant) names
+            return JSONResponse(content={"falkordb": "ok"})
         return JSONResponse(content={"falkordb": "ok", "graphs": graphs})
 
     return app
