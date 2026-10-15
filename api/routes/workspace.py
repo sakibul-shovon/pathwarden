@@ -8,12 +8,13 @@ from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 
 from api.api_errors import ApiError
+from api.auth import require_workspace_access
 from api.runtime.errors import NotFoundError
 from api.runtime.explain import rule_of_two
 from api.scenarios.demo import SCENARIOS
 from api.workspace import LiveModeUnavailableError, Workspace
 
-router = APIRouter(prefix="/api/ws/{ws}")
+router = APIRouter(prefix="/api/ws/{ws}", dependencies=[Depends(require_workspace_access)])
 
 
 def get_workspace(ws: str, request: Request) -> Workspace:

@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from api.auth import require_human, require_workspace_access
 from api.routes.workspace import Ws
 from api.runtime.explain import laundering_memories, lineage_subgraph, query_texts
 from api.runtime.gate import GateResult
 
-router = APIRouter(prefix="/api/ws/{ws}/actions")
+router = APIRouter(prefix="/api/ws/{ws}/actions", dependencies=[Depends(require_workspace_access)])
 
 
 class ApproveRequest(BaseModel):
@@ -56,7 +57,7 @@ def explain(ws: Ws, action_id: str) -> dict:
     }
 
 
-@router.post("/{action_id}/approve")
+@router.post("/{action_id}/approve", dependencies=[Depends(require_human)])
 def approve(ws: Ws, action_id: str, body: ApproveRequest | None = None) -> dict:
     """Human approval: declassify the payload, gate again; executes only if the gate allows."""
     body = body or ApproveRequest()
@@ -69,7 +70,7 @@ def approve(ws: Ws, action_id: str, body: ApproveRequest | None = None) -> dict:
     }
 
 
-@router.post("/{action_id}/reject")
+@router.post("/{action_id}/reject", dependencies=[Depends(require_human)])
 def reject(ws: Ws, action_id: str) -> dict:
     with ws.lock:
         outcome = ws.orchestrator().reject(action_id)
