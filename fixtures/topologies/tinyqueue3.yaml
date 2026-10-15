@@ -1,0 +1,21 @@
+name: tinyqueue3
+nodes:
+  sources:
+    - {name: public_issues, trust: untrusted}
+    - {name: deploy_env,    trust: secret}
+    - {name: internal_docs, trust: internal}
+  agents: [triage, fixer, release]
+  stores: [team_memory, workspace]
+  sinks:
+    - {name: public_release_page, external: true}
+    - {name: internal_changelog,  external: false}
+edges:   # [src, dst, cost]; cap_id = "<src>-><dst>"
+  - [public_issues, triage, 9]          # triage exists to read issues
+  - [triage, team_memory, 3]            # free-text memory writes (structured tasks are a separate, sanitized path)
+  - [team_memory, fixer, 4]
+  - [deploy_env, fixer, 6]              # fixer needs PORT; secret keys are rarely needed
+  - [internal_docs, fixer, 1]
+  - [fixer, workspace, 8]
+  - [workspace, release, 9]
+  - [release, public_release_page, 10]
+  - [release, internal_changelog, 2]
