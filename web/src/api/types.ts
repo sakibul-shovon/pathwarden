@@ -160,3 +160,40 @@ export interface ApiErrorBody {
   error: string;
   detail: string;
 }
+
+export interface TimeMarker {
+  t: number;
+  artifact_id: string;
+  key: string;
+}
+
+export interface TimeAction {
+  action_id: string;
+  status: string;
+  payload_id: string;
+}
+
+/** `GET /graph-at?t=`: the lineage graph as it was at logical time `t` (markers are workspace-wide). */
+export interface GraphAt {
+  t: number;
+  max_t: number;
+  nodes: LineageNode[];
+  edges: LineageEdge[];
+  actions: TimeAction[];
+  doubly_tainted: string[];
+  markers: {
+    poisoned_memory_written: TimeMarker | null;
+    draft_doubly_tainted: TimeMarker | null;
+  };
+}
+
+export interface MemoryEntry {
+  memory_id: string;
+  key: string;
+  kind: string;
+  written_by: string;
+  written_on: string;
+  quarantined: boolean;
+  untrusted_origins: string[];
+  quarantine_id: string | null;
+}
