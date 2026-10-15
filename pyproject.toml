@@ -19,6 +19,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mcp = [
+  "mcp>=2,<3",  # P9; the 2.x API differs from 1.x (FastMCP renamed), see scripts/probe_mcp.py
+]
 dev = [
   "pytest",
   "ruff",  # dev-only, approved in D-006
