@@ -13,14 +13,13 @@ import re
 from collections import Counter
 
 import pytest
-from fastapi.testclient import TestClient
 
 from api.main import create_app
 from api.runtime.registry import Registry
 from api.runtime.replay import replay
 from api.runtime.runtime import Runtime
 from eval import generate, metrics, run_eval
-from tests.conftest import FIXTURES
+from tests.conftest import FIXTURES, make_client
 
 SECRET = "PWDEMO-SECRET-7f3a9c21-NOT-A-REAL-KEY"
 TOKEN = "PWDEMO-TOKEN-b81e44d0-NOT-A-REAL-KEY"
@@ -416,7 +415,7 @@ def test_percentiles_use_nearest_rank():
 
 def test_the_eval_summary_endpoint_serves_the_generated_file_or_404(settings, manager, tmp_path):
     app = create_app(settings.model_copy(update={"state_dir": tmp_path}), manager)
-    client = TestClient(app, raise_server_exceptions=False)
+    client = make_client(app, settings)
 
     app.state.eval_results_dir = tmp_path / "nothing-here"
     missing = client.get("/api/eval/summary")

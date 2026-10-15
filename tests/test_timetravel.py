@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from tests.conftest import unknown_workspace_error
+
 BASE = "/api/ws/tinyqueue"
 
 
@@ -168,14 +170,15 @@ def test_quarantine_flags_are_the_current_state_not_history(client):
 
 
 # -------------------------------------------------- errors
-def test_invalid_times_are_rejected_in_the_documented_shape(client):
+def test_invalid_times_are_rejected_in_the_documented_shape(client, settings):
     run(client, "benign_43")
     for params in ({"t": "abc"}, {}):
         response = client.get(f"{BASE}/graph-at", params=params)
         assert (response.status_code, response.json()["error"]) == (422, "validation_error")
     negative = client.get(f"{BASE}/graph-at", params={"t": -1})
     assert (negative.status_code, negative.json()["error"]) == (400, "bad_request")
-    assert client.get("/api/ws/nope/timeline/max").json()["error"] == "unknown_workspace"
+    unknown = client.get("/api/ws/nope/timeline/max").json()["error"]
+    assert unknown == unknown_workspace_error(settings)
 
 
 # --------------------------------------------------

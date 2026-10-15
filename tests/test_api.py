@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
 
 from api.main import create_app
 from api.runtime.registry import Registry
@@ -12,7 +11,7 @@ from api.runtime.runtime import Runtime
 from api.scenarios.demo import SCENARIOS
 from api.settings import Settings
 from api.workspace import WorkspaceManager
-from tests.conftest import FIXTURES
+from tests.conftest import FIXTURES, make_client, unknown_workspace_error
 
 BASE = "/api/ws/tinyqueue"
 SECRET = "PWDEMO-SECRET-7f3a9c21-NOT-A-REAL-KEY"
@@ -227,8 +226,8 @@ def test_without_a_reset_the_poison_persists_and_holds_a_later_benign_run(client
 
 
 # -------------------------------------------------- error shape
-def test_errors_use_the_documented_shape(client):
-    assert client.get("/api/ws/nope/actions").json()["error"] == "unknown_workspace"
+def test_errors_use_the_documented_shape(client, settings):
+    assert client.get("/api/ws/nope/actions").json()["error"] == unknown_workspace_error(settings)
     assert client.post(f"{BASE}/scenarios/nope/run", json={}).json()["error"] == "unknown_scenario"
     assert client.get(f"{BASE}/actions/act-9999").json()["error"] == "not_found"
     assert client.get(f"{BASE}/sessions/s-9999/rule-of-two").status_code == 404
@@ -267,7 +266,7 @@ def test_a_restarted_api_continues_ids_without_collisions(client, manager, setti
     )
     app = create_app(settings.model_copy(update={"state_dir": tmp_path}), restarted)
 
-    second = run(TestClient(app), "benign_lookalike", reset=False)
+    second = run(make_client(app, settings), "benign_lookalike", reset=False)
 
     old = {s["id"] for s in first["sessions"]}
     new = {s["id"] for s in second["sessions"]}

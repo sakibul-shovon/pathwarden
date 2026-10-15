@@ -122,7 +122,31 @@ def manager(db: FalkorDB, settings: Settings, tmp_path: Path) -> Iterator[Worksp
             pass
 
 
+DEMO_KEY = "pwdemo-key-tinyqueue-0001"  # fixtures/api_keys.yaml -> workspace tinyqueue
+
+
+def human_headers(settings: Settings, key: str = DEMO_KEY) -> dict[str, str]:
+    """What the UI sends: the human header always, the workspace key when ``PW_AUTH=on``.
+
+    Run the whole suite in hosted mode with ``PW_AUTH=on`` (``make test-auth``).
+    """
+    headers = {"X-PW-Human": "true"}
+    if settings.auth == "on":
+        headers["Authorization"] = f"Bearer {key}"
+    return headers
+
+
+def unknown_workspace_error(settings: Settings) -> str:
+    """Hosted mode answers a workspace the key may not use (or that does not exist) with the same
+    403, so the answer never reveals which workspaces exist."""
+    return "forbidden" if settings.auth == "on" else "unknown_workspace"
+
+
+def make_client(app, settings: Settings) -> TestClient:
+    return TestClient(app, raise_server_exceptions=False, headers=human_headers(settings))
+
+
 @pytest.fixture
 def client(manager: WorkspaceManager, settings: Settings, tmp_path: Path) -> TestClient:
     app = create_app(settings.model_copy(update={"state_dir": tmp_path}), manager)
-    return TestClient(app, raise_server_exceptions=False)
+    return make_client(app, settings)
