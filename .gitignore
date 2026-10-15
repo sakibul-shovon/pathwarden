@@ -42,3 +42,7 @@ docker-compose.override.yml
 # --- scratch ---
 /tmp/
 /scratch/
+
+# --- evaluation: wall-clock latency varies between runs (A-08); results.csv/summary.* are committed
+/eval/results/latency.csv
+/eval/results/latency.md
