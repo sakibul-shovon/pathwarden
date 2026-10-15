@@ -646,14 +646,14 @@ def test_the_gateway_process_serves_an_sdk_client_over_stdio(
 def test_the_api_serves_the_gateway_graph_as_the_workspace_tinyqueue_mcp(
     settings, tmp_path, graph_name
 ):
-    from fastapi.testclient import TestClient
 
     from api.main import create_app
     from api.workspace import WorkspaceManager
+    from tests.conftest import make_client, unknown_workspace_error
 
     state = settings.model_copy(update={"state_dir": tmp_path / "api-state"})
     manager = WorkspaceManager(state, graph_names={"tinyqueue-mcp": graph_name})
-    client = TestClient(create_app(state, manager), raise_server_exceptions=False)
+    client = make_client(create_app(state, manager), settings)
 
     assert manager.get("tinyqueue-mcp").graph_name == graph_name
     assert WorkspaceManager(state).get("tinyqueue-mcp").graph_name == "pw_mcp_tinyqueue"
@@ -662,4 +662,5 @@ def test_the_api_serves_the_gateway_graph_as_the_workspace_tinyqueue_mcp(
     )
     assert ran.status_code == 200 and ran.json()["actions"][-1]["status"] == "held"
     assert client.get("/api/ws/tinyqueue-mcp/actions").json()[0]["status"] == "held"
-    assert client.get("/api/ws/nowhere-mcp/actions").json()["error"] == "unknown_workspace"
+    unknown = client.get("/api/ws/nowhere-mcp/actions").json()["error"]
+    assert unknown == unknown_workspace_error(settings)

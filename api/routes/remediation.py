@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 
+from api.auth import require_any_key, require_human
 from api.remediation.capability_graph import CapabilityService
 
 router = APIRouter(prefix="/api/remediation/{topology}")
@@ -23,7 +24,7 @@ def get_topology(request: Request, topology: str) -> dict:
     return service(request).state(topology)
 
 
-@router.post("/reset")
+@router.post("/reset", dependencies=[Depends(require_any_key), Depends(require_human)])
 def reset(request: Request, topology: str) -> dict:
     service(request).reset(topology)
     return service(request).state(topology)
@@ -35,7 +36,7 @@ def suggest(request: Request, topology: str) -> dict:
     return {"topology": topology, "candidates": service(request).suggest(topology)}
 
 
-@router.post("/apply")
+@router.post("/apply", dependencies=[Depends(require_any_key), Depends(require_human)])
 def apply(request: Request, topology: str, body: ApplyRequest) -> dict:
     """Revoke flows on the real graph (a human action; authentication arrives in P11)."""
     return service(request).apply(topology, body.cap_ids)

@@ -91,12 +91,12 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 | A-04 (**Resolved in P2**: sha256 of fixtures/policy.yaml) | §11 | `verdicts.jsonl` has a `policy_version` field that is never defined | Use sha256 of `fixtures/policy.yaml` bytes | P2 |
 | A-05 (**Resolved in P3**, Part B4) | §21, §24.6 | `make demo` is required to work but never specified | Runs the six §12.4 scenarios through the API/CLI and prints a verdict table; non-zero exit if any expectation differs | P3 |
 | A-06 (**Resolved in P3**, Part B4) | §18 vs §22 | `GET …/actions/{id}/explain` returns laundering + subgraph (q3, q6, q6b), but P4 owns q3 | Build q3/q6/q6b and `explain` in P3; P4 reuses | P3 |
-| A-07 | §17, §18 | Which endpoints need `X-PW-Human`? Remediation and eval endpoints are not workspace-scoped, so API keys cannot scope them | Human-only: action approve/reject, heal approve, quarantine release, remediation apply/reset/suggest-apply. Remediation/eval read endpoints are global and public-demo data. Record the list. | P11 |
+| A-07 (**Resolved in P11**, see Part B13) | §17, §18 | Which endpoints need `X-PW-Human`? Remediation and eval endpoints are not workspace-scoped, so API keys cannot scope them | Human-only: action approve/reject, heal approve, quarantine release, remediation apply/reset/suggest-apply. Remediation/eval read endpoints are global and public-demo data. Record the list. | P11 |
 | A-08 (**Resolved in P5**, Part B7) | §20.4–20.5 | Decision latency p50/p95 is wall-clock, but "non-LLM defenses must be byte-identical across runs" and `make eval` twice must give identical files | Write latency to a separate non-deterministic file (e.g. `eval/results/latency.csv`, gitignored or excluded from the identity check); `results.csv`/`summary.md` hold only deterministic columns | P5 |
 | A-09 (**Resolved in P7**, see Part B9) | §14 | The two time-travel markers ("poisoned memory written", "draft doubly tainted") need artifact-level taint, but rule 1 forbids new Cypher and §10 has no such query | Compute in Python from existing `q7` edges + `q6b` details (BFS over the returned subgraph). No new Cypher. Needs human OK because rule 1 says ask. | P7 |
 | A-10 (**Partly resolved in P4**, Part B5; finished in P8) | §13.5, §18 | Heal approval "re-runs Fixer and Release" — scripted or live? And `POST /forensics` accepts `mode:"llm"` before P8 exists | Heal re-run uses the same mode as the original run (scripted by default). `mode:"llm"` returns `{"error":"llm_not_configured"}` until P8. | P4/P8 |
 | A-11 (**Resolved in P9**, see Part B12) | §8.8 vs §16.3, §5 | `gateway.yaml` says the gateway spawns upstreams as stdio subprocesses, yet compose lists a `mock-upstreams` service | Decide after `probe_mcp.py`; likely the service just hosts the code image / is unused for stdio | P9 |
-| A-12 | §17, §21 | Is `fixtures/api_keys.yaml` committed? Hosted keys must not be | Commit demo keys only (`pwdemo-…`, non-provider format); hosted keys via an env-selected file or env var | P11 |
+| A-12 (**Resolved in P11**, see Part B13) | §17, §21 | Is `fixtures/api_keys.yaml` committed? Hosted keys must not be | Commit demo keys only (`pwdemo-…`, non-provider format); hosted keys via an env-selected file or env var | P11 |
 | A-13 (**Resolved in P0**) | §6, §23 | API port, FalkorDB env var names not specified | Port 8000 (Uvicorn default); `PW_FALKORDB_HOST/PORT/PASSWORD` (see `.env.example`) | P0 |
 | A-14 | §12.3, §24 | LLM provider and README license. **Provider = Groq** (human, 2026-10-15). **Still open: exact model, the key itself (goes only in the local `.env` as `PW_LLM_API_KEY`), and the license** | Via LiteLLM a Groq model is addressed as `groq/<model>` (to be confirmed by the P8 probe — rule 13; also confirm how the key is passed). Pick the model at P8 from Groq's current list. Free-tier rate/token limits may throttle the live study and the B3 full-trace judge (long prompts): measure in the probe, add backoff, reduce nothing silently. License: the human chooses (e.g. MIT or Apache-2.0) before P12-T6 | P8/P12 |
 | A-15 | §23 | Hosted FalkorDB (Cloud/Railway) support for `GRAPH.COPY` and `algo.maxFlow` is not stated | Run `make probe` against the hosted endpoint as soon as one exists (before P12) | P0 (local) / P12 |
@@ -251,6 +251,25 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 ### D-027 — tool server notes
 - `pathwarden_forensics` runs the scripted mode (LLM mode arrives with P8) and quarantines automatically (risk-reducing, rule 8). Domain errors are `ToolError`s with a readable message. `Workspace.quarantine_preview()` was added (a thin wrapper of the existing forensic tool); no new Cypher anywhere in P9.
 - **Known gaps:** the gateway has no `sanitize` class (nothing is ever marked sanitized through it); the live-LLM three-agent demo needs P8; no authentication on the tool server (P11, G-002); no human click-through of the UI.
+
+## Part B13 — P11 outcomes (2026-10-16)
+
+### A-07 and A-12 — Resolved
+- **A-07 (which endpoints are human-only):** approve, reject, heal-approve, quarantine release (workspace-scoped) and remediation apply and reset (global). The list is pinned by `tests/test_invariants.py` and written in `docs/SECURITY.md`. Remediation and eval **reads** (and `remediation/.../suggest`, which only computes on a temporary copy) are global public demo data. Workspace `reset` and `scenarios/.../run` rebuild the tenant's own demo graph and need only the workspace key (they are destructive to demo data, not risk-increasing).
+- **A-12 (keys file):** `fixtures/api_keys.yaml` is committed with three DEMO keys (`pwdemo-key-...`, non-provider format). Hosted keys come from `PW_API_KEYS` (wins) or `PW_API_KEYS_FILE`; neither is ever logged.
+
+### D-028 — key transport, tenants and uniform errors
+- **Status:** Accepted (agent) · key in `Authorization: Bearer <key>` (the plan does not name the header); keys are compared in constant time; tenants are the workspaces named by the keys, each sharing the demo registry (agents, sources, sinks) but with its own graphs (`pw_<ws>`, `__sbx`, `pw_mcp_<ws>`) and state folder. Names must match `^[a-z0-9][a-z0-9_-]{0,31}$` and must not end in `-mcp`.
+- A request the key may not make, **and** a request for a workspace that does not exist, answer with the same 403 `forbidden`; `GET /api/health` omits the graph list in hosted mode. In local mode (`PW_AUTH=off`) the old 404 `unknown_workspace` and the graph list stay.
+- Hosted mode refuses to start without usable keys (fail closed). CORS is not added (the UI uses the same origin or a proxy; stated as a non-goal in `docs/SECURITY.md`).
+
+### D-029 — the human header is required in both modes
+- `X-PW-Human: true` is required on the human-only routes **also with `PW_AUTH=off`** (plan §17 mentions it for approvals in general; the phase file tests it in both modes). It is a deliberate-action guard, not authentication; the UI sends it on its human actions. Tests send it by default (`tests/conftest.py::human_headers`), security tests use a raw client.
+
+### D-030 — tests in both modes; CI
+- `make test-auth` runs the whole suite with `PW_AUTH=on` (set from Python so it works with cmd.exe too); CI runs both. Mode-dependent expectations use `unknown_workspace_error(settings)`. CI now installs `.[dev,mcp]`: the P9 tests need the SDK and the old CI line would have failed on them (CI has still never been observed on GitHub).
+- **FastAPI 0.143 detail:** included routers are wrapped in private objects, so `app.routes` cannot be walked; the route invariant walks `api/routes/*.py` and asserts that every module is included in `api/main.py`.
+- **Known gaps after P11:** the MCP tool server and gateway are not authenticated (local stdio processes); `X-PW-Human` is not authentication; no CORS/TLS/rate limiting (non-goals).
 
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 

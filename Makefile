@@ -9,7 +9,7 @@ else
 endif
 PY ?= $(if $(wildcard $(VENV_PY)),$(VENV_PY),python)
 
-.PHONY: up down probe probe-mcp test lint fmt hooks api demo demo-mcp eval eval-live web mcp-server gateway
+.PHONY: up down probe probe-mcp test test-auth lint fmt hooks api demo demo-mcp eval eval-live web mcp-server gateway
 
 up:
 	docker compose up -d --build
@@ -22,6 +22,10 @@ probe:
 
 test:
 	$(PY) -m pytest
+
+# the whole suite in hosted mode (PW_AUTH=on: workspace keys required); set in Python so it also works with cmd.exe
+test-auth:
+	$(PY) -c "import os, sys, pytest; os.environ['PW_AUTH'] = 'on'; sys.exit(pytest.main([]))"
 
 # Explicit code folders only: never point ruff at the repo root (it would reformat Markdown, incl. plan.md).
 CODE_DIRS := api tests scripts eval mock_upstreams

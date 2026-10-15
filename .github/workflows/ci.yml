@@ -42,7 +42,7 @@ jobs:
           cache: pip
 
       - name: Install
-        run: python -m pip install -c constraints.txt -e ".[dev]"
+        run: python -m pip install -c constraints.txt -e ".[dev,mcp]"
 
       - name: Wait for FalkorDB
         run: |
@@ -57,6 +57,9 @@ jobs:
 
       - name: Tests (no LLM key, no network beyond localhost)
         run: make test
+
+      - name: Tests in hosted mode (PW_AUTH=on, workspace keys required)
+        run: make test-auth
 
   web:
     runs-on: ubuntu-latest

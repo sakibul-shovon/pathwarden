@@ -186,3 +186,73 @@ def test_shell_and_query_files_use_lf_line_endings():
     ]
     for name in wanted:
         assert b"\r" not in (REPO / name).read_bytes(), f"{name} contains CR characters"
+
+
+# -------------------------------------------------- P11: every route is guarded or classified
+HUMAN_ONLY_ROUTES = {
+    "POST /api/ws/{ws}/actions/{action_id}/approve",
+    "POST /api/ws/{ws}/actions/{action_id}/reject",
+    "POST /api/ws/{ws}/heal/{action_id}/approve",
+    "POST /api/ws/{ws}/quarantine/{quarantine_id}/release",
+    "POST /api/remediation/{topology}/apply",
+    "POST /api/remediation/{topology}/reset",
+}
+# mutating routes that are deliberately NOT human-only (docs/SECURITY.md explains why)
+OTHER_MUTATING_ROUTES = {
+    "POST /api/ws/{ws}/reset",
+    "POST /api/ws/{ws}/scenarios/{name}/run",
+    "POST /api/ws/{ws}/forensics/{action_id}",
+    "POST /api/remediation/{topology}/suggest",
+}
+
+
+def _guards(dependant) -> set[str]:
+    names: set[str] = set()
+    for dep in dependant.dependencies:
+        names.add(getattr(dep.call, "__name__", ""))
+        names |= _guards(dep)
+    return names
+
+
+def _route_modules() -> list:
+    """Every ``api/routes/*.py`` module with a ``router`` (found on disk, never hand-listed)."""
+    import importlib
+
+    names = sorted(p.stem for p in (REPO / "api" / "routes").glob("*.py") if p.stem != "__init__")
+    modules = [importlib.import_module(f"api.routes.{name}") for name in names]
+    return [m for m in modules if hasattr(m, "router")]
+
+
+def test_every_router_is_included_in_the_app():
+    """A router module nobody includes would hide its routes from the checks below."""
+    main = (REPO / "api" / "main.py").read_text(encoding="utf-8")
+    for module in _route_modules():
+        alias = module.__name__.rsplit(".", 1)[1]
+        included = f"{alias}.router" in main or f"{alias}_routes.router" in main
+        assert included, f"api/routes/{alias}.py is not included in api/main.py"
+
+
+def test_every_route_is_covered_by_the_workspace_key_or_explicitly_classified():
+    from fastapi.routing import APIRoute
+
+    seen_mutating: set[str] = set()
+    for module in _route_modules():
+        for route in module.router.routes:
+            assert isinstance(route, APIRoute), route
+            guards = _guards(route.dependant)
+            for method in sorted(route.methods - {"HEAD", "OPTIONS"}):
+                label = f"{method} {route.path}"
+                if route.path.startswith("/api/ws/"):
+                    assert "require_workspace_access" in guards, f"{label} is not key-scoped"
+                if method == "GET":
+                    assert "require_human" not in guards, f"{label}: a read needs no human header"
+                    continue
+                seen_mutating.add(label)
+                assert label in HUMAN_ONLY_ROUTES | OTHER_MUTATING_ROUTES, (
+                    f"{label} is a new mutating route: classify it here and in docs/SECURITY.md"
+                )
+                assert ("require_human" in guards) == (label in HUMAN_ONLY_ROUTES), label
+                if label.startswith("POST /api/remediation/") and label in HUMAN_ONLY_ROUTES:
+                    assert "require_any_key" in guards, f"{label} needs a key when hosted"
+    stale = (HUMAN_ONLY_ROUTES | OTHER_MUTATING_ROUTES) - seen_mutating
+    assert not stale, f"classified routes that no longer exist: {sorted(stale)}"

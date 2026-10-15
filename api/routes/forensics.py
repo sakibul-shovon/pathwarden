@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from api.api_errors import ApiError
+from api.auth import require_human, require_workspace_access
 from api.forensics.agent import LlmModeUnavailableError
 from api.routes.workspace import Ws
 
-router = APIRouter(prefix="/api/ws/{ws}")
+router = APIRouter(prefix="/api/ws/{ws}", dependencies=[Depends(require_workspace_access)])
 
 
 class ForensicsRequest(BaseModel):
@@ -34,13 +35,13 @@ def run_forensics(ws: Ws, action_id: str, body: ForensicsRequest | None = None) 
         ) from None
 
 
-@router.post("/heal/{action_id}/approve")
+@router.post("/heal/{action_id}/approve", dependencies=[Depends(require_human)])
 def approve_heal(ws: Ws, action_id: str, body: HealRequest | None = None) -> dict:
     """Human approval of the healed release: re-run in the main graph, gate, execute, supersede."""
     return ws.heal_approve(action_id, (body or HealRequest()).approver)
 
 
-@router.post("/quarantine/{quarantine_id}/release")
+@router.post("/quarantine/{quarantine_id}/release", dependencies=[Depends(require_human)])
 def release_quarantine(ws: Ws, quarantine_id: str) -> dict:
     """Human undo of a quarantine (reversible; the Quarantine node stays as the audit record)."""
     return {"quarantine_id": quarantine_id, "released": ws.release_quarantine(quarantine_id)}

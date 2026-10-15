@@ -13,7 +13,6 @@ from collections import defaultdict, deque
 
 import pytest
 import yaml
-from fastapi.testclient import TestClient
 
 from api.main import create_app
 from api.remediation import capability_graph as cg
@@ -21,7 +20,7 @@ from api.remediation.capability_graph import CapabilityService, load_topology
 from api.remediation.mincut import CapEdge, extract_cut
 from api.runtime.errors import NotFoundError, ProvenanceError
 from eval import remediation_optimum as opt
-from tests.conftest import FIXTURES
+from tests.conftest import FIXTURES, make_client
 
 PLAN = (FIXTURES.parent / "plan.md").read_text(encoding="utf-8")
 TOPOLOGIES = ["tinyqueue3", "enterprise12"]
@@ -399,7 +398,7 @@ def test_the_optimum_report_has_a_non_negative_gap_and_a_toxic_free_solution(ser
 @pytest.fixture
 def client(service, manager, settings, tmp_path):
     app = create_app(settings.model_copy(update={"state_dir": tmp_path}), manager, service)
-    return TestClient(app, raise_server_exceptions=False)
+    return make_client(app, settings)
 
 
 def test_the_remediation_api_follows_plan_18(client):

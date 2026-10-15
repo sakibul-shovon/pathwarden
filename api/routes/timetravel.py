@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from api.api_errors import ApiError
+from api.auth import require_workspace_access
 from api.routes.workspace import Ws
 from api.runtime import timetravel
 
-router = APIRouter(prefix="/api/ws/{ws}")
+router = APIRouter(prefix="/api/ws/{ws}", dependencies=[Depends(require_workspace_access)])
 
 
 @router.get("/timeline/max")

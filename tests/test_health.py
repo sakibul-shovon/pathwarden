@@ -14,7 +14,10 @@ def test_health_reports_ok_and_lists_a_graph_that_exists(settings, db, graph_nam
     assert response.status_code == 200
     body = response.json()
     assert body["falkordb"] == "ok"
-    assert graph_name in body["graphs"]
+    if settings.auth == "on":  # hosted: graph (= tenant) names are never listed
+        assert "graphs" not in body
+    else:
+        assert graph_name in body["graphs"]
 
 
 def test_health_reports_unreachable_database_in_the_documented_error_shape():
