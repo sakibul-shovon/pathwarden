@@ -128,6 +128,11 @@
       "text": "B2 misses cross-agent attacks by construction; present it as illustrating the blind spot."
     }
   ],
+  "limitations": [
+    "The scenarios are synthetic and scripted; ground truth comes from how they were constructed.",
+    "The gate and the dataset share one model of lineage (sources, sanitizers, approvals, sinks). A perfect PW score therefore shows that the implementation matches that model, not that the model covers real-world attacks; the live-agent study (phase P8) is where that is tested.",
+    "Latency is measured separately (`latency.md`, not deterministic) and is not part of this file."
+  ],
   "per_family": {
     "ATK-disguise": {
       "B0": {

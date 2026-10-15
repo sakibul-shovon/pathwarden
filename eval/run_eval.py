@@ -258,8 +258,19 @@ def summarise(rows: list[dict], remediation: dict | None = None) -> dict:
         "per_family": per_family,
         "witness_accuracy": witness,
         "falsification_criteria": _criteria(defenses),
+        "limitations": LIMITATIONS,
         **({"remediation": remediation} if remediation else {}),
     }
+
+
+# One source for summary.md and summary.json, so the UI shows the same caveats as the report.
+LIMITATIONS = [
+    "The scenarios are synthetic and scripted; ground truth comes from how they were constructed.",
+    "The gate and the dataset share one model of lineage (sources, sanitizers, approvals, sinks). A "
+    "perfect PW score therefore shows that the implementation matches that model, not that the model "
+    "covers real-world attacks; the live-agent study (phase P8) is where that is tested.",
+    "Latency is measured separately (`latency.md`, not deterministic) and is not part of this file.",
+]
 
 
 def _criteria(defenses: dict) -> list[dict]:
@@ -368,17 +379,7 @@ def render_markdown(summary: dict) -> str:
                 for c in r["candidates"]
             )
             lines += ["", f"- {name} candidates: {cells}."]
-    lines += [
-        "",
-        "## Limitations",
-        "",
-        "- The scenarios are synthetic and scripted; ground truth comes from how they were constructed.",
-        "- The gate and the dataset share one model of lineage (sources, sanitizers, approvals, sinks). A "
-        "perfect PW score therefore shows that the implementation matches that model, not that the model "
-        "covers real-world attacks; the live-agent study (phase P8) is where that is tested.",
-        "- Latency is measured separately (`latency.md`, not deterministic) and is not part of this file.",
-        "",
-    ]
+    lines += ["", "## Limitations", "", *(f"- {text}" for text in LIMITATIONS), ""]
     return "\n".join(lines)
 
 
