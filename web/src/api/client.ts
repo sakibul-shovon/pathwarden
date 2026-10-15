@@ -1,8 +1,13 @@
 import type {
   ActionDetail,
   ActionListItem,
+  AgentWitness,
   ApiErrorBody,
+  ApplyResult,
   Artifact,
+  Candidate,
+  CapState,
+  EvalSummary,
   Explain,
   ForensicReport,
   GraphAt,
@@ -53,6 +58,15 @@ async function request<T>(
 const ws = (path: string): string => `/ws/${WS}${path}`;
 
 export const api = {
+  evalSummary: () => request<EvalSummary>("GET", "/eval/summary"),
+  capState: (topology: string) => request<CapState>("GET", `/remediation/${topology}`),
+  capReset: (topology: string) => request<CapState>("POST", `/remediation/${topology}/reset`),
+  capSuggest: (topology: string) =>
+    request<{ topology: string; candidates: Candidate[] }>("POST", `/remediation/${topology}/suggest`),
+  capApply: (topology: string, capIds: string[]) =>
+    request<ApplyResult>("POST", `/remediation/${topology}/apply`, { cap_ids: capIds }),
+  capWitness: (topology: string, agent: string) =>
+    request<AgentWitness>("GET", `/remediation/${topology}/witness/${encodeURIComponent(agent)}`),
   scenarios: () => request<ScenarioInfo[]>("GET", ws("/scenarios")),
   run: (name: string, guard: boolean, mode: "scripted" | "live") =>
     request<RunResult>("POST", ws(`/scenarios/${name}/run`), { guard, mode }),

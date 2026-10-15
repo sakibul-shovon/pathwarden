@@ -150,3 +150,14 @@ button.danger:disabled { opacity: 0.5; cursor: not-allowed; }
 .markers { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .markers button { background: var(--card); color: var(--fg); border: 2px solid var(--edge); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; }
 .markers button.here { border-color: var(--untrusted); font-weight: 700; }
+
+.cap-graph { height: 520px; }
+.row-sel { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+button.secondary { background: var(--card); color: var(--fg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+button.secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+tr.best td { font-weight: 700; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pill-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.pill-list code { border: 1px solid var(--border); border-radius: 4px; padding: 0 6px; }
+.limits { margin: 6px 0 0; padding-left: 20px; }
+.notrun { color: var(--muted); font-style: italic; }

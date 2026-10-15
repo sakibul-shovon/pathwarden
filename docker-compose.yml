@@ -17,3 +17,6 @@ services:
       PW_FALKORDB_HOST: falkordb
     ports:
       - "8000:8000"
+    volumes:
+      # the generated evaluation results (`make eval`), read-only, for GET /api/eval/summary
+      - ./eval/results:/app/eval/results:ro
