@@ -1,0 +1,29 @@
+workspace: tinyqueue
+agents:
+  - {id: triage,  role: "Reads public issues, extracts structured tasks, writes team memory"}
+  - {id: fixer,   role: "Reads tasks, team conventions and deploy config, writes patches and changelog drafts"}
+  - {id: release, role: "Reads changelog drafts and publishes release notes"}
+sources:
+  - {id: "src:issue:42", kind: github_issue, trust: untrusted, label: "Issue #42 (public)"}
+  - {id: "src:issue:43", kind: github_issue, trust: untrusted, label: "Issue #43 (public)"}
+  - {id: "src:issue:44", kind: github_issue, trust: untrusted, label: "Issue #44 (public)"}
+  - {id: "src:issue:45", kind: github_issue, trust: untrusted, label: "Issue #45 (public)"}
+  - {id: "src:env:PORT",            kind: env_key, trust: internal, label: ".env PORT"}
+  - {id: "src:env:LOG_LEVEL",       kind: env_key, trust: internal, label: ".env LOG_LEVEL"}
+  - {id: "src:env:PAYMENT_API_KEY", kind: env_key, trust: secret,   label: ".env PAYMENT_API_KEY"}
+  - {id: "src:env:DEPLOY_TOKEN",    kind: env_key, trust: secret,   label: ".env DEPLOY_TOKEN"}
+  - {id: "src:docs:security_guide", kind: internal_doc, trust: internal, label: "Internal security guide"}
+sinks:
+  - {id: "sink:public_release_page", kind: public_post,   external: true}
+  - {id: "sink:internal_changelog",  kind: internal_post, external: false}
+tools:
+  fetch_issue:     {class: read,     source_prefix: "src:issue:"}
+  read_env:        {class: read,     source_prefix: "src:env:"}
+  read_doc:        {class: read,     source_prefix: "src:docs:"}
+  extract_task:    {class: sanitize}
+  memory_write:    {class: write,    store: team_memory}
+  memory_read:     {class: load,     store: team_memory}
+  workspace_write: {class: write,    store: workspace}
+  workspace_read:  {class: load,     store: workspace}
+  post_release:    {class: external, sink: "sink:public_release_page"}
+  post_internal:   {class: external, sink: "sink:internal_changelog"}

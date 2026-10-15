@@ -1,0 +1,11 @@
+extra_agents:
+  - {id: relay1,   role: "Copies drafts between workspaces"}
+  - {id: relay2,   role: "Copies drafts between workspaces"}
+  - {id: relay3,   role: "Copies drafts between workspaces"}
+  - {id: curator1, role: "Rewrites team memory"}
+  - {id: curator2, role: "Rewrites team memory"}
+  - {id: curator3, role: "Rewrites team memory"}
+  - {id: curator4, role: "Rewrites team memory"}
+  - {id: auditor,  role: "Reads deploy config for internal audits"}
+extra_sources:
+  - {id: "src:env:ALL", kind: env_file, trust: secret, label: ".env, all keys (PW-coarse ablation only)"}
