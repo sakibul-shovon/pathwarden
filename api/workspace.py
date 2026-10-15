@@ -17,7 +17,7 @@ from api.forensics.agent import ForensicAgent, LlmModeUnavailableError
 from api.forensics.report import ForensicReport
 from api.forensics.tools import ForensicTools, Sandbox
 from api.graph.client import NamedGraph, connect
-from api.graph.schema import main_graph_name, reset_graph
+from api.graph.schema import main_graph_name, mcp_graph_name, reset_graph
 from api.runtime.errors import ActionStateError, NotFoundError, ProvenanceError
 from api.runtime.events import EventLog
 from api.runtime.gate import Gate
@@ -29,6 +29,7 @@ from api.scenarios.demo import SCENARIOS, build_result, run_scenario
 from api.settings import Settings
 
 FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
+MCP_SUFFIX = "-mcp"
 
 
 __all__ = ["LiveModeUnavailableError", "LlmModeUnavailableError", "Workspace", "WorkspaceManager"]
@@ -46,12 +47,13 @@ class Workspace:
         state_dir: Path,
         fixtures_dir: Path = FIXTURES_DIR,
         graph_name: str | None = None,
+        registry_workspace: str | None = None,
     ):
         self.name = name
         self._db = db
         self.fixtures = Fixtures(fixtures_dir)
         self.registry = Registry.load(fixtures_dir / "registry.yaml")
-        if self.registry.workspace != name:
+        if self.registry.workspace != (registry_workspace or name):
             raise NotFoundError(f"workspace {name!r}")
         self.policy = load_policy(fixtures_dir / "policy.yaml")
         self._policy_version = policy_version(fixtures_dir / "policy.yaml")
@@ -216,6 +218,10 @@ class Workspace:
             self._quarantines.pop(quarantine_id, None)
             return released
 
+    def quarantine_preview(self, source_id: str) -> dict:
+        """Read-only preview of a quarantine of everything derived from ``source_id``."""
+        return self._tools().preview_quarantine(source_id)
+
     def memory_inventory(self) -> list[dict]:
         """q8 rows plus ``quarantine_id``: the newest remembered quarantine covering the entry
         (``None`` when it is not quarantined or the id is unknown, e.g. after an API restart)."""
@@ -252,10 +258,14 @@ class WorkspaceManager:
             if name not in self._workspaces:
                 if self._db is None:
                     self._db = connect(self._settings)
+                # "<ws>-mcp" is the view of the lineage the MCP gateway wrote to pw_mcp_<ws> (P9)
+                base = name.removesuffix(MCP_SUFFIX)
+                default_graph = mcp_graph_name(base) if base != name else None
                 self._workspaces[name] = Workspace(
                     name,
                     self._db,
                     self._settings.state_dir,
-                    graph_name=self._graph_names.get(name),
+                    graph_name=self._graph_names.get(name) or default_graph,
+                    registry_workspace=base,
                 )
             return self._workspaces[name]

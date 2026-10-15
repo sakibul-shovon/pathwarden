@@ -9,7 +9,7 @@ else
 endif
 PY ?= $(if $(wildcard $(VENV_PY)),$(VENV_PY),python)
 
-.PHONY: up down probe test lint fmt hooks api demo eval eval-live web mcp-server gateway
+.PHONY: up down probe probe-mcp test lint fmt hooks api demo demo-mcp eval eval-live web mcp-server gateway
 
 up:
 	docker compose up -d --build
@@ -24,7 +24,7 @@ test:
 	$(PY) -m pytest
 
 # Explicit code folders only: never point ruff at the repo root (it would reformat Markdown, incl. plan.md).
-CODE_DIRS := api tests scripts eval
+CODE_DIRS := api tests scripts eval mock_upstreams
 
 lint:
 	$(PY) -m ruff check $(CODE_DIRS)
@@ -53,8 +53,16 @@ eval-live:
 web:
 	cd web && npm run dev
 
-mcp-server:
-	@echo "make mcp-server: not implemented until P9 (docs/phases/P9-mcp.md)" && exit 1
+# P9: needs the extra `mcp` (pip install -e ".[mcp]") and FalkorDB
+probe-mcp:
+	$(PY) scripts/probe_mcp.py
 
+mcp-server:
+	$(PY) -m api.mcp.tool_server
+
+# one gateway = one agent: set PW_WORKSPACE, PW_AGENT_ID, PW_DAY_LABEL, PW_TASK_REF (see docs/MCP.md)
 gateway:
-	@echo "make gateway: not implemented until P9 (docs/phases/P9-mcp.md)" && exit 1
+	$(PY) -m api.mcp.gateway
+
+demo-mcp:
+	$(PY) -m api.mcp.demo

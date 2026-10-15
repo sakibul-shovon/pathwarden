@@ -1,0 +1,19 @@
+workspace: tinyqueue
+graph: pw_mcp_tinyqueue
+ui_url: http://localhost:5173
+transport: stdio                      # gateway spawns each upstream as a subprocess (verify in probe_mcp.py)
+upstreams:
+  github:    {command: ["python", "-m", "mock_upstreams.github"]}
+  env:       {command: ["python", "-m", "mock_upstreams.env"]}
+  memory:    {command: ["python", "-m", "mock_upstreams.memory"]}
+  workspace: {command: ["python", "-m", "mock_upstreams.workspace"]}
+  release:   {command: ["python", "-m", "mock_upstreams.release"]}
+tools:
+  github.get_issue:          {class: read,     source_id: "src:issue:{number}"}
+  env.get_env:               {class: read,     source_id: "src:env:{key}"}
+  memory.memory_write:       {class: write,    store: team_memory, kind: memory, key_arg: key, content_arg: content}
+  memory.memory_read:        {class: load,     store: team_memory, key_arg: key}
+  memory.memory_list:        {class: load,     store: team_memory, prefix_arg: prefix}
+  workspace.workspace_write: {class: write,    store: workspace,   kind: draft,  key_arg: key, content_arg: content}
+  workspace.workspace_read:  {class: load,     store: workspace,   key_arg: key}
+  release.post_release:      {class: external, sink: "sink:public_release_page", content_arg: content}
