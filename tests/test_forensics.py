@@ -316,3 +316,14 @@ def test_the_sandbox_tool_refuses_unknown_agents_and_malformed_tasks(client, man
         tools.sandbox_replay("issue:42", ["fixer", "wizard"])
     with pytest.raises(ProvenanceError):
         tools.sandbox_replay("issue:42", ["fixer"])  # no release => no action to gate
+
+
+def test_explain_keeps_both_witness_paths_after_the_quarantine_blocks_the_action(client):
+    action = held(client)
+    forensics(client, action)
+
+    gate = client.get(f"{BASE}/actions/{action}/explain").json()["gate"]
+
+    assert (gate["verdict"], gate["reason"]) == ("BLOCK", "QUARANTINED_LINEAGE")
+    assert gate["untrusted_witness"][-1] == "src:issue:42"  # still drawn on the lineage graph
+    assert gate["secret_witness"][-1].startswith("src:env:")
