@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from api.runtime.runtime import Runtime
 
 
@@ -9,12 +11,23 @@ class ReplayError(ValueError):
     """The scenario is malformed (unknown op or reference). Replay fails closed."""
 
 
-def replay(runtime: Runtime, scenario: dict) -> dict[str, str]:
-    """Execute ``scenario["events"]`` in order. Returns {local name -> real id}."""
+COARSE_ENV_SOURCE = "src:env:ALL"
+
+
+def replay(runtime: Runtime, scenario: dict, *, coarse: bool = False) -> dict[str, str]:
+    """Execute ``scenario["events"]`` in order. Returns {local name -> real id}.
+
+    ``coarse=True`` applies the three PW-coarse ablation overrides of plan §20.3 (v1 behaviour):
+    1. sessions of the same (agent, day) are merged, so context keeps accumulating;
+    2. every ``src:env:*`` source becomes ``src:env:ALL`` (one secret artifact for the whole .env);
+    3. ``sanitize`` runs as a plain ``memory_write`` (kind memory, ``sanitized: false``) that
+       derives from the whole session context, so the sanitizer no longer cuts anything.
+    """
     for source in scenario.get("extra_sources", []):
         runtime.add_source(source["id"], source["kind"], source["trust"], source["label"])
 
     ids: dict[str, str] = {}
+    merged: dict[tuple[str, str], str] = {}  # (agent, day) -> real session id (coarse only)
 
     def real(name: str) -> str:
         try:
@@ -26,17 +39,32 @@ def replay(runtime: Runtime, scenario: dict) -> dict[str, str]:
         op = event.get("op")
         try:
             if op == "start_session":
-                ids[event["sid"]] = runtime.start_session(
-                    event["agent"], event["day"], event["task_ref"]
-                )
+                key = (event["agent"], event["day"])
+                if coarse and key in merged:
+                    ids[event["sid"]] = merged[key]
+                else:
+                    ids[event["sid"]] = runtime.start_session(*key, event["task_ref"])
+                    merged[key] = ids[event["sid"]]
             elif op == "read_source":
+                source_id = event["source_id"]
+                if coarse and source_id.startswith("src:env:"):
+                    source_id = COARSE_ENV_SOURCE
                 ids[event["ref"]] = runtime.read_source(
-                    real(event["sid"]), event["tool"], event["source_id"], event["content"]
+                    real(event["sid"]), event["tool"], source_id, event["content"]
                 )
             elif op == "sanitize":
-                ids[event["ref"]] = runtime.sanitize(
-                    real(event["sid"]), real(event["input"]), event["extracted"], event["key"]
-                )
+                if coarse:
+                    ids[event["ref"]] = runtime.write(
+                        real(event["sid"]),
+                        "memory_write",
+                        "memory",
+                        event["key"],
+                        json.dumps(event["extracted"], sort_keys=True),
+                    )
+                else:
+                    ids[event["ref"]] = runtime.sanitize(
+                        real(event["sid"]), real(event["input"]), event["extracted"], event["key"]
+                    )
             elif op == "write":
                 ids[event["ref"]] = runtime.write(
                     real(event["sid"]),

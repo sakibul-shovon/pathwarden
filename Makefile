@@ -24,7 +24,7 @@ test:
 	$(PY) -m pytest
 
 # Explicit code folders only: never point ruff at the repo root (it would reformat Markdown, incl. plan.md).
-CODE_DIRS := api tests scripts
+CODE_DIRS := api tests scripts eval
 
 lint:
 	$(PY) -m ruff check $(CODE_DIRS)
@@ -45,7 +45,7 @@ demo:
 	$(PY) -m api.scenarios.demo
 
 eval:
-	@echo "make eval: not implemented until P5 (docs/phases/P5-evaluation.md)" && exit 1
+	$(PY) -m eval.run_eval
 
 eval-live:
 	@echo "make eval-live: not implemented until P8 (docs/phases/P8-live-llm.md)" && exit 1

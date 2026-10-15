@@ -5,7 +5,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 - **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** P10a (VERIFYING); P0-P4 DONE
+- **Active phase:** P5 (VERIFYING); P0-P4 and P10a DONE
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -17,8 +17,8 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 | P2 | Gate | 1 | DONE | `phase/p2-gate` | - | 86 tests, 4 sabotage checks; merged `bce8e9b`, tag `phase-p2-done` | no independent review (G-001); CI not observed |
 | P3 | Scripted agents, demo scenarios, core API | 1 | DONE | `phase/p3-scripted-api` | - | 143 tests, make demo 6/6; merged `46adba1`, tag `phase-p3-done` | CI not observed |
 | P4 | Forensic Agent, quarantine, healing, memory API | 1 | DONE | `phase/p4-forensics` | - | 165 tests, probe 36/36, 4 sabotage checks; merged `e6f2588`, tag `phase-p4-done` | **D-017 awaiting human review**; no independent review; CI not observed |
-| P10a | UI: scaffold, Run, Investigate | 1 | VERIFYING | `phase/p10a-ui-run-investigate` | P3, P4 | strict tsc build ok; verified in a real browser (headless Edge) | A-16 resolved; CI `web` job enabled |
-| P5 | Evaluation (non-LLM defenses) | 2 | NOT_STARTED | `phase/p5-eval` | P3 (+P2) | — | cross-agent review recommended |
+| P10a | UI: scaffold, Run, Investigate | 1 | DONE | `phase/p10a-ui-run-investigate` | - | strict tsc build, verified in headless Edge; merged `0f8de3b`, tag `phase-p10a-done` | CI not observed; no human click-through |
+| P5 | Evaluation (non-LLM defenses) | 2 | VERIFYING | `phase/p5-eval` | P2, P3 | 190 tests; `make eval` twice byte-identical; 6 sabotage checks | results reported as measured |
 | P6 | Remediation (max-flow) | 2 | NOT_STARTED | `phase/p6-remediation` | P0 only | — | can run in a worktree beside P1–P5 |
 | P7 | Time travel | 2 | NOT_STARTED | `phase/p7-timetravel` | P3 | — | needs A-09 decision |
 | P10b | UI: Memory, Time travel | 2 | NOT_STARTED | `phase/p10b-ui-memory-time` | P4, P7, P10a | — | |
@@ -83,6 +83,11 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-16 | P10a-T7 | Investigate with `?autoforensics=1` + screenshot (`docs/img/investigate-attack.png`) | 0 | verdict card (decision 2 ms, LLM calls 0), lineage graph with untrusted witness (orange, thick, via the convention) and secret witness (dotted), `task:42` dashed, quarantined nodes grey, sources as diamonds; laundering table; report `APPROVE_HEALED_RELEASE`; held-vs-healed diff; Approve button. **Screenshot exposed a defect** (witness paths vanished after quarantine because the verdict became BLOCK): fixed (`explain` returns witnesses independent of quarantine) + test; re-shot, highlights present | Claude Code |
 | 2026-10-16 | P10a-T7 | `?autoforensics=1&autoheal=1` (the full browser flow) | 0 | banner `Healed release act-0002 executed; act-0001 is superseded`; API: act-0001 superseded, act-0002 executed; public page has 1 entry and no secret | Claude Code |
 | 2026-10-16 | P10a-T6 | page inside a 400 px iframe (Edge enforces a minimum window width, so a plain 420 px window crops) | 0 | no horizontal overflow; tabs wrap; cards stack | Claude Code |
+| 2026-10-16 | P5-T6 | `make eval` (full: 120 scenarios x 7 defenses, ~20 s) | 0 | writes results.csv (840 rows), summary.json, summary.md; no `pw_eval_*` graph left behind | Claude Code |
+| 2026-10-16 | P5-T7 | G7: second full `make eval`, `cmp` of results.csv / summary.json / summary.md against the first | 0 | all three byte-identical; zero CR bytes (checked by reading bytes) | Claude Code |
+| 2026-10-16 | P5-T2 | `tests/test_eval.py` | 0 | 25 tests: family counts (15/15/15/15, 12/12/12/8/8/8), ground truth, issue pools 100-199 / 200-299 without replacement, determinism and sync with the committed scenario files, injection effects E1-E4/B1-B3, split/relay/curator structure, coarse-replay rules, defenses on hand-picked scenarios, byte-identical outputs, Wilson known values, derived-not-typed B0/B2/B4 numbers, endpoint; suite 190 passed | Claude Code |
+| 2026-10-16 | P5-T8 | sabotage S1-S6 (files restored byte-identical): coarse session merging off; DLP regex wrong; relay length i%3; Wilson formula; PW counts only BLOCK; coarse env override off | - | all 6 CAUGHT, 0 missed | Claude Code |
+| 2026-10-16 | P5-T5 | measured results (not predicted; see `eval/results/summary.md`) | - | B0 ASR 100% FHR 0%; B2 100% / 0%; B4 16.7% / 40.0%; PW-coarse 0% / 73.3%; **PW 0% / 0%**, witness accuracy 60/60; B1/B3 not_run. Cross-checks: B4's 10 missed attacks = 4 base64 disguise + 6 base64 sleepers (counted from the scenarios); B4's 24 false holds = 8 lookalike + 8 approved + 8 internal-sink | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 

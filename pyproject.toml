@@ -45,3 +45,6 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.ruff.lint.per-file-ignores]
 # The probe carries verbatim copies of plan §10 queries; long lines are intentional.
 "scripts/probe_falkordb.py" = ["E501"]
+# The injection texts and issue titles are verbatim copies of plan §20.2.1.
+"eval/generate.py" = ["E501"]
+"eval/run_eval.py" = ["E501"]  # falsification criteria are verbatim plan §20.7 sentences
