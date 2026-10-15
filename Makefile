@@ -24,7 +24,7 @@ test:
 	$(PY) -m pytest
 
 # Explicit code folders only: never point ruff at the repo root (it would reformat Markdown, incl. plan.md).
-CODE_DIRS := api tests scripts eval
+CODE_DIRS := api tests scripts eval mock_upstreams
 
 lint:
 	$(PY) -m ruff check $(CODE_DIRS)
