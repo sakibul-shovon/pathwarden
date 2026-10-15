@@ -9,6 +9,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass, field
 
+from api.agents.live import LiveAgents
 from api.agents.scripted import ScriptedAgents, SessionInfo
 from api.graph.client import NamedGraph
 from api.runtime.explain import rule_of_two
@@ -117,9 +118,10 @@ def run_scenario(
     scenario: Scenario,
     *,
     runtime: Runtime,
-    agents: ScriptedAgents,
+    agents: ScriptedAgents | LiveAgents,
     orchestrator: Orchestrator,
     graph: NamedGraph,
+    mode: str = "scripted",
 ) -> dict:
     """Execute ``scenario`` against a (normally freshly reset) workspace; return a ``RunResult``."""
     first_event = len(runtime.events.events)
@@ -135,6 +137,8 @@ def run_scenario(
         elif step.agent == "release":
             info, action_id = agents.release(step.issue, step.day)
             sessions.append(info)
+            if action_id is None:  # a live Release agent may never ask to post: nothing to gate
+                continue
             outcome = orchestrator.submit(action_id)
             actions.append({"id": action_id, "status": outcome.status, "reason": outcome.reason})
             detail = f"{action_id} {outcome.status} {outcome.reason}"
@@ -156,6 +160,7 @@ def run_scenario(
         actions=actions,
         first_event=first_event,
         gate_entries=gate_entries,
+        mode=mode,
     )
 
 
@@ -169,6 +174,7 @@ def build_result(
     actions: list[dict],
     first_event: int,
     gate_entries: list[tuple[int, dict]],
+    mode: str = "scripted",
 ) -> dict:
     """Assemble a ``RunResult`` (plan §18): sessions with badges, a timeline, the actions."""
     agent_of: dict[str, str] = {}
@@ -195,7 +201,7 @@ def build_result(
     return {
         "scenario": name,
         "guard": guard,
-        "mode": "scripted",
+        "mode": mode,
         "sessions": [
             {"id": s.id, "agent": s.agent, "day": s.day, "rule_of_two": rule_of_two(graph, s.id)}
             for s in sessions

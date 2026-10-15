@@ -12,12 +12,14 @@ from pathlib import Path
 
 from falkordb import FalkorDB
 
+from api.agents.live import LiveAgents
 from api.agents.scripted import Fixtures, ScriptedAgents
 from api.forensics.agent import ForensicAgent, LlmModeUnavailableError
 from api.forensics.report import ForensicReport
 from api.forensics.tools import ForensicTools, Sandbox
 from api.graph.client import NamedGraph, connect
 from api.graph.schema import main_graph_name, mcp_graph_name, reset_graph
+from api.llm import Llm, make_llm
 from api.runtime.errors import ActionStateError, NotFoundError, ProvenanceError
 from api.runtime.events import EventLog
 from api.runtime.gate import Gate
@@ -36,7 +38,7 @@ __all__ = ["LiveModeUnavailableError", "LlmModeUnavailableError", "Workspace", "
 
 
 class LiveModeUnavailableError(Exception):
-    """``mode="live"`` was requested before live agents exist (P8)."""
+    """``mode="live"`` was requested but no language model is configured (``PW_LLM_API_KEY``)."""
 
 
 class Workspace:
@@ -49,8 +51,10 @@ class Workspace:
         graph_name: str | None = None,
         registry_workspace: str | None = None,
         tenant: bool = False,
+        llm: Llm | None = None,
     ):
         self.name = name
+        self._llm = llm
         self._db = db
         self.fixtures = Fixtures(fixtures_dir)
         self.registry = Registry.load(fixtures_dir / "registry.yaml")
@@ -120,12 +124,41 @@ class Workspace:
         scenario = SCENARIOS.get(name)
         if scenario is None:
             raise NotFoundError(f"scenario {name!r}")
-        if mode != "scripted":
+        if mode not in ("scripted", "live"):
+            raise NotFoundError(f"mode {mode!r}")
+        if mode == "live" and self._llm is None:
             raise LiveModeUnavailableError(mode)
         with self.lock:
             if reset:
                 self.reset()
             runtime = self.runtime
+            if mode == "live":
+                assert self._llm is not None
+                before = self._llm.stats.as_dict()
+                live = LiveAgents(runtime, self.fixtures, self._llm)
+                result = run_scenario(
+                    scenario,
+                    runtime=runtime,
+                    agents=live,
+                    orchestrator=self.orchestrator(guard=guard),
+                    graph=self.graph,
+                    mode="live",
+                )
+                after = self._llm.stats.as_dict()
+                result["live"] = {
+                    "model": self._llm.model,
+                    "llm": {k: after[k] - before[k] for k in after},
+                    "sessions": [
+                        {
+                            "session": r.session,
+                            "agent": r.agent,
+                            "steps": r.steps,
+                            "stopped": r.stopped,
+                        }
+                        for r in live.reports
+                    ],
+                }
+                return result
             return run_scenario(
                 scenario,
                 runtime=runtime,
@@ -160,7 +193,7 @@ class Workspace:
         """Investigate a held/blocked action, quarantine its source, replay in the sandbox."""
         with self.lock:
             self.runtime.get_action(action_id)  # NotFoundError for unknown actions
-            report = ForensicAgent(self._tools()).run(action_id, mode)
+            report = ForensicAgent(self._tools(), self._llm).run(action_id, mode)
             if report.quarantine_id:
                 self._quarantines[report.quarantine_id] = list(report.quarantined_artifacts)
             return report
@@ -258,8 +291,10 @@ class WorkspaceManager:
         settings: Settings,
         graph_names: dict[str, str] | None = None,
         tenants: frozenset[str] = frozenset(),
+        llm: Llm | None = None,
     ) -> None:
         self._settings = settings
+        self._llm = llm if llm is not None else make_llm(settings)
         self._tenants = tenants
         self._graph_names = graph_names or {}
         self._db: FalkorDB | None = None
@@ -281,5 +316,6 @@ class WorkspaceManager:
                     graph_name=self._graph_names.get(name) or default_graph,
                     registry_workspace=base,
                     tenant=base in self._tenants,
+                    llm=self._llm,
                 )
             return self._workspaces[name]

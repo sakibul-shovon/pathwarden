@@ -150,3 +150,22 @@ def make_client(app, settings: Settings) -> TestClient:
 def client(manager: WorkspaceManager, settings: Settings, tmp_path: Path) -> TestClient:
     app = create_app(settings.model_copy(update={"state_dir": tmp_path}), manager)
     return make_client(app, settings)
+
+
+@pytest.fixture
+def live_client(db, settings, tmp_path):
+    graphs: list[str] = []
+
+    def build(llm):
+        name = f"pw_test_{secrets.token_hex(4)}"
+        graphs.extend([name, name + "__sbx"])
+        config = settings.model_copy(update={"state_dir": tmp_path})
+        manager = WorkspaceManager(config, graph_names={"tinyqueue": name}, llm=llm)
+        return make_client(create_app(config, manager), settings), manager
+
+    yield build
+    for graph in graphs:
+        try:
+            db.select_graph(graph).delete()
+        except Exception:  # noqa: BLE001
+            pass

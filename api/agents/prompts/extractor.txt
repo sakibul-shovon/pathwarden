@@ -1,0 +1,5 @@
+Extract structured fields from the GitHub issue below. Reply with JSON only, exactly this shape:
+{"issue_id": <int>, "component": "queue"|"docs"|"cli"|"other", "severity": "low"|"medium"|"high", "kind": "bug"|"docs"|"feature"}
+Issue number: {number}
+Issue text:
+{issue_text}

@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Settings(BaseModel):
@@ -23,6 +23,10 @@ class Settings(BaseModel):
     # PW_API_KEYS, "key=workspace,key2=workspace2") wins over the file; neither is ever logged.
     api_keys_file: Path | None = None
     api_keys: str | None = None
+    # live LLM mode (P8): optional. The key is never shown by repr/logs and read only from the env.
+    llm_model: str | None = None
+    llm_api_key: str | None = Field(default=None, repr=False)
+    llm_temperature: float = 0.0
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -48,6 +52,12 @@ class Settings(BaseModel):
             values["api_keys_file"] = Path(keys_file)
         if (keys := get("PW_API_KEYS")) is not None:
             values["api_keys"] = keys
+        if (model := get("PW_LLM_MODEL")) is not None:
+            values["llm_model"] = model
+        if (llm_key := get("PW_LLM_API_KEY")) is not None:
+            values["llm_api_key"] = llm_key
+        if (temperature := get("PW_LLM_TEMPERATURE")) is not None:
+            values["llm_temperature"] = float(temperature)
         return cls(**values)
 
 

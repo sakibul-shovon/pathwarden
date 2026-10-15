@@ -57,7 +57,9 @@ def run(ws: Ws, name: str, body: RunRequest | None = None) -> dict:
     try:
         return ws.run_scenario(name, guard=body.guard, mode=body.mode, reset=body.reset)
     except LiveModeUnavailableError:
-        raise ApiError(501, "live_not_available", "live LLM agents arrive in phase P8") from None
+        raise ApiError(
+            501, "live_not_available", "live mode needs a language model (PW_LLM_API_KEY)"
+        ) from None
     except NotFoundError:
         raise ApiError(404, "unknown_scenario", f"no scenario named {name!r}") from None
 
