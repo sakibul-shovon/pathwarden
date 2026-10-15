@@ -18,6 +18,7 @@ class Settings(BaseModel):
     falkordb_port: int = 6379
     falkordb_password: str | None = None
     auth: Literal["on", "off"] = "off"
+    state_dir: Path = Path("state")
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -37,6 +38,8 @@ class Settings(BaseModel):
             values["falkordb_password"] = password
         if (auth := get("PW_AUTH")) is not None:
             values["auth"] = auth
+        if (state_dir := get("PW_STATE_DIR")) is not None:
+            values["state_dir"] = Path(state_dir)
         return cls(**values)
 
 

@@ -365,6 +365,31 @@ class Runtime:
         if not rows:
             raise NotFoundError(f"action {old_action_id!r} or {new_action_id!r} not found")
 
+    def action_context(self, action_id: str) -> dict:
+        """Payload, sink and external flag of an action (``q2d``); ids only, never content."""
+        rows = self._graph.run("q2d_action_context", action_id=action_id)
+        if not rows:
+            raise NotFoundError(f"action {action_id!r} not found")
+        _, payload_id, sink_id, external = rows[0]
+        return {
+            "action_id": action_id,
+            "payload_id": payload_id,
+            "sink_id": sink_id,
+            "external": external,
+        }
+
+    def list_actions(self) -> list[dict]:
+        """Every action with its current status (``q7b`` at the current clock), oldest first."""
+        rows = self._graph.run("q7b_actions_at_time", t=self._clock.next_value)
+        actions = [{"id": a, "status": s, "payload_id": p} for a, s, p in rows]
+        return sorted(actions, key=lambda action: action["id"])
+
+    def get_action(self, action_id: str) -> dict:
+        for action in self.list_actions():
+            if action["id"] == action_id:
+                return action
+        raise NotFoundError(f"action {action_id!r} not found")
+
     # ------------------------------------------------------------------ reads for agents/UI only
     def get_artifact(self, artifact_id: str) -> dict:
         """Full artifact including ``content``. Never used by the gate or the Forensic Agent."""

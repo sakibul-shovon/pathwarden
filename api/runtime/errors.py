@@ -37,3 +37,7 @@ class QuarantinedError(PathwardenError):
 
 class ProvenanceError(PathwardenError):
     """A lineage write did not produce the edges it must (e.g. DERIVED_FROM count mismatch)."""
+
+
+class ActionStateError(PathwardenError):
+    """The action's state does not allow this operation (e.g. approving an executed action)."""

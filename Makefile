@@ -12,7 +12,7 @@ PY ?= $(if $(wildcard $(VENV_PY)),$(VENV_PY),python)
 .PHONY: up down probe test lint fmt hooks api demo eval eval-live web mcp-server gateway
 
 up:
-	docker compose up -d falkordb
+	docker compose up -d --build
 
 down:
 	docker compose down
@@ -42,7 +42,7 @@ api:
 
 # --- stubs: not implemented until their phase ---------------------------------------------
 demo:
-	@echo "make demo: not implemented until P3 (docs/phases/P3-scripted-agents-core-api.md)" && exit 1
+	$(PY) -m api.scenarios.demo
 
 eval:
 	@echo "make eval: not implemented until P5 (docs/phases/P5-evaluation.md)" && exit 1

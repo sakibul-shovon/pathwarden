@@ -26,6 +26,11 @@ READ_ONLY_QUERIES = frozenset(
         "q2b_secret_witness",
         "q2c_quarantine_check",
         "q2d_action_context",
+        "q3_laundering_memory",
+        "q5_session_facts",
+        "q6_lineage_subgraph",
+        "q6b_node_details",
+        "q7b_actions_at_time",
     }
 )
 
