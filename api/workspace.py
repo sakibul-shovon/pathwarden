@@ -63,6 +63,9 @@ class Workspace:
         self.lock = threading.RLock()
         self._runtime: Runtime | None = None
         self._gate: Gate | None = None
+        # quarantine id -> artifact ids it covers; the graph keeps the audit node, but no §10 query
+        # lists it, so the ids the forensic agent returned are remembered here (D-019)
+        self._quarantines: dict[str, list[str]] = {}
 
     # ------------------------------------------------------------------ lifecycle
     def reset(self) -> None:
@@ -71,6 +74,7 @@ class Workspace:
             shutil.rmtree(self.state_dir, ignore_errors=True)
             reset_graph(self._db, self.graph_name, self.registry, self.policy.query_timeout_ms)
             self._runtime = self._gate = None
+            self._quarantines = {}
 
     def _ensure_graph(self) -> None:
         if self.graph_name not in self._db.list_graphs():
@@ -148,7 +152,10 @@ class Workspace:
         """Investigate a held/blocked action, quarantine its source, replay in the sandbox."""
         with self.lock:
             self.runtime.get_action(action_id)  # NotFoundError for unknown actions
-            return ForensicAgent(self._tools()).run(action_id, mode)
+            report = ForensicAgent(self._tools()).run(action_id, mode)
+            if report.quarantine_id:
+                self._quarantines[report.quarantine_id] = list(report.quarantined_artifacts)
+            return report
 
     def heal_approve(self, action_id: str, approver: str) -> dict:
         """Human approval of the healed release: re-run Fixer and Release in the MAIN graph with a
@@ -205,10 +212,18 @@ class Workspace:
 
     def release_quarantine(self, quarantine_id: str) -> int:
         with self.lock:
-            return self.runtime.release_quarantine(quarantine_id)
+            released = self.runtime.release_quarantine(quarantine_id)
+            self._quarantines.pop(quarantine_id, None)
+            return released
 
     def memory_inventory(self) -> list[dict]:
-        return self._tools().list_memory_inventory()
+        """q8 rows plus ``quarantine_id``: the newest remembered quarantine covering the entry
+        (``None`` when it is not quarantined or the id is unknown, e.g. after an API restart)."""
+        rows = self._tools().list_memory_inventory()
+        for row in rows:
+            covering = [q for q, ids in self._quarantines.items() if row["memory_id"] in ids]
+            row["quarantine_id"] = max(covering) if covering and row["quarantined"] else None
+        return rows
 
     def sandbox_artifact(self, artifact_id: str) -> dict:
         """Artifact (with content) from the SANDBOX graph only; no fallback between graphs."""

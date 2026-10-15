@@ -5,7 +5,9 @@ import type {
   Artifact,
   Explain,
   ForensicReport,
+  GraphAt,
   HealResult,
+  MemoryEntry,
   PostedEntry,
   RunResult,
   ScenarioInfo,
@@ -27,9 +29,15 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function request<T>(
+  method: "GET" | "POST",
+  path: string,
+  body?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
   const response = await fetch(`${BASE}/api${path}`, {
     method,
+    signal,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
@@ -58,5 +66,11 @@ export const api = {
     request<HealResult>("POST", ws(`/heal/${id}/approve`), { approver: "maintainer" }),
   artifact: (id: string, graph: "main" | "sandbox") =>
     request<Artifact>("GET", ws(`/artifacts/${id}?graph=${graph}`)),
+  timelineMax: () => request<{ t: number }>("GET", ws("/timeline/max")),
+  graphAt: (t: number, signal?: AbortSignal) =>
+    request<GraphAt>("GET", ws(`/graph-at?t=${t}`), undefined, signal),
+  memory: () => request<MemoryEntry[]>("GET", ws("/memory")),
+  releaseQuarantine: (qid: string) =>
+    request<{ quarantine_id: string; released: number }>("POST", ws(`/quarantine/${qid}/release`)),
   sink: (id: string) => request<PostedEntry[]>("GET", ws(`/sinks/${encodeURIComponent(id)}`)),
 };

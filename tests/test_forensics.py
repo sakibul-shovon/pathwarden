@@ -236,6 +236,33 @@ def test_releasing_a_quarantine_restores_the_memory_and_the_gate_holds_again(cli
     assert client.post(f"{BASE}/quarantine/q-9999/release").status_code == 404
 
 
+def test_the_memory_inventory_names_the_quarantine_to_release_and_forgets_it_afterwards(client):
+    action = held(client)
+    assert all(m["quarantine_id"] is None for m in client.get(f"{BASE}/memory").json())
+    qid = forensics(client, action)["quarantine_id"]
+
+    quarantined = [m for m in client.get(f"{BASE}/memory").json() if m["quarantined"]]
+
+    assert quarantined and {m["quarantine_id"] for m in quarantined} == {qid}
+    client.post(f"{BASE}/quarantine/{qid}/release")
+    assert all(m["quarantine_id"] is None for m in client.get(f"{BASE}/memory").json())
+
+
+def test_a_quarantine_id_is_offered_only_for_entries_that_quarantine_covers(client, manager):
+    action = held(client)
+    qid = forensics(client, action)["quarantine_id"]
+    # another remembered quarantine that covers an unrelated artifact must never be offered
+    manager.get("tinyqueue")._quarantines["q-9999"] = ["a-9999"]
+
+    quarantined = [m for m in client.get(f"{BASE}/memory").json() if m["quarantined"]]
+
+    assert quarantined and {m["quarantine_id"] for m in quarantined} == {qid}
+    # after an API restart the ids are forgotten: the entry stays quarantined, without a release id
+    manager.get("tinyqueue")._quarantines.clear()
+    forgotten = [m for m in client.get(f"{BASE}/memory").json() if m["quarantined"]]
+    assert forgotten and all(m["quarantine_id"] is None for m in forgotten)
+
+
 # ----------------------------------------------------------------------------- API surface
 def test_llm_mode_is_not_available_yet_and_unknown_actions_are_404(client):
     action = held(client)

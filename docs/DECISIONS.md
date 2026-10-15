@@ -192,6 +192,22 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **Files:** `api/runtime/timetravel.py`, `api/routes/timetravel.py`, `api/graph/queries/q7_graph_at_time.cypher` (verbatim), `tests/test_timetravel.py`. `q7b` already existed since P3.
 - **Lesson (sabotage):** scenario-level tests did not cover the sanitizer boundary inside the marker logic; crafted graphs (replay events) are needed for each side of a boundary rule.
 
+## Part B10 — P10b outcomes (2026-10-16)
+
+### D-019 — `GET /memory` rows carry `quarantine_id`, remembered by the workspace (needs the human's review)
+- **Status:** **Implemented by the agent, awaiting the human's confirmation** · **Phase:** P10b
+- **Gap:** the Memory tab must offer "release quarantine", and `POST /quarantine/{qid}/release` needs the quarantine id, but the q8 inventory does not return it and §10 has no query that lists `(Quarantine)-[:COVERS]->(Artifact)`. Rule 1 forbids ad-hoc Cypher.
+- **Choice:** `Workspace` remembers `quarantine id -> covered artifact ids` from the forensic report (the only place the id is produced), clears it on `reset`, forgets it on release, and `memory_inventory()` adds `quarantine_id` (newest remembered quarantine covering the entry, else `null`). No new Cypher; additive field.
+- **Limitation (stated in the UI):** the map lives in API memory. After an API restart a quarantined entry stays quarantined, but its release button is disabled with the hint "run forensics again" (a repeat run quarantines nothing new, so the real fix is a one-query addition).
+- **To replace:** add a read query over `COVERS` (needs the human's OK, rule 1) and drop the map. Tests: `tests/test_forensics.py` (the two `quarantine_id` tests).
+
+### Other P10b decisions and findings
+- **Time travel layout:** one headless Cytoscape layout of the final graph (with an explicit bounding box; without one every node got the same position) fixes the positions for every earlier time.
+- **Markers are rendered, not computed:** the UI draws `markers` and `doubly_tainted` exactly as the API returns them; the "written at this moment" line lists nodes whose `created_at` equals t.
+- **Stale answers:** a 120 ms debounce plus `AbortController`; a response is shown only when its `t` equals the requested one.
+- **Deep link:** `?tab=time&t=N`. **Tooling in this session (not in the repo):** the real UI was driven in headless Edge over the DevTools protocol using Node's built-in WebSocket; no new dependency.
+- **Port note:** another project's dev server may already hold 5173; Vite then picks 5174 (the proxy to `localhost:8000` is unchanged).
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.

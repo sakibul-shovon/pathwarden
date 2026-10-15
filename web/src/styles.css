@@ -138,3 +138,15 @@ details { margin-top: 8px; }
 .del { background: var(--del-bg); display: inline-block; width: 100%; }
 .add { background: var(--add-bg); display: inline-block; width: 100%; }
 .inline { margin-right: 14px; }
+
+.sw-marked { background: var(--card); border-color: var(--untrusted); box-shadow: 0 0 0 3px color-mix(in srgb, var(--untrusted) 35%, transparent); }
+.slider-row { display: flex; align-items: center; gap: 10px; }
+.slider-row input[type="range"] { flex: 1; min-width: 0; }
+.clock { font-variant-numeric: tabular-nums; font-weight: 700; }
+button.step { background: var(--card); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+button.step:disabled { opacity: 0.5; cursor: not-allowed; }
+button.danger { background: none; color: var(--red); border: 1px solid var(--red); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+button.danger:disabled { opacity: 0.5; cursor: not-allowed; }
+.markers { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.markers button { background: var(--card); color: var(--fg); border: 2px solid var(--edge); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; }
+.markers button.here { border-color: var(--untrusted); font-weight: 700; }

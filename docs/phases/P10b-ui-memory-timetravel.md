@@ -16,10 +16,10 @@ P4 (memory inventory, quarantine release), P7 (timeline + graph-at + markers), P
 Create: `web/src/tabs/{TimeTravel.tsx,Memory.tsx}`. Modify: `web/src/api/{client.ts,types.ts}`, `web/src/App.tsx` (enable the two tabs), `web/src/components/LineageGraph.tsx` (accept time-travel styling), `docs/PROGRESS.md`.
 
 ## 5. Tasks
-- [ ] **P10b-T1 Types and client** for `timeline/max`, `graph-at`, `memory`, `quarantine release`.
-- [ ] **P10b-T2 Time-travel tab:** slider over `0…max`; fetch `graph-at?t=` (debounced); render with `LineageGraph`; highlight the two markers (poisoned memory written; draft doubly tainted); show the clock value and the event at that time; label that quarantine flags are current-state.
-- [ ] **P10b-T3 Memory tab:** table from `GET /memory` — entry (id, key, kind), writer, day, untrusted origins, quarantine state; "Release quarantine" button with confirmation (human action) → refresh the table.
-- [ ] **P10b-T4 Manual acceptance** per checklist; record Evidence.
+- [x] **P10b-T1 Types and client** for `timeline/max`, `graph-at`, `memory`, `quarantine release`.
+- [x] **P10b-T2 Time-travel tab:** slider over `0…max`; fetch `graph-at?t=` (debounced); render with `LineageGraph`; highlight the two markers (poisoned memory written; draft doubly tainted); show the clock value and the event at that time; label that quarantine flags are current-state.
+- [x] **P10b-T3 Memory tab:** table from `GET /memory` — entry (id, key, kind), writer, day, untrusted origins, quarantine state; "Release quarantine" button with confirmation (human action) → refresh the table.
+- [x] **P10b-T4 Manual acceptance** per checklist; record Evidence.
 
 ## 6. Tests and validation
 `npm run build` exit 0 · CI `web` green · manual checklist: (1) run `attack_sleeper_44` guard on; (2) Time travel: slide to the Monday memory write → convention visible, no draft; slide to the end → doubly tainted draft with both markers; (3) Memory: `team_convention:42` listed with origin `src:issue:42`; (4) run forensics (Investigate tab) → Memory tab shows it quarantined; (5) release quarantine → state flips back.
@@ -40,3 +40,6 @@ Tasks ticked with evidence · G1, G3, G5, G6, G8, G10 · tracking updated · PR 
 
 ## 10. Git checkpoints
 `P10b: feat(web): time-travel tab` · `P10b: feat(web): memory tab` · `P10b: docs: ui acceptance evidence` → PR → merge → tag.
+
+## 11. Outcome (2026-10-16)
+All four tasks done; evidence in `docs/PROGRESS.md` (P10b rows), decision D-019 in `docs/DECISIONS.md` Part B10. One API addition was needed: `GET /memory` rows now carry `quarantine_id` (see D-019). The release button was clicked in headless Edge over the DevTools protocol (no human click-through).

@@ -1,20 +1,23 @@
 import { useMemo, useState } from "react";
 import { InvestigateTab } from "./tabs/Investigate";
+import { MemoryTab } from "./tabs/Memory";
 import { RunTab } from "./tabs/Run";
+import { TimeTravelTab } from "./tabs/TimeTravel";
 
 type TabId = "run" | "investigate" | "time" | "memory" | "remediate" | "evaluation";
 
 const TABS: { id: TabId; label: string; built: boolean; note?: string }[] = [
   { id: "run", label: "Run", built: true },
   { id: "investigate", label: "Investigate", built: true },
-  { id: "time", label: "Time travel", built: false, note: "arrives in P10b" },
-  { id: "memory", label: "Memory", built: false, note: "arrives in P10b" },
+  { id: "time", label: "Time travel", built: true },
+  { id: "memory", label: "Memory", built: true },
   { id: "remediate", label: "Remediate", built: false, note: "arrives in P10c" },
   { id: "evaluation", label: "Evaluation", built: false, note: "arrives in P10c" },
 ];
 
 /** Deep links make a state reproducible (and checkable in a headless browser):
- *  ?tab=investigate&scenario=attack_pipeline_42&guard=off&autorun=1&autoforensics=1&autoheal=1 */
+ *  ?tab=investigate&scenario=attack_pipeline_42&guard=off&autorun=1&autoforensics=1&autoheal=1
+ *  ?tab=time&t=16 opens the Time travel tab at logical time 16. */
 function readUrl(): {
   tab: TabId;
   scenario: string;
@@ -22,6 +25,7 @@ function readUrl(): {
   autorun: boolean;
   autoForensics: boolean;
   autoHeal: boolean;
+  t: number | null;
 } {
   const q = new URLSearchParams(window.location.search);
   const tab = (q.get("tab") ?? "run") as TabId;
@@ -32,6 +36,7 @@ function readUrl(): {
     autorun: q.get("autorun") === "1",
     autoForensics: q.get("autoforensics") === "1",
     autoHeal: q.get("autoheal") === "1",
+    t: /^\d+$/.test(q.get("t") ?? "") ? Number(q.get("t")) : null,
   };
 }
 
@@ -64,6 +69,8 @@ export function App() {
       <main>
         {tab === "run" && <RunTab initial={{ scenario: url.scenario, guard: url.guard, autorun: url.autorun }} />}
         {tab === "investigate" && <InvestigateTab autoForensics={url.autoForensics} autoHeal={url.autoHeal} />}
+        {tab === "time" && <TimeTravelTab initialT={url.t} />}
+        {tab === "memory" && <MemoryTab />}
       </main>
     </div>
   );
