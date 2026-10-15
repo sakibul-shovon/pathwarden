@@ -94,9 +94,41 @@ def _referenced_query_names() -> set[str]:
 
 def test_every_referenced_query_exists_and_every_query_file_is_used():
     files = {p.stem for p in (REPO / "api" / "graph" / "queries").glob("*.cypher")}
-    referenced = _referenced_query_names()
-    assert referenced <= files, f"code references missing queries: {sorted(referenced - files)}"
-    assert files <= referenced, f"unused query files (dead code?): {sorted(files - referenced)}"
+    called = _referenced_query_names()  # names passed straight to .run(...) / load_query(...)
+    assert called <= files, f"code references missing queries: {sorted(called - files)}"
+    # A file also counts as used when its name appears as a string literal anywhere in api/
+    # (e.g. passed through a helper such as Gate._witness("q2a_untrusted_witness", ...)).
+    literals = {
+        node.value
+        for path in (REPO / "api").rglob("*.py")
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    }
+    unused = sorted(files - literals)
+    assert not unused, f"unused query files (dead code?): {unused}"
+
+
+def test_gate_forensic_and_ui_queries_never_read_artifact_content():
+    """Plan rule 3: no `.content` in any q2*-q8* query (the runtime's q1_* lookups may)."""
+    for path in (REPO / "api" / "graph" / "queries").glob("q[2-8]*.cypher"):
+        assert not re.search(r"\.content\b", path.read_text(encoding="utf-8")), path.name
+
+
+def test_the_gate_imports_no_llm_client_and_never_touches_content():
+    source = (REPO / "api" / "runtime" / "gate.py").read_text(encoding="utf-8")
+    banned = {"litellm", "openai", "anthropic", "groq", "cohere", "mistralai", "ollama"}
+    imported = {
+        alias.name.split(".")[0]
+        for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    } | {
+        node.module.split(".")[0]
+        for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.ImportFrom) and node.module
+    }
+    assert not (imported & banned), f"LLM client imported in the gate: {imported & banned}"
+    assert not re.search(r"\.content\b", source), "the gate must not read artifact content"
 
 
 def test_agents_md_section_2_is_plan_section_4_verbatim():

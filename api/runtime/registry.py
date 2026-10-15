@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Literal, Self
 
@@ -112,3 +113,8 @@ class Registry(_Strict):
 
 def load_policy(path: Path) -> Policy:
     return Policy.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+
+def policy_version(path: Path) -> str:
+    """Identifies the policy that produced a verdict: sha256 of the policy file's bytes (A-04)."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()

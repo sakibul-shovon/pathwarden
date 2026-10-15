@@ -5,7 +5,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 
 - **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** P1 (VERIFYING); P0 DONE
+- **Active phase:** P2 (VERIFYING); P0, P1 DONE
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -13,8 +13,8 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 | Phase | Name | Tier | Status | Branch | Needs | Last evidence | Notes |
 |---|---|---|---|---|---|---|---|
 | P0 | Probe and skeleton | 1 | DONE | `phase/p0-skeleton` | — | probe 35/35, 14 tests; merged `3632e9c`, tag `phase-p0-done` | exceptions: CI run not observed (repo private, no gh); T11 GitHub settings deferred until the repo is public (D-014) |
-| P1 | Graph layer, runtime, replay | 1 | VERIFYING | `phase/p1-runtime` | P0 | 69 tests pass, lint clean (2026-10-15) | A-01, A-02 resolved; one real bug found and fixed (see Evidence) |
-| P2 | Gate | 1 | NOT_STARTED | `phase/p2-gate` | P1 | — | cross-agent review recommended |
+| P1 | Graph layer, runtime, replay | 1 | DONE | `phase/p1-runtime` | — | 69 tests, lint clean; merged `4610b64`, tag `phase-p1-done` | A-01, A-02 resolved; CI not observed |
+| P2 | Gate | 1 | VERIFYING | `phase/p2-gate` | P1 | 86 tests pass, lint clean, 4 sabotage checks | independent review NOT done (single agent) — see Known gaps |
 | P3 | Scripted agents, demo scenarios, core API | 1 | NOT_STARTED | `phase/p3-scripted-api` | P2 | — | |
 | P4 | Forensic Agent, quarantine, healing, memory API | 1 | NOT_STARTED | `phase/p4-forensics` | P3 | — | cross-agent review recommended |
 | P10a | UI: scaffold, Run, Investigate | 1 | NOT_STARTED | `phase/p10a-ui-run-investigate` | P4 | — | |
@@ -63,6 +63,10 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-15 | P1-T5/T7 | sabotage checks on a backup of runtime.py, restored byte-identical each time | — | exact-namespace regex broken → `test_a_sandbox_runtime_creates_only_namespaced_ids` FAILS; write-existence check removed → `test_unknown_agent_session_source_and_payload_fail_closed` FAILS. (A first sabotage attempt whose `sed` did not match was discarded, not counted.) | Claude Code |
 | 2026-10-15 | P1-T1/T2 | `tests/test_fixtures_and_queries.py` | 0 | 9 fixtures and all 22 query files are verbatim copies of plan.md blocks and equal to the queries the probe verified | Claude Code |
 | 2026-10-15 | P1-T10 | `make lint` / `make fmt` | 0 | all checks passed, 23 files formatted; plan.md unchanged | Claude Code |
+| 2026-10-15 | P2-T5/T6 | `make test` | 0 | **86 passed** (15 gate tests: attack→HOLD/TRIFECTA with witness endpoints `src:issue:42` / `src:env:PAYMENT_API_KEY`; no convention→ALLOW CLEAN; sanitized-only→no untrusted witness; approved→ALLOW; internal sink→CLEAN; strict→BLOCK; quarantined ancestor/payload→BLOCK; missing payload/sink→HOLD MISSING_PROVENANCE; unknown action→raises; DB error→raises, status untouched, nothing logged; content-agnostic over 6 awkward content sets; verdict log fields; hop bound = policy) | Claude Code |
+| 2026-10-15 | P2-T8 | sabotage S1-S3 on backed-up query files (restored byte-identical) | — | S1 q2a ignores `sanitized` → 2 tests FAIL; S2 q2b ignores `approved` → approval test FAILS; S3 q2a ignores `approved` → approval test FAILS | Claude Code |
+| 2026-10-15 | P2-T8 | sabotage S4: q2b wrongly excludes sanitized nodes (rule 7) | — | **first run: NOT caught (14 passed)** → test gap. Added `test_sanitizing_a_secret_does_not_declassify_it` (secret reaches the draft only via a sanitized artifact). Re-run: S4 now FAILS that test; files restored byte-identical; suite 86 passed | Claude Code |
+| 2026-10-15 | P2-T6 | `tests/test_invariants.py` additions | 0 | no `.content` in any q2*–q8* query; gate.py imports no LLM client and never reads `.content`; every query file is referenced from code (strengthened after the gate passed names through a helper) | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 
@@ -74,7 +78,8 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 
 | id | what | where | how it fails | filled in |
 |---|---|---|---|---|
-| | | | | |
+| G-001 | Independent cross-agent review of P2 (recommended by the phase file) was not possible: only one agent is available | P2 | n/a — process gap; the 4 sabotage checks partly compensate | when a second agent reviews (optional) |
+| G-002 | `Runtime.approve*` and the gate have no caller authentication | api layer | by design until P11 (human-only endpoints) | P11 |
 
 ## Session log (append-only: one line per work session)
 

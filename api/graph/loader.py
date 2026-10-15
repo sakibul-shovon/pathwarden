@@ -22,6 +22,9 @@ READ_ONLY_QUERIES = frozenset(
         "q1_key_exists",
         "q1_lookup_prefix",
         "q1_get_artifact",
+        "q2a_untrusted_witness",
+        "q2b_secret_witness",
+        "q2c_quarantine_check",
         "q2d_action_context",
     }
 )
