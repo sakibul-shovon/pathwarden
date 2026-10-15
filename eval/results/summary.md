@@ -48,9 +48,21 @@ Among attacks that PW held, 60/60 witness pairs ended at the ground-truth untrus
 - If B1/B3 are unaffected by base64/Banglish disguises, drop the content-agnostic advantage claim. **Status:** not evaluable: B1/B3 not_run.
 - B2 misses cross-agent attacks by construction; present it as illustrating the blind spot. **Status:** B2 ASR = 100.0% on this dataset.
 
+## Remediation (max-flow cuts, plan §15)
+
+Toxic agents are reachable from an untrusted and a secret source and can reach an external sink. Four cuts C1-C4 are each a complete fix by construction and each is verified on a copy of the graph; the optimum comes from an exhaustive search (evaluation ground truth only).
+
+| Topology | toxic agents | best candidate cost | optimum cost | gap |
+|---|---|---|---|---|
+| enterprise12 | 5 | 16 | 14 | 2 |
+| tinyqueue3 | 2 | 3 | 3 | 0 |
+
+- enterprise12 candidates: C1=17, C2=22, C3=16, C4=23.
+
+- tinyqueue3 candidates: C1=3, C2=6, C3=3, C4=6.
+
 ## Limitations
 
 - The scenarios are synthetic and scripted; ground truth comes from how they were constructed.
 - The gate and the dataset share one model of lineage (sources, sanitizers, approvals, sinks). A perfect PW score therefore shows that the implementation matches that model, not that the model covers real-world attacks; the live-agent study (phase P8) is where that is tested.
 - Latency is measured separately (`latency.md`, not deterministic) and is not part of this file.
-- Remediation (max-flow) results are produced by phase P6.

@@ -25,12 +25,14 @@ from falkordb import FalkorDB
 
 from api.graph.client import connect
 from api.graph.schema import reset_graph
+from api.remediation.capability_graph import CapabilityService, load_topology
 from api.runtime.gate import Gate
 from api.runtime.registry import Registry, load_policy, policy_version
 from api.runtime.replay import replay
 from api.runtime.runtime import Runtime
 from api.settings import Settings
 from eval import generate, metrics
+from eval import remediation_optimum as optimum
 from eval.baselines import Context, Decision, b0, b2, b4, pw, pw_coarse
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -147,8 +149,46 @@ def evaluate(scenarios: list[dict], db: FalkorDB) -> tuple[list[dict], list[dict
     return rows, latency
 
 
+# ----------------------------------------------------------------------------- remediation
+def remediation_report(settings: Settings) -> dict:
+    """Per topology: toxic agents, candidates C1-C4, best verified cost, brute-force optimum, gap.
+
+    Everything is computed; nothing is typed in (rule 11). The optimum is evaluation ground truth only.
+    """
+    service = CapabilityService(settings, prefix="pw_cap_eval_")
+    report: dict[str, dict] = {}
+    try:
+        for name in ("enterprise12", "tinyqueue3"):
+            service.reset(name)
+            toxic = service.toxic_agents(name)
+            candidates = service.suggest(name)
+            verified = [c for c in candidates if c["verified"]]
+            best = min((c["total_cost"] for c in verified), default=None)
+            exact = optimum.report(load_topology(name), best)
+            report[name] = {
+                "toxic_agents_before": toxic,
+                "candidates": [
+                    {
+                        "id": c["id"],
+                        "total_cost": c["total_cost"],
+                        "flows": len(c["cap_ids"]),
+                        "verified": c["verified"],
+                    }
+                    for c in sorted(candidates, key=lambda c: c["id"])
+                ],
+                "best_candidate_cost": best,
+                "optimum_cost": exact["optimum_cost"],
+                "optimum_cap_ids": exact["optimum_cap_ids"],
+                "gap": exact["gap"],
+            }
+    finally:
+        for name in ("enterprise12", "tinyqueue3"):
+            service.delete(name)
+    return report
+
+
 # ----------------------------------------------------------------------------- summary
-def summarise(rows: list[dict]) -> dict:
+def summarise(rows: list[dict], remediation: dict | None = None) -> dict:
     by_defense: dict[str, list[dict]] = defaultdict(list)
     for row in rows:
         by_defense[row["defense"]].append(row)
@@ -218,6 +258,7 @@ def summarise(rows: list[dict]) -> dict:
         "per_family": per_family,
         "witness_accuracy": witness,
         "falsification_criteria": _criteria(defenses),
+        **({"remediation": remediation} if remediation else {}),
     }
 
 
@@ -303,6 +344,30 @@ def render_markdown(summary: dict) -> str:
     lines += [
         f"- {c['text']} **Status:** {c['status']}." for c in summary["falsification_criteria"]
     ]
+    remediation = summary.get("remediation")
+    if remediation:
+        lines += [
+            "",
+            "## Remediation (max-flow cuts, plan §15)",
+            "",
+            "Toxic agents are reachable from an untrusted and a secret source and can reach an external "
+            "sink. Four cuts C1-C4 are each a complete fix by construction and each is verified on a copy "
+            "of the graph; the optimum comes from an exhaustive search (evaluation ground truth only).",
+            "",
+            "| Topology | toxic agents | best candidate cost | optimum cost | gap |",
+            "|---|---|---|---|---|",
+        ]
+        for name, r in remediation.items():
+            lines.append(
+                f"| {name} | {len(r['toxic_agents_before'])} | {r['best_candidate_cost']} | "
+                f"{r['optimum_cost']} | {r['gap']} |"
+            )
+        for name, r in remediation.items():
+            cells = ", ".join(
+                f"{c['id']}={c['total_cost']}{'' if c['verified'] else ' (NOT verified)'}"
+                for c in r["candidates"]
+            )
+            lines += ["", f"- {name} candidates: {cells}."]
     lines += [
         "",
         "## Limitations",
@@ -312,7 +377,6 @@ def render_markdown(summary: dict) -> str:
         "perfect PW score therefore shows that the implementation matches that model, not that the model "
         "covers real-world attacks; the live-agent study (phase P8) is where that is tested.",
         "- Latency is measured separately (`latency.md`, not deterministic) and is not part of this file.",
-        "- Remediation (max-flow) results are produced by phase P6.",
         "",
     ]
     return "\n".join(lines)
@@ -326,9 +390,14 @@ def _csv_text(rows: list[dict], fields: list[str]) -> str:
     return buffer.getvalue()
 
 
-def write_outputs(rows: list[dict], latency: list[dict], out: Path = RESULTS) -> dict:
+def write_outputs(
+    rows: list[dict],
+    latency: list[dict],
+    out: Path = RESULTS,
+    remediation: dict | None = None,
+) -> dict:
     out.mkdir(parents=True, exist_ok=True)
-    summary = summarise(rows)
+    summary = summarise(rows, remediation)
     fields = [
         "scenario_id",
         "family",
@@ -373,7 +442,7 @@ def main() -> int:  # pragma: no cover - exercised through `make eval`
     generate.write_scenarios()
     scenarios = generate.generate()
     rows, latency = evaluate(scenarios, db)
-    summary = write_outputs(rows, latency)
+    summary = write_outputs(rows, latency, remediation=remediation_report(Settings.from_env()))
     for name in DEFENSES:
         cell = summary["defenses"][name]
         print(
@@ -387,6 +456,11 @@ def main() -> int:  # pragma: no cover - exercised through `make eval`
     print(
         f"witness accuracy (PW): {summary['witness_accuracy']['correct']}/{summary['witness_accuracy']['n']}"
     )
+    for name, r in summary["remediation"].items():
+        print(
+            f"remediation {name}: best candidate {r['best_candidate_cost']}, "
+            f"optimum {r['optimum_cost']}, gap {r['gap']}"
+        )
     return 0
 
 
