@@ -18,14 +18,14 @@ Create: `api/graph/queries/q2a_untrusted_witness.cypher`, `q2b_secret_witness.cy
 Modify: `tests/test_invariants.py` (P2 additions), `docs/DECISIONS.md` (A-03, A-04).
 
 ## 5. Tasks
-- [ ] **P2-T1 Queries verbatim** from §10 (or the P0 fallback for `q2b`), and direct query tests on hand-built graphs (built with P1 replay).
-- [ ] **P2-T2 `Verdict`, `GateResult`, `decide()`** following the decision order in §11 exactly: missing payload/sink → HOLD `MISSING_PROVENANCE`; quarantined payload/ancestor → BLOCK `QUARANTINED_LINEAGE`; external + both witnesses → HOLD `TRIFECTA` (BLOCK if `policy.strict`); external + only secret witness → ALLOW `SECRET_EGRESS_WARNING`; else ALLOW `CLEAN`. Writes `Action.status` + `verdict_reason` through `q1_set_action_status`. `llm_calls` is always 0.
-- [ ] **P2-T3 Fail closed on errors.** A database error or timeout inside `decide()` must raise; it must never produce ALLOW. Test that the orchestrator-facing API leaves the action un-executed.
-- [ ] **P2-T4 Verdict log** `state/<ws>/verdicts.jsonl` with `action_id, verdict, reason, witnesses, latency_ms, policy_version`. Define `policy_version` = sha256 of `fixtures/policy.yaml` (A-04).
-- [ ] **P2-T5 Behaviour tests** (below) on replayed graphs.
-- [ ] **P2-T6 Content-agnostic proof.** (a) Property-style test with a seeded RNG: randomise **all** artifact contents → identical verdicts and witness *endpoints*. (b) Static test: no `.content` in any `q2*`–`q8*` file that exists; no LLM/provider imports in `api/runtime/gate.py`.
-- [ ] **P2-T7 Hop-bound consistency** (A-03): a test asserting the literal bound in the queries equals `policy.max_lineage_hops`; decide what happens to `query_timeout_ms` (enforce only if the client documents a timeout; else mark unenforced in DECISIONS).
-- [ ] **P2-T8 Sabotage check** (recorded in Evidence): remove the `sanitized` exclusion from `q2a` → the sanitized-only test must fail; remove the `approved` exclusion from `q2b` → the approved test must fail; restore both.
+- [x] **P2-T1 Queries verbatim** from §10 (or the P0 fallback for `q2b`), and direct query tests on hand-built graphs (built with P1 replay).
+- [x] **P2-T2 `Verdict`, `GateResult`, `decide()`** following the decision order in §11 exactly: missing payload/sink → HOLD `MISSING_PROVENANCE`; quarantined payload/ancestor → BLOCK `QUARANTINED_LINEAGE`; external + both witnesses → HOLD `TRIFECTA` (BLOCK if `policy.strict`); external + only secret witness → ALLOW `SECRET_EGRESS_WARNING`; else ALLOW `CLEAN`. Writes `Action.status` + `verdict_reason` through `q1_set_action_status`. `llm_calls` is always 0.
+- [x] **P2-T3 Fail closed on errors.** A database error or timeout inside `decide()` must raise; it must never produce ALLOW. Test that the orchestrator-facing API leaves the action un-executed.
+- [x] **P2-T4 Verdict log** `state/<ws>/verdicts.jsonl` with `action_id, verdict, reason, witnesses, latency_ms, policy_version`. Define `policy_version` = sha256 of `fixtures/policy.yaml` (A-04).
+- [x] **P2-T5 Behaviour tests** (below) on replayed graphs.
+- [x] **P2-T6 Content-agnostic proof.** (a) Property-style test with a seeded RNG: randomise **all** artifact contents → identical verdicts and witness *endpoints*. (b) Static test: no `.content` in any `q2*`–`q8*` file that exists; no LLM/provider imports in `api/runtime/gate.py`.
+- [x] **P2-T7 Hop-bound consistency** (A-03): a test asserting the literal bound in the queries equals `policy.max_lineage_hops`; decide what happens to `query_timeout_ms` (enforce only if the client documents a timeout; else mark unenforced in DECISIONS).
+- [x] **P2-T8 Sabotage check** (recorded in Evidence): remove the `sanitized` exclusion from `q2a` → the sanitized-only test must fail; remove the `approved` exclusion from `q2b` → the approved test must fail; restore both.
 
 ## 6. Tests and validation
 Per §22-P2: attack lineage → HOLD/`TRIFECTA` with correct witness endpoints (last node = ground-truth untrusted source / a secret source) · no convention written → ALLOW · approved payload → ALLOW · sanitized-only path → **no** untrusted witness · quarantined ancestor → BLOCK · missing payload → HOLD `MISSING_PROVENANCE` · content-agnostic.
