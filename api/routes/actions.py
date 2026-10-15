@@ -45,8 +45,11 @@ def get_action(ws: Ws, action_id: str) -> dict:
 @router.get("/{action_id}/explain")
 def explain(ws: Ws, action_id: str) -> dict:
     ws.runtime.get_action(action_id)  # 404 for unknown actions
+    gate = gate_dict(ws.gate.evaluate(action_id))
+    # after a quarantine the verdict is BLOCK and carries no witnesses; the lineage still has them
+    gate["untrusted_witness"], gate["secret_witness"] = ws.gate.witnesses(action_id)
     return {
-        "gate": gate_dict(ws.gate.evaluate(action_id)),
+        "gate": gate,
         "laundering": laundering_memories(ws.graph, action_id),
         "subgraph": lineage_subgraph(ws.graph, action_id),
         "queries": query_texts(),

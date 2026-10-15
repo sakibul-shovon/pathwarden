@@ -100,7 +100,7 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 | A-13 (**Resolved in P0**) | §6, §23 | API port, FalkorDB env var names not specified | Port 8000 (Uvicorn default); `PW_FALKORDB_HOST/PORT/PASSWORD` (see `.env.example`) | P0 |
 | A-14 | §12.3, §24 | LLM provider and README license. **Provider = Groq** (human, 2026-10-15). **Still open: exact model, the key itself (goes only in the local `.env` as `PW_LLM_API_KEY`), and the license** | Via LiteLLM a Groq model is addressed as `groq/<model>` (to be confirmed by the P8 probe — rule 13; also confirm how the key is passed). Pick the model at P8 from Groq's current list. Free-tier rate/token limits may throttle the live study and the B3 full-trace judge (long prompts): measure in the probe, add backoff, reduce nothing silently. License: the human chooses (e.g. MIT or Apache-2.0) before P12-T6 | P8/P12 |
 | A-15 | §23 | Hosted FalkorDB (Cloud/Railway) support for `GRAPH.COPY` and `algo.maxFlow` is not stated | Run `make probe` against the hosted endpoint as soon as one exists (before P12) | P0 (local) / P12 |
-| A-16 | §6 | No frontend test tooling in the stack; UI cannot be regression-tested automatically | Gate UI with `npm run build` (strict TS) + a manual acceptance checklist with recorded evidence; ask before adding Vitest/Playwright | P10a |
+| A-16 (**Resolved in P10a**, Part B6) | §6 | No frontend test tooling in the stack; UI cannot be regression-tested automatically | Gate UI with `npm run build` (strict TS) + a manual acceptance checklist with recorded evidence; ask before adding Vitest/Playwright | P10a |
 
 ## Part B2 — P1 outcomes (2026-10-15)
 
@@ -148,6 +148,14 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **Event log** now loads an existing `events.jsonl` on construction, so history survives an API restart.
 - **New names:** `Gate.witnesses`, `Runtime.{node_details, apply_quarantine, release_quarantine, action_context, list_actions, get_action}`, `Workspace.{make_sandbox, forensics, heal_approve, release_quarantine, memory_inventory, sandbox_artifact}`, `api/forensics/{report,tools,agent}.py`, `api/routes/forensics.py`.
 - **Observation:** the sandbox is a *copy* of main at replay time, so `?graph=sandbox` also serves the held payload; the property that matters (and is tested) is that main never serves sandbox-namespaced artifacts.
+
+## Part B6 — P10a outcomes (2026-10-16)
+
+- **A-16 Resolved without new dependencies:** UI gate = strict `tsc` + `vite build` (CI job `web`) **plus** a real-browser check that needs no test framework: headless Edge (`--dump-dom`, `--screenshot`) against the running API. To make states reproducible the UI accepts **deep-link parameters** (`?tab=`, `scenario=`, `guard=off`, `autorun=1`, `autoforensics=1`, `autoheal=1`); they are a documented feature (shareable links), not test-only code.
+- **Dev wiring:** Vite proxies `/api` to `http://localhost:8000` (no CORS in development). A hosted build sets `VITE_API_BASE` and then **the API needs a CORS allow-list** — deferred to P12 (hosted deployment) and P11 (auth); recorded here so it is not forgotten.
+- **Toolchain as resolved by npm today:** React 18.3.1, cytoscape 3.34.3 (ships its own types), Vite 8.3.4, `@vitejs/plugin-react` 6.1.2, TypeScript 7.0.2; versions are pinned by `web/package-lock.json`.
+- **UI facts worth knowing:** after a quarantine the gate verdict reads BLOCK/QUARANTINED_LINEAGE while the recorded status stays `held`; the card says so and the graph keeps drawing the witness paths (`explain` returns `Gate.witnesses`). Tabs not built yet are visibly disabled ("arrives in P10b/c"), the live-mode toggle is disabled ("arrives in P8"). The UI treats `PWDEMO-` and a `### Checksum` section as "leak" markers only to highlight the demo's fake secrets.
+- **Not verified:** clicking through in a visible browser by a human (the headless flow covers the same states), light-mode appearance (the headless Edge used dark mode), Safari/Firefox.
 
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 

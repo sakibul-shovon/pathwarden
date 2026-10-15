@@ -51,7 +51,7 @@ eval-live:
 	@echo "make eval-live: not implemented until P8 (docs/phases/P8-live-llm.md)" && exit 1
 
 web:
-	@echo "make web: not implemented until P10a (docs/phases/P10a-ui-run-investigate.md)" && exit 1
+	cd web && npm run dev
 
 mcp-server:
 	@echo "make mcp-server: not implemented until P9 (docs/phases/P9-mcp.md)" && exit 1
