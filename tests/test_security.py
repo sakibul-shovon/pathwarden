@@ -134,7 +134,7 @@ def test_health_never_lists_graphs_in_hosted_mode(hosted):
 
     body = client.get("/api/health").json()
 
-    assert body == {"falkordb": "ok"}
+    assert body == {"falkordb": "ok", "llm": {"configured": False, "model": None}}  # no graph names
 
 
 # -------------------------------------------------- isolation between tenants

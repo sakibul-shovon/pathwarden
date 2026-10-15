@@ -25,6 +25,7 @@ function readUrl(): {
   scenario: string;
   guard: boolean;
   autorun: boolean;
+  mode: "scripted" | "live";
   autoForensics: boolean;
   autoHeal: boolean;
   t: number | null;
@@ -37,6 +38,7 @@ function readUrl(): {
     scenario: q.get("scenario") ?? "attack_pipeline_42",
     guard: q.get("guard") !== "off",
     autorun: q.get("autorun") === "1",
+    mode: q.get("mode") === "live" ? "live" : "scripted",
     autoForensics: q.get("autoforensics") === "1",
     autoHeal: q.get("autoheal") === "1",
     t: /^\d+$/.test(q.get("t") ?? "") ? Number(q.get("t")) : null,
@@ -68,7 +70,7 @@ export function App() {
         </nav>
       </header>
       <main>
-        {tab === "run" && <RunTab initial={{ scenario: url.scenario, guard: url.guard, autorun: url.autorun }} />}
+        {tab === "run" && <RunTab initial={{ scenario: url.scenario, guard: url.guard, autorun: url.autorun, mode: url.mode }} />}
         {tab === "investigate" && <InvestigateTab autoForensics={url.autoForensics} autoHeal={url.autoHeal} />}
         {tab === "time" && <TimeTravelTab initialT={url.t} />}
         {tab === "memory" && <MemoryTab />}

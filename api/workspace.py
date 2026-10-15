@@ -301,6 +301,11 @@ class WorkspaceManager:
         self._workspaces: dict[str, Workspace] = {}
         self._lock = threading.Lock()
 
+    @property
+    def llm_model(self) -> str | None:
+        """The configured model name (never the key), or None when live mode is unavailable."""
+        return self._llm.model if self._llm is not None else None
+
     def get(self, name: str) -> Workspace:
         with self._lock:
             if name not in self._workspaces:

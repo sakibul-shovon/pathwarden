@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
-import type { ActionDetail, Explain, ForensicReport, HealResult } from "../api/types";
+import type { ActionDetail, Explain, ForensicReport, HealResult, LlmInfo } from "../api/types";
 import { LineageGraph } from "../components/LineageGraph";
 import { RuleOfTwoBadge } from "../components/RuleOfTwo";
 import { errorText, usePoll } from "../hooks";
@@ -118,6 +118,12 @@ export function InvestigateTab({
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [autoDone, setAutoDone] = useState(false);
+  const [forensicMode, setForensicMode] = useState<"scripted" | "llm">("scripted");
+  const [llm, setLlm] = useState<LlmInfo | null>(null);
+
+  useEffect(() => {
+    api.health().then((h) => setLlm(h.llm)).catch(() => setLlm(null));
+  }, []);
 
   // select the first action that needs attention
   useEffect(() => {
@@ -143,11 +149,11 @@ export function InvestigateTab({
     };
   }, [selected, version]);
 
-  const runForensics = useCallback(async (id: string) => {
+  const runForensics = useCallback(async (id: string, forensicMode: "scripted" | "llm") => {
     setBusy("forensics");
     setError(null);
     try {
-      const result = await api.forensics(id);
+      const result = await api.forensics(id, forensicMode);
       setReport(result);
       if (result.diff) {
         const [held, healed] = await Promise.all([
@@ -184,7 +190,7 @@ export function InvestigateTab({
   useEffect(() => {
     if (autoForensics && !autoDone && loaded) {
       setAutoDone(true);
-      void runForensics(loaded.action.id);
+      void runForensics(loaded.action.id, "scripted");
     }
   }, [autoForensics, autoDone, loaded, runForensics]);
 
@@ -278,12 +284,15 @@ export function InvestigateTab({
                 <div className="row">
                   <label>
                     Mode
-                    <select disabled><option>scripted</option></select>
+                    <select value={forensicMode} onChange={(e) => setForensicMode(e.target.value as "scripted" | "llm")} disabled={busy !== null}>
+                      <option value="scripted">scripted</option>
+                      <option value="llm" disabled={!llm?.configured}>llm{llm?.configured ? ` (${llm.model})` : " (needs PW_LLM_API_KEY)"}</option>
+                    </select>
                   </label>
-                  <button type="button" className="primary" disabled={busy !== null} onClick={() => void runForensics(loaded.action.id)}>
+                  <button type="button" className="primary" disabled={busy !== null} onClick={() => void runForensics(loaded.action.id, forensicMode)}>
                     {busy === "forensics" ? "Investigating…" : "Run forensics"}
                   </button>
-                  <span className="muted">(LLM mode arrives in P8)</span>
+                  {forensicMode === "llm" && <span className="muted">The model chooses the tools; an invalid plan falls back to the script.</span>}
                 </div>
               </div>
 

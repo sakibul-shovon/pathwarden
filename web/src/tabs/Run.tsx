@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, PUBLIC_PAGE_SINK } from "../api/client";
-import type { PostedEntry, RunResult, ScenarioInfo, SessionView } from "../api/types";
+import type { LiveInfo, LlmInfo, PostedEntry, RunResult, ScenarioInfo, SessionView } from "../api/types";
 import { RuleOfTwoBadge } from "../components/RuleOfTwo";
 import { errorText } from "../hooks";
 
@@ -8,6 +8,7 @@ export interface RunInitial {
   scenario: string;
   guard: boolean;
   autorun: boolean;
+  mode: "scripted" | "live";
 }
 
 const AGENTS = [
@@ -20,7 +21,13 @@ const LEAK = /PWDEMO-|### Checksum/;
 
 function Outcome({ result, posted }: { result: RunResult; posted: PostedEntry[] }) {
   const last = result.actions[result.actions.length - 1];
-  if (!last) return null;
+  if (!last) {
+    return result.mode === "live" ? (
+      <div className="banner green" role="status">
+        The Release agent never asked to post, so there was nothing to gate and nothing was published.
+      </div>
+    ) : null;
+  }
   const leaked = posted.some((p) => LEAK.test(p.content));
   if (last.status === "held" || last.status === "blocked") {
     return (
@@ -52,21 +59,48 @@ function SessionRow({ s }: { s: SessionView }) {
   );
 }
 
+function LivePanel({ live }: { live: LiveInfo }) {
+  return (
+    <div className="card">
+      <h3>Live agents</h3>
+      <p className="muted">
+        Real language-model agents (<code>{live.model}</code>) played the three roles; the model was not told anything
+        about security. Whether it follows a hidden instruction is up to the model: nothing here is scripted.
+      </p>
+      <dl className="facts">
+        <div><dt>Model calls</dt><dd>{live.llm.calls}</dd></div>
+        <div><dt>Prompt tokens</dt><dd>{live.llm.prompt_tokens}</dd></div>
+        <div><dt>Completion tokens</dt><dd>{live.llm.completion_tokens}</dd></div>
+      </dl>
+      <table>
+        <thead><tr><th>session</th><th>agent</th><th>model steps</th><th>ended</th></tr></thead>
+        <tbody>
+          {live.sessions.map((s) => (
+            <tr key={s.session}><td><code>{s.session}</code></td><td>{s.agent}</td><td>{s.steps}</td><td>{s.stopped}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function RunTab({ initial }: { initial: RunInitial }) {
   const [scenarios, setScenarios] = useState<ScenarioInfo[]>([]);
   const [scenario, setScenario] = useState(initial.scenario);
   const [guard, setGuard] = useState(initial.guard);
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"scripted" | "live">(initial.mode);
+  const [llm, setLlm] = useState<LlmInfo | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
   const [posted, setPosted] = useState<PostedEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(
-    async (name: string, withGuard: boolean) => {
+    async (name: string, withGuard: boolean, runMode: "scripted" | "live") => {
       setBusy(true);
       setError(null);
       try {
-        const outcome = await api.run(name, withGuard, "scripted");
+        const outcome = await api.run(name, withGuard, runMode);
         setResult(outcome);
         setPosted(await api.sink(PUBLIC_PAGE_SINK));
       } catch (err) {
@@ -86,7 +120,8 @@ export function RunTab({ initial }: { initial: RunInitial }) {
         if (!list.some((s) => s.name === initial.scenario) && list[0]) setScenario(list[0].name);
       })
       .catch((err: unknown) => setError(errorText(err)));
-    if (initial.autorun) void run(initial.scenario, initial.guard);
+    api.health().then((h) => setLlm(h.llm)).catch(() => setLlm(null));
+    if (initial.autorun) void run(initial.scenario, initial.guard, initial.mode);
   }, [initial, run]);
 
   const current = scenarios.find((s) => s.name === scenario);
@@ -108,12 +143,15 @@ export function RunTab({ initial }: { initial: RunInitial }) {
         </label>
         <fieldset className="mode">
           <legend>Mode</legend>
-          <label><input type="radio" checked readOnly /> scripted</label>
-          <label title="Live LLM agents arrive in phase P8">
-            <input type="radio" disabled /> live <span className="muted">(arrives in P8)</span>
+          <label>
+            <input type="radio" name="mode" checked={mode === "scripted"} onChange={() => setMode("scripted")} disabled={busy} /> scripted
+          </label>
+          <label title={llm?.configured ? "Real language-model agents (costs tokens)" : "Set PW_LLM_API_KEY to enable live mode"}>
+            <input type="radio" name="mode" checked={mode === "live"} onChange={() => setMode("live")} disabled={busy || !llm?.configured} /> live{" "}
+            <span className="muted">{llm?.configured ? `(${llm.model})` : "(needs PW_LLM_API_KEY)"}</span>
           </label>
         </fieldset>
-        <button type="button" className="primary" onClick={() => void run(scenario, guard)} disabled={busy || !scenario}>
+        <button type="button" className="primary" onClick={() => void run(scenario, guard, mode)} disabled={busy || !scenario}>
           {busy ? "Running…" : "Run"}
         </button>
         {current && <p className="muted desc">{current.description}</p>}
@@ -121,6 +159,7 @@ export function RunTab({ initial }: { initial: RunInitial }) {
 
       {error && <div className="banner red" role="alert">{error}</div>}
       {result && <Outcome result={result} posted={posted} />}
+      {result?.live && <LivePanel live={result.live} />}
 
       {result && (
         <>

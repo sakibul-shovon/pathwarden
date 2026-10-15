@@ -12,6 +12,7 @@ import type {
   ForensicReport,
   GraphAt,
   HealResult,
+  LlmInfo,
   MemoryEntry,
   PostedEntry,
   RunResult,
@@ -95,8 +96,9 @@ export const api = {
   actions: () => request<ActionListItem[]>("GET", ws("/actions")),
   action: (id: string) => request<ActionDetail>("GET", ws(`/actions/${id}`)),
   explain: (id: string) => request<Explain>("GET", ws(`/actions/${id}/explain`)),
-  forensics: (id: string) =>
-    request<ForensicReport>("POST", ws(`/forensics/${id}`), { mode: "scripted" }),
+  health: () => request<{ llm: LlmInfo }>("GET", "/health"),
+  forensics: (id: string, mode: "scripted" | "llm" = "scripted") =>
+    request<ForensicReport>("POST", ws(`/forensics/${id}`), { mode }),
   healApprove: (id: string) =>
     request<HealResult>("POST", ws(`/heal/${id}/approve`), { approver: "maintainer" }, undefined, true),
   artifact: (id: string, graph: "main" | "sandbox") =>

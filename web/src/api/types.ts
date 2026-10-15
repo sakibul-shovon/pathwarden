@@ -37,6 +37,7 @@ export interface RunResult {
   sessions: SessionView[];
   timeline: TimelineRow[];
   actions: ActionOutcome[];
+  live?: LiveInfo; // only for mode "live"
 }
 
 export interface HealResult extends RunResult {
@@ -290,4 +291,22 @@ export interface EvalSummary {
   falsification_criteria: { text: string; status: string }[];
   limitations: string[];
   remediation?: Record<string, RemediationSummary>;
+}
+
+export interface LlmInfo {
+  configured: boolean;
+  model: string | null;
+}
+
+export interface LiveSession {
+  session: string;
+  agent: string;
+  steps: number;
+  stopped: string; // done | finished | max_steps | invalid_json | llm_error
+}
+
+export interface LiveInfo {
+  model: string;
+  llm: { calls: number; prompt_tokens: number; completion_tokens: number };
+  sessions: LiveSession[];
 }

@@ -56,9 +56,13 @@ def create_app(
                 status_code=503,
                 content={"error": "falkordb_unavailable", "detail": type(exc).__name__},
             )
+        llm = {
+            "configured": app.state.workspaces.llm_model is not None,
+            "model": app.state.workspaces.llm_model,
+        }
         if app.state.settings.auth == "on":  # hosted: never list graph (= tenant) names
-            return JSONResponse(content={"falkordb": "ok"})
-        return JSONResponse(content={"falkordb": "ok", "graphs": graphs})
+            return JSONResponse(content={"falkordb": "ok", "llm": llm})
+        return JSONResponse(content={"falkordb": "ok", "graphs": graphs, "llm": llm})
 
     return app
 
