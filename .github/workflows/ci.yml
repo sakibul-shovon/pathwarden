@@ -1,7 +1,7 @@
 name: ci
 
 # Required status checks for `main` (configure after the first successful run): `repo-hygiene` and `api`.
-# Add `web` when P10a enables that job.
+# `web` (strict TypeScript build) joined in P10a: add it to the required checks too.
 #
 # Scaffold exists (P0): a missing pyproject.toml / Makefile is a hard failure.
 
@@ -58,18 +58,17 @@ jobs:
       - name: Tests (no LLM key, no network beyond localhost)
         run: make test
 
-  # P10a-T1: uncomment when web/ exists, then add `web` to the required checks.
-  # web:
-  #   runs-on: ubuntu-latest
-  #   defaults:
-  #     run:
-  #       working-directory: web
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: "22"
-  #         cache: npm
-  #         cache-dependency-path: web/package-lock.json
-  #     - run: npm ci
-  #     - run: npm run build   # must include `tsc` (strict) so type errors fail the job
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build # `tsc --noEmit` (strict) then `vite build`: type errors fail the job
