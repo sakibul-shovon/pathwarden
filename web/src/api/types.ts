@@ -298,6 +298,13 @@ export interface LlmInfo {
   model: string | null;
 }
 
+/** `GET /api/health`: `graphs` is listed only in local mode (hosted mode never lists tenant names). */
+export interface HealthInfo {
+  falkordb: string;
+  graphs?: string[];
+  llm: LlmInfo;
+}
+
 export interface LiveSession {
   session: string;
   agent: string;

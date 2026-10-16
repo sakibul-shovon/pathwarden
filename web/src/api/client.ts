@@ -2,7 +2,6 @@ import type {
   ActionDetail,
   ActionListItem,
   AgentWitness,
-  ApiErrorBody,
   ApplyResult,
   Artifact,
   Candidate,
@@ -12,16 +11,24 @@ import type {
   ForensicReport,
   GraphAt,
   HealResult,
-  LlmInfo,
+  HealthInfo,
   MemoryEntry,
   PostedEntry,
   RunResult,
   ScenarioInfo,
 } from "./types";
+import { beginMutation, endMutation } from "../shared/lib/activity";
+import { parseResponse, UNREACHABLE } from "./failure";
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
 // `?ws=tinyqueue-mcp` shows the lineage written by the MCP gateway (P9); default: the main workspace
-const WS = new URLSearchParams(window.location.search).get("ws") ?? "tinyqueue";
+const DEFAULT_WORKSPACE = "tinyqueue";
+let currentWorkspace = new URLSearchParams(window.location.search).get("ws") ?? DEFAULT_WORKSPACE;
+/** The workspace every `/api/ws/{ws}/...` call goes to; the shell switches it without a reload. */
+export const getWorkspace = (): string => currentWorkspace;
+export const setWorkspace = (name: string): void => {
+  currentWorkspace = name;
+};
 export const PUBLIC_PAGE_SINK = "sink:public_release_page";
 
 /** Hosted mode (PW_AUTH=on): the workspace key, from `?key=` (kept for the tab session) or
@@ -48,6 +55,11 @@ export class ApiError extends Error {
   }
 }
 
+/** The API did not answer at all (network failure, a proxy's Bad Gateway, or something that is not JSON). */
+export const isUnreachable = (err: unknown): boolean => err instanceof ApiError && err.code === UNREACHABLE;
+/** The API answered but FalkorDB is down (503 `falkordb_unavailable`). */
+export const isDatabaseDown = (err: unknown): boolean => err instanceof ApiError && err.code === "falkordb_unavailable";
+
 async function request<T>(
   method: "GET" | "POST",
   path: string,
@@ -61,22 +73,31 @@ async function request<T>(
   if (key) headers["Authorization"] = `Bearer ${key}`;
   // risk-increasing actions (approve, release, apply): a deliberate-action guard, not authentication
   if (human) headers["X-PW-Human"] = "true";
-  const response = await fetch(`${BASE}/api${path}`, {
-    method,
-    signal,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const text = await response.text();
-  const data: unknown = text ? JSON.parse(text) : null;
-  if (!response.ok) {
-    const err = data as Partial<ApiErrorBody> | null;
-    throw new ApiError(response.status, err?.error ?? "http_error", err?.detail ?? response.statusText);
+  // a POST can hold the workspace lock for a long time (run, forensics, heal): polling pauses meanwhile
+  const mutating = method === "POST";
+  if (mutating) beginMutation();
+  try {
+    let response: Response;
+    try {
+      response = await fetch(`${BASE}/api${path}`, {
+        method,
+        signal,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") throw err; // a cancelled request is not a failure
+      throw new ApiError(0, UNREACHABLE, "Could not reach the Pathwarden API.");
+    }
+    const parsed = parseResponse(response.status, response.ok, await response.text(), response.statusText);
+    if ("error" in parsed) throw new ApiError(parsed.error.status, parsed.error.code, parsed.error.detail);
+    return parsed.data as T;
+  } finally {
+    if (mutating) endMutation();
   }
-  return data as T;
 }
 
-const ws = (path: string): string => `/ws/${WS}${path}`;
+const ws = (path: string): string => `/ws/${currentWorkspace}${path}`;
 
 export const api = {
   evalSummary: () => request<EvalSummary>("GET", "/eval/summary"),
@@ -96,7 +117,7 @@ export const api = {
   actions: () => request<ActionListItem[]>("GET", ws("/actions")),
   action: (id: string) => request<ActionDetail>("GET", ws(`/actions/${id}`)),
   explain: (id: string) => request<Explain>("GET", ws(`/actions/${id}/explain`)),
-  health: () => request<{ llm: LlmInfo }>("GET", "/health"),
+  health: () => request<HealthInfo>("GET", "/health"),
   forensics: (id: string, mode: "scripted" | "llm" = "scripted") =>
     request<ForensicReport>("POST", ws(`/forensics/${id}`), { mode }),
   healApprove: (id: string) =>
