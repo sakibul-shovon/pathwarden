@@ -31,15 +31,23 @@ export const setWorkspace = (name: string): void => {
 };
 export const PUBLIC_PAGE_SINK = "sink:public_release_page";
 
-/** Hosted mode (PW_AUTH=on): the workspace key, from `?key=` (kept for the tab session) or
- *  VITE_API_KEY. Local mode needs none. It is sent only in the Authorization header. */
+/** Hosted mode (PW_AUTH=on): the workspace key, from `?key=` (kept for the tab session) or VITE_API_KEY. Local mode
+ *  needs none. It is sent only in the Authorization header. The URL is read once, when this module loads: the app
+ *  later rewrites the address bar (and P13d removes the key from it), so nothing may depend on `?key=` staying there. */
+const KEY_STORAGE = "pw_key";
+const keyFromUrl = new URLSearchParams(window.location.search).get("key");
+try {
+  if (keyFromUrl) window.sessionStorage.setItem(KEY_STORAGE, keyFromUrl);
+} catch {
+  // storage can be blocked: the key then lives only in `keyFromUrl` for this page load
+}
+
 function apiKey(): string | null {
-  const fromUrl = new URLSearchParams(window.location.search).get("key");
+  const fromEnv = (import.meta.env.VITE_API_KEY as string | undefined) ?? null;
   try {
-    if (fromUrl) window.sessionStorage.setItem("pw_key", fromUrl);
-    return window.sessionStorage.getItem("pw_key") ?? (import.meta.env.VITE_API_KEY as string | undefined) ?? null;
+    return window.sessionStorage.getItem(KEY_STORAGE) ?? keyFromUrl ?? fromEnv;
   } catch {
-    return fromUrl ?? (import.meta.env.VITE_API_KEY as string | undefined) ?? null;
+    return keyFromUrl ?? fromEnv;
   }
 }
 
