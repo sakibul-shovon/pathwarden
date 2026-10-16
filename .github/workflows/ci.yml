@@ -75,3 +75,4 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npm run build # `tsc --noEmit` (strict) then `vite build`: type errors fail the job
+      - run: npm test # Vitest unit tests of the pure UI logic (dev dependency only, D-036)
