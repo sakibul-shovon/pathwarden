@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 /** Motion helpers (ui-redesign.md §17). Motion explains causality, state change or spatial origin and nothing else; the final state is
@@ -46,22 +46,28 @@ export function runTrace<T>(frames: T[][], stepMs: number, onFrame: (frame: T[],
 /** How many steps of each rail are shown: all of them when there is no trace, otherwise growing by one per frame. */
 export const revealedSteps = (frame: number | null, total: number): number => (frame === null ? total : Math.min(total, frame + 1));
 
+// effects that start a trace run before the browser paints (so the finished figure never flashes); on a server they are plain effects
+const useStartEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 const canAnimateTrace = (): boolean => !prefersReducedMotion() && tokenMs("--dur-trace-step") > 0;
 
 /** Drives the HTML witness trace: `null` shows everything (no key, a trace already played for this key, or reduced motion); otherwise the
- *  index of the last revealed frame, advancing every `--dur-trace-step`. Plays once for each new `key`; while `ready` is false it waits on
- *  the first frame (the payload), so the rest does not flash before the trace starts. */
+ *  index of the last revealed frame, advancing every `--dur-trace-step`. Plays once for each new `key`. While `ready` is false (the figure
+ *  is not on screen yet) everything is shown: a figure nobody has seen is never left half drawn. */
 export function useTraceFrame(key: string | null, frameCount: number, ready = true): number | null {
   const played = useRef<string | null>(null);
-  const [frame, setFrame] = useState<number | null>(() => (key !== null && frameCount > 0 && canAnimateTrace() ? 0 : null));
-  useEffect(() => {
+  const [frame, setFrame] = useState<number | null>(() => (key !== null && frameCount > 0 && ready && canAnimateTrace() ? 0 : null));
+  useStartEffect(() => {
     if (key === null || frameCount === 0 || played.current === key || !canAnimateTrace()) {
       if (key !== null) played.current = key;
       setFrame(null);
       return;
     }
+    if (!ready) {
+      setFrame(null);
+      return;
+    }
     setFrame(0);
-    if (!ready) return;
     const step = tokenMs("--dur-trace-step");
     const frames = Array.from({ length: frameCount }, (_, i) => [i]);
     return runTrace(
@@ -77,13 +83,20 @@ export function useTraceFrame(key: string | null, frameCount: number, ready = tr
   return frame;
 }
 
-/** True once the element has been at least `ratio` visible; never goes back. Uses an IntersectionObserver, not a scroll listener. */
+/** True once the element has been at least `ratio` visible; never goes back. An element already on screen at mount counts at once (before the
+ *  first paint); otherwise an IntersectionObserver, not a scroll listener, notices. */
 export function useOnceVisible<T extends Element>(ratio = 0.5): [React.RefObject<T>, boolean] {
   const ref = useRef<T>(null);
   const [seen, setSeen] = useState(false);
-  useEffect(() => {
+  useStartEffect(() => {
     const el = ref.current;
     if (seen || !el) return;
+    const box = el.getBoundingClientRect();
+    const shown = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0);
+    if (box.height > 0 && shown / box.height >= ratio) {
+      setSeen(true);
+      return;
+    }
     if (typeof IntersectionObserver === "undefined") {
       setSeen(true);
       return;
