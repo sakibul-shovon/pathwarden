@@ -6,6 +6,7 @@ import { Button } from "../shared/components/Button";
 import { Dialog } from "../shared/components/Dialog";
 import { Wordmark } from "../shared/components/Wordmark";
 import { Icon } from "../shared/icons/Icon";
+import { withViewTransition } from "../shared/lib/motion";
 import { applyTheme, readStoredTheme, type ThemePreference } from "../shared/lib/theme";
 import { Connect } from "./Connect";
 import { readOnboarding, writeOnboarding } from "./guide";
@@ -51,7 +52,7 @@ export function Shell() {
     const onPop = (): void => {
       const next = parseUrl(window.location.search);
       setWorkspace(next.ws);
-      setUrl(next);
+      withViewTransition(() => setUrl(next));
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -74,8 +75,10 @@ export function Shell() {
       setWorkspace(next.ws);
       window.history.pushState(null, "", buildSearch(next));
       writeOnboarding({ ...readOnboarding(), lastTab: next.tab });
-      setUrl(next);
-      setMenuOpen(false);
+      withViewTransition(() => {
+        setUrl(next);
+        setMenuOpen(false);
+      });
     },
     [url],
   );
