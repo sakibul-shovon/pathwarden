@@ -24,18 +24,22 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** `copied` is true for two seconds after a successful copy, so a button can say "Copied" in text. */
-export function useCopy(): { copied: boolean; copy: (text: string) => void } {
+/** `copied` is true for two seconds after a successful copy, so a button can say "Copied" in text; `failed` likewise after a refusal, so the person is told to copy by hand. */
+export function useCopy(): { copied: boolean; failed: boolean; copy: (text: string) => void } {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
   const copy = useCallback((text: string) => {
     void copyText(text).then((ok) => {
-      if (!ok) return;
-      setCopied(true);
+      setCopied(ok);
+      setFailed(!ok);
       window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => setCopied(false), 2000);
+      timer.current = window.setTimeout(() => {
+        setCopied(false);
+        setFailed(false);
+      }, 2000);
     });
   }, []);
-  return { copied, copy };
+  return { copied, failed, copy };
 }

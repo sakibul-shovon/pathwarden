@@ -250,7 +250,10 @@
   text-align: left;
   cursor: pointer;
 }
-.pw-step__btn:hover .pw-step__label {
+.pw-step__btn--static {
+  cursor: default;
+}
+button.pw-step__btn:hover .pw-step__label {
   text-decoration: underline;
   text-underline-offset: 3px;
 }

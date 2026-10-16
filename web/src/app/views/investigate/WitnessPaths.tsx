@@ -25,7 +25,19 @@ interface RailProps {
   onOpen?: (id: string) => void;
 }
 
+const chip = (s: PathStep) => (
+  <>
+    <span className="pw-step__label">
+      {s.isSource && <Icon name="diamond" size={14} />} {s.label}
+    </span>
+    {s.label !== s.id && <code className="pw-step__id">{s.id}</code>}
+    {s.tags.length > 0 && <span className="pw-step__tags">{s.tags.join(" · ")}</span>}
+  </>
+);
+
 function Rail({ kind, steps, query, queryName, onHover, onOpen }: RailProps) {
+  // a chip is a button only when something happens on hover or activation (the landing page's plate is a static figure)
+  const interactive = Boolean(onHover || onOpen);
   const n = stepCount(steps.map((s) => s.id));
   const title = kind === "untrusted" ? "Untrusted path" : "Secret path";
   return (
@@ -43,21 +55,21 @@ function Rail({ kind, steps, query, queryName, onHover, onOpen }: RailProps) {
         <ol className="pw-path__steps">
           {steps.map((s, i) => (
             <li key={s.id} className={s.isSource ? "pw-step pw-step--source" : "pw-step"}>
-              <button
-                type="button"
-                className="pw-step__btn"
-                onClick={() => onOpen?.(s.id)}
-                onMouseEnter={() => onHover?.(s.id)}
-                onMouseLeave={() => onHover?.(null)}
-                onFocus={() => onHover?.(s.id)}
-                onBlur={() => onHover?.(null)}
-              >
-                <span className="pw-step__label">
-                  {s.isSource && <Icon name="diamond" size={14} />} {s.label}
-                </span>
-                {s.label !== s.id && <code className="pw-step__id">{s.id}</code>}
-                {s.tags.length > 0 && <span className="pw-step__tags">{s.tags.join(" · ")}</span>}
-              </button>
+              {interactive ? (
+                <button
+                  type="button"
+                  className="pw-step__btn"
+                  onClick={() => onOpen?.(s.id)}
+                  onMouseEnter={() => onHover?.(s.id)}
+                  onMouseLeave={() => onHover?.(null)}
+                  onFocus={() => onHover?.(s.id)}
+                  onBlur={() => onHover?.(null)}
+                >
+                  {chip(s)}
+                </button>
+              ) : (
+                <span className="pw-step__btn pw-step__btn--static">{chip(s)}</span>
+              )}
               {i < steps.length - 1 && <Icon name="arrow-right" size={14} className="pw-step__arrow" />}
             </li>
           ))}
