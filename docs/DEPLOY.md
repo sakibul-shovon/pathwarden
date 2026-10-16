@@ -27,7 +27,13 @@ Notes: the evaluation summary (`GET /api/eval/summary`) is read from `eval/resul
 
 ## 2. UI
 
-`cd web && npm run build`, then serve `web/dist` (Vercel or any static host). The API is called through a **relative** `/api` path; with the UI and the API on different origins either put a reverse proxy in front (same origin) or set `VITE_API_BASE` to the API's URL, **and note that the API has no CORS configuration**: a cross-origin deployment needs a CORS layer or a proxy (a stated non-goal, `docs/SECURITY.md`). The key is taken from `?key=<workspace key>` (kept for the tab session) or `VITE_API_KEY`; a build-time key is visible to everyone who can load the UI, so prefer a per-visitor `?key=` link.
+`cd web && npm run build` emits **two entry pages** into `web/dist`: `index.html` (the project page, served at `/`) and `app/index.html` (the workspace, served at `/app/`), with hashed assets and the self-hosted fonts. Serve `web/dist` from any static host (Vercel, Netlify, nginx, `python -m http.server`). Do **not** add an "every unknown path falls back to `index.html`" rule: `/app/` is a real folder, and the project page decides between "Open the workspace" and "Run it locally" by asking `/api/health` once, so a host that answers `/api/...` with HTML would make it look like an API (the page requires the API's own JSON and treats anything else as "not running").
+
+The API is called through a **relative** `/api` path. With the UI and the API on different origins either put a reverse proxy in front (same origin) or set `VITE_API_BASE` to the API's URL, **and note that the API has no CORS configuration**: a cross-origin deployment needs a CORS layer or a proxy (a stated non-goal, `docs/SECURITY.md`). In hosted mode (`PW_AUTH=on`) the workspace key is entered on the Connect screen, or arrives once in `?key=<workspace key>` (kept for the tab session in `sessionStorage` and removed from the address bar), or is built in with `VITE_API_KEY`; a build-time key is visible to everyone who can load the UI, so prefer a per-visitor `?key=` link.
+
+Links from the earlier single-page version (`/?tab=investigate&ws=...`, including the one in the MCP gateway's tool error) are forwarded by a small script on the project page to `/app/?...` with the same query, so they keep working on a static host without a server rule.
+
+The project page renders fully with the API stopped. Its figures do not call the API: the evaluation, the two queries and the issue fixture are read from the repository at build time (re-run `make eval` and rebuild to refresh them), and the witness figure, the leaked release page and the held-versus-healed diff come from `web/src/landing/recorded/story.json`, recorded from the real API by `python scripts/capture_landing_story.py` (it resets the local demo workspace: run it deliberately, never against a hosted tenant).
 
 ## 3. TLS, limits
 

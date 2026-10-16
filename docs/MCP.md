@@ -57,7 +57,7 @@ make demo-mcp           # three scripted MCP clients, three gateway processes; t
 make web                # then open  http://localhost:5173/?tab=investigate&ws=tinyqueue-mcp
 ```
 
-`?ws=tinyqueue-mcp` makes every tab show the graph the gateway wrote (`pw_mcp_tinyqueue`): the held action with both witnesses, the memory inventory, the time-travel slider. `make demo-mcp` resets that workspace first. With P8 (live LLM mode) the same three roles can be real LLM agents; until then the demo clients are scripted, and the demo says so.
+`?ws=tinyqueue-mcp` makes every view show the graph the gateway wrote (`pw_mcp_tinyqueue`): the held action with both witnesses, the memory inventory, the time-travel scrubber. The link in the tool error (`/?tab=investigate&ws=...`) opens the workspace: the project page forwards it to `/app/` with the same query. `make demo-mcp` resets that workspace first. With P8 (live LLM mode) the same three roles can be real LLM agents; until then the demo clients are scripted, and the demo says so.
 
 ## Limits (stated, not hidden)
 

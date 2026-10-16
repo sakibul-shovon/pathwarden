@@ -10,7 +10,7 @@ Entered in **Track 01** and **Track 02** (see [section 14](#14-tracks-entered)).
 |---|---|
 | ![guard off](docs/img/run-guard-off-leak.png) | ![guard on](docs/img/run-guard-on-hold.png) |
 
-> A GIF/video of this flow is a human task (see `docs/PROGRESS.md`, P12-T5); the screenshots above are real captures of the running UI.
+> A GIF/video of this flow is a human task (see `docs/PROGRESS.md`, P12-T5); the screenshots above are real captures of the running UI (regenerated for the redesigned interface).
 
 ---
 
@@ -37,7 +37,7 @@ make up         # FalkorDB + the API in Docker; waits until the database answers
 make demo       # the six scenarios of the story, with and without the guard (exit code 0 = as expected)
 make test       # the test suite against a real FalkorDB
 make eval       # 120 scenarios x 7 defenses; deterministic, byte-identical on every run
-make web        # the UI on http://localhost:5173 (needs Node; tested with 22; `cd web && npm install` once)
+make web        # the UI: the project page at http://localhost:5173, the workspace at /app/ (needs Node; tested with 22; `cd web && npm install` once)
 ```
 
 Everything above works offline: scripted agents (a deterministic simulation of an LLM that follows the injected instruction) need no key. The live-LLM mode is not implemented yet (see [Limitations](#11-evaluation)).
@@ -56,7 +56,9 @@ Other commands: `make demo-mcp` (the same attack through the MCP gateway, [secti
 
 Hard rules (plan §4, enforced by `tests/test_invariants.py`): all Cypher lives in `api/graph/queries/*.cypher` and is loaded by name; only the runtime writes provenance (agents never get a graph handle); the gate and the Forensic Agent never read artifact content and call no LLM; trust labels come only from the registry; unknown tools, sinks or missing provenance fail closed.
 
-Folders: `api/` (runtime, gate, forensics, remediation, routes, MCP), `eval/` (generator, baselines, results), `fixtures/` (registry, policy, issues, topologies), `web/` (UI), `mock_upstreams/`, `docs/`.
+Folders: `api/` (runtime, gate, forensics, remediation, routes, MCP), `eval/` (generator, baselines, results), `fixtures/` (registry, policy, issues, topologies), `web/` (UI: `src/landing/` the project page, `src/app/` the workspace, `src/shared/` the design system), `mock_upstreams/`, `docs/`.
+
+**The interface** (`web/`, React and TypeScript, no UI framework). `/` is the project page, drawn from the repository itself: the generated evaluation, the two gate queries, the issue fixture and one recorded run. `/app/` is the workspace with six views: **Run**, **Investigate** (a review queue and a case file), **Memory**, **Time travel**, **Remediate** and **Evaluation**. Every view is a deep link (`/app/?tab=investigate&action=act-0001`, `?tab=time&t=4`, `?tab=remediate&topology=tinyqueue3`, plus `&ws=<workspace>`), and the links of the earlier single-page version still work (`/?tab=...` is forwarded to `/app/?tab=...`). The UI decides nothing: verdicts, witness paths, taint markers, toxic agents, cuts and every number come from the API. It was checked with an automated accessibility scan (no violations), a width, theme and zoom matrix, a keyboard walk and reduced-motion runs; the evidence, and what was not tested (a screen reader, a touch device), is in [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ## 4. Graph data model
 
@@ -94,7 +96,7 @@ From a held action the Forensic Agent (metadata-only tools, no content): finds t
 
 ## 7. Time travel and memory hygiene
 
-The **Time travel** tab replays the lineage graph at any logical time; the two moments of the story are marked: *the poisoned memory is written* (Monday) and *the draft becomes doubly tainted* (Wednesday). Markers are computed from the graph, never hard-coded. The **Memory** tab lists every team-memory entry with its writer, day, untrusted origins and quarantine state, with a confirmed *Release quarantine* action.
+The **Time travel** view replays the lineage graph at any logical time (a scrubber, step buttons and a replay), drawn as one lane per session with time running down; the two moments of the story are marked: *the poisoned memory is written* (Monday) and *the draft becomes doubly tainted* (Wednesday). Markers are computed from the graph, never hard-coded. The **Memory** view lists every team-memory entry with its writer, day, untrusted origins and quarantine state, with a confirmed *Release quarantine* action.
 
 ![time travel](docs/img/time-travel-sleeper.png)
 
@@ -112,7 +114,7 @@ Every agent session gets A/B/C badges computed from the graph (`q5`). In the dem
 
 ## 10. MCP gateway and tool server
 
-`make demo-mcp` runs three scripted agents as three separate MCP client sessions, each through its own gateway process (stdio), in front of five mock upstream servers. The release is answered with the tool error `Held by Pathwarden: act-0001 (TRIFECTA). Review at ...`; the upstream `post_release` is never called. `?ws=tinyqueue-mcp` shows the same witnesses in the UI. The **tool server** exposes `pathwarden_gate`, `pathwarden_explain`, `pathwarden_quarantine_preview`, `pathwarden_forensics` and `pathwarden_toxic_agents`. Details, client configuration and limits: [`docs/MCP.md`](docs/MCP.md). The demo clients are scripted; real LLM agents through the gateway need the live mode (not implemented).
+`make demo-mcp` runs three scripted agents as three separate MCP client sessions, each through its own gateway process (stdio), in front of five mock upstream servers. The release is answered with the tool error `Held by Pathwarden: act-0001 (TRIFECTA). Review at ...`; the upstream `post_release` is never called. Opening the link in the tool error (`/?tab=investigate&ws=tinyqueue-mcp`) shows the same witnesses in the workspace. The **tool server** exposes `pathwarden_gate`, `pathwarden_explain`, `pathwarden_quarantine_preview`, `pathwarden_forensics` and `pathwarden_toxic_agents`. Details, client configuration and limits: [`docs/MCP.md`](docs/MCP.md). The demo clients are scripted; real LLM agents through the gateway need the live mode (not implemented).
 
 ![mcp](docs/img/mcp-gateway-hold.png)
 
