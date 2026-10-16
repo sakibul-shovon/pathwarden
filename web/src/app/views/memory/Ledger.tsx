@@ -1,5 +1,6 @@
 import type { MemoryEntry } from "../../../api/types";
 import { Button } from "../../../shared/components/Button";
+import { Scroll } from "../../../shared/components/Scroll";
 import { StatusPill } from "../../../shared/components/StatusPill";
 import { Icon } from "../../../shared/icons/Icon";
 import { releaseBlockedReason } from "./memoryLogic";
@@ -16,7 +17,8 @@ interface LedgerProps {
  *  nothing is hidden and nothing scrolls sideways. State is a word and an icon, never only a colour. */
 export function Ledger({ entries, busy, onOpen, onRelease }: LedgerProps) {
   return (
-    <table className="pw-ledger">
+    <Scroll label="Team memory ledger">
+      <table className="pw-ledger">
       <caption className="pw-visually-hidden">Entries of shared team memory</caption>
       <thead>
         <tr>
@@ -86,5 +88,6 @@ export function Ledger({ entries, busy, onOpen, onRelease }: LedgerProps) {
         })}
       </tbody>
     </table>
+    </Scroll>
   );
 }

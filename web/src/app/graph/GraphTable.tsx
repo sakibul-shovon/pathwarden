@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import type { LineageEdge, LineageNode } from "../../api/types";
 import { Field } from "../../shared/components/Field";
+import { Scroll } from "../../shared/components/Scroll";
 import { edgeRows, filterRows, nodeRows, sortRows, type EdgeRow, type NodeRow, type SortDir } from "./graphModel";
 
 interface GraphTableProps {
@@ -11,6 +12,8 @@ interface GraphTableProps {
   onOpen: (id: string) => void;
   /** Called when a row's id is hovered or focused, so a canvas next to it can dim what is unrelated. */
   onHover?: (id: string | null) => void;
+  /** 3 under a section heading (the case file), 2 straight under the view's title (Time travel). */
+  headingLevel?: 2 | 3;
 }
 
 interface Column<T> {
@@ -47,7 +50,7 @@ function SortableTable<T extends object>({ caption, columns, rows, openKeys, onO
   const shown = useMemo(() => (sort ? sortRows(rows, sort.key, sort.dir) : rows), [rows, sort]);
   const toggle = (key: keyof T): void => setSort((s) => (s && s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
   return (
-    <div className="pw-scroll">
+    <Scroll label={caption}>
       <table className="pw-log__table pw-gtable">
         <caption className="pw-visually-hidden">{caption}</caption>
         <thead>
@@ -89,13 +92,14 @@ function SortableTable<T extends object>({ caption, columns, rows, openKeys, onO
           ))}
         </tbody>
       </table>
-    </div>
+    </Scroll>
   );
 }
 
 /** The graph as two tables, nodes and edges: sortable, filterable, and exactly the data the canvas draws. This is the primary
  *  accessible form of the graph (ui-redesign.md §15.8): a witness path is a word in a column, not only a colour on a line. */
-export function GraphTable({ nodes, edges, untrustedWitness, secretWitness, onOpen, onHover }: GraphTableProps) {
+export function GraphTable({ nodes, edges, untrustedWitness, secretWitness, onOpen, onHover, headingLevel = 3 }: GraphTableProps) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   const filterId = useId();
   const [filter, setFilter] = useState("");
   const allNodes = useMemo(() => nodeRows(nodes, untrustedWitness, secretWitness), [nodes, untrustedWitness, secretWitness]);
@@ -110,9 +114,9 @@ export function GraphTable({ nodes, edges, untrustedWitness, secretWitness, onOp
       <p className="pw-muted" role="status">
         {nodeShown.length} of {allNodes.length} nodes · {edgeShown.length} of {allEdges.length} edges
       </p>
-      <h3 className="pw-gtables__h">Nodes</h3>
+      <Heading className="pw-gtables__h">Nodes</Heading>
       <SortableTable caption="Nodes of the graph" columns={NODE_COLUMNS} rows={nodeShown} openKeys={["id"]} onOpen={onOpen} onHover={onHover} />
-      <h3 className="pw-gtables__h">Edges</h3>
+      <Heading className="pw-gtables__h">Edges</Heading>
       <SortableTable caption="Edges of the graph" columns={EDGE_COLUMNS} rows={edgeShown} openKeys={["from", "to"]} onOpen={onOpen} onHover={onHover} />
     </div>
   );

@@ -1,5 +1,6 @@
 import type { LiveInfo } from "../../../api/types";
 import { stopLabel } from "./runLogic";
+import { Scroll } from "../../../shared/components/Scroll";
 
 /** What the live (language-model) agents did: the model, the tokens it used, and why each session ended. The raw stop
  *  reason is kept next to its label. Whether a model follows a hidden instruction is up to the model, not scripted. */
@@ -27,7 +28,7 @@ export function LivePanel({ live }: { live: LiveInfo }) {
           <dd>{live.llm.completion_tokens}</dd>
         </div>
       </dl>
-      <div className="pw-scroll">
+      <Scroll label="Live agent sessions">
         <table className="pw-log__table">
           <thead>
             <tr>
@@ -52,7 +53,7 @@ export function LivePanel({ live }: { live: LiveInfo }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </Scroll>
     </section>
   );
 }

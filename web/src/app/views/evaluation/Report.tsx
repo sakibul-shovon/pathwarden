@@ -2,13 +2,14 @@ import type { EvalSummary } from "../../../api/types";
 import { StatusPill } from "../../../shared/components/StatusPill";
 import type { StatusFamily } from "../../../shared/lib/status";
 import { criterionChip, defenseRows, familyCell, judgeNote, judgeSummary, pct, rateText, remediationRows, type CriterionChip } from "./evalLogic";
+import { Scroll } from "../../../shared/components/Scroll";
 
 const CHIP_FAMILY: Record<CriterionChip, StatusFamily> = { triggered: "hold", "not triggered": "allow", "not evaluable": "neutral", met: "allow" };
 
 /** The primary, accessible form of the chart: every defense with ASR and FHR as the rate, the interval and the counts. */
 export function DefenseTable({ s }: { s: EvalSummary }) {
   return (
-    <div className="pw-scroll">
+    <Scroll label="Defenses table">
       <table className="pw-etable">
         <caption className="pw-visually-hidden">Defenses with attack success rate and false hold rate</caption>
         <thead>
@@ -42,7 +43,7 @@ export function DefenseTable({ s }: { s: EvalSummary }) {
           })}
         </tbody>
       </table>
-    </div>
+    </Scroll>
   );
 }
 
@@ -77,7 +78,7 @@ export function CriteriaList({ s }: { s: EvalSummary }) {
 export function FamilyTable({ s }: { s: EvalSummary }) {
   const defenses = Object.keys(s.defenses);
   return (
-    <div className="pw-scroll">
+    <Scroll label="Results per family">
       <table className="pw-etable">
         <caption className="pw-visually-hidden">Results per scenario family and defense</caption>
         <thead>
@@ -111,7 +112,7 @@ export function FamilyTable({ s }: { s: EvalSummary }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </Scroll>
   );
 }
 
@@ -119,7 +120,7 @@ export function RemediationTable({ s }: { s: EvalSummary }) {
   const rows = remediationRows(s.remediation);
   if (rows.length === 0) return null;
   return (
-    <div className="pw-scroll">
+    <Scroll label="Remediation candidates">
       <table className="pw-etable">
         <caption className="pw-visually-hidden">Remediation candidates against the exhaustive optimum</caption>
         <thead>
@@ -143,7 +144,7 @@ export function RemediationTable({ s }: { s: EvalSummary }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </Scroll>
   );
 }
 

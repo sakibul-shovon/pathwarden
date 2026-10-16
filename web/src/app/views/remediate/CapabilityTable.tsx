@@ -1,6 +1,7 @@
 import type { CapEdge, CapNode } from "../../../api/types";
 import { Button } from "../../../shared/components/Button";
 import { agentRows } from "./remediateLogic";
+import { Scroll } from "../../../shared/components/Scroll";
 
 interface CapabilityTableProps {
   nodes: CapNode[];
@@ -15,7 +16,7 @@ export function CapabilityTable({ nodes, edges, selected, onSelect }: Capability
   const rows = agentRows(nodes);
   return (
     <div className="pw-captables">
-      <div className="pw-scroll">
+      <Scroll label="Nodes of the capability graph">
         <table className="pw-log__table">
           <caption className="pw-visually-hidden">Nodes of the capability graph</caption>
           <thead>
@@ -51,8 +52,8 @@ export function CapabilityTable({ nodes, edges, selected, onSelect }: Capability
             ))}
           </tbody>
         </table>
-      </div>
-      <div className="pw-scroll">
+      </Scroll>
+      <Scroll label="Flows of the capability graph">
         <table className="pw-log__table">
           <caption className="pw-visually-hidden">Flows of the capability graph</caption>
           <thead>
@@ -82,7 +83,7 @@ export function CapabilityTable({ nodes, edges, selected, onSelect }: Capability
             ))}
           </tbody>
         </table>
-      </div>
+      </Scroll>
     </div>
   );
 }

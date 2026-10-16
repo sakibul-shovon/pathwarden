@@ -3,6 +3,7 @@ import type { SessionView, TimelineRow } from "../../../api/types";
 import { Icon } from "../../../shared/icons/Icon";
 import { SegmentedControl } from "../../../shared/components/SegmentedControl";
 import { filterRows, groupBySession, verbOf, type LogFilter } from "./runLogic";
+import { Scroll } from "../../../shared/components/Scroll";
 
 interface EventLogProps {
   rows: TimelineRow[];
@@ -49,7 +50,7 @@ export function EventLog({ rows, sessions }: EventLogProps) {
       {shown.length === 0 ? (
         <p className="pw-muted">No events match this filter.</p>
       ) : view === "table" ? (
-        <div className="pw-scroll">
+        <Scroll label="Event log">
           <table className="pw-log__table">
             <caption className="pw-visually-hidden">Events recorded during the run</caption>
             <thead>
@@ -73,7 +74,7 @@ export function EventLog({ rows, sessions }: EventLogProps) {
               ))}
             </tbody>
           </table>
-        </div>
+        </Scroll>
       ) : (
         groups.map((g) => (
           <div key={g.session ?? "none"} className="pw-log__group">

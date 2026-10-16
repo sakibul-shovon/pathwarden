@@ -39,6 +39,8 @@ interface LineageFigureProps {
   layoutFrom?: { nodes: LineageNode[]; edges: LineageEdge[] };
   /** Time travel: new nodes fade in as time steps (off during a replay). */
   fadeNew?: boolean;
+  /** The heading level of the table form's two headings (2 when the figure follows the view's title directly). */
+  headingLevel?: 2 | 3;
   /** Where the data came from, shown under the figure. */
   source: string;
 }
@@ -166,7 +168,7 @@ export function LineageFigure(props: LineageFigureProps) {
           <GraphLegend items={lineageLegend({ witness: hasWitness, payload: Boolean(payloadId), marked: Boolean(marked && marked.length > 0), tainted: Boolean(tainted && tainted.length > 0) })} label="Graph legend" />
         </>
       ) : (
-        <GraphTable nodes={nodes} edges={edges} untrustedWitness={untrustedWitness} secretWitness={secretWitness} onOpen={onOpen} onHover={onHover} />
+        <GraphTable nodes={nodes} edges={edges} untrustedWitness={untrustedWitness} secretWitness={secretWitness} onOpen={onOpen} onHover={onHover} headingLevel={props.headingLevel} />
       )}
       <figcaption id={captionId} className="pw-graphfig__caption">
         {caption} <span className="pw-figure__source">Source: {source}</span>

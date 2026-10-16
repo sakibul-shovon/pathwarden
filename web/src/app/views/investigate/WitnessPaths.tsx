@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { CodeBlock } from "../../../shared/components/CodeBlock";
 import { Icon } from "../../../shared/icons/Icon";
 import { revealedSteps, useTraceFrame } from "../../../shared/lib/motion";
@@ -16,6 +17,8 @@ interface WitnessPathsProps {
   trace?: string | null;
   /** Hold the trace on its first step until this is true (the landing page waits until the figure is half visible). */
   traceReady?: boolean;
+  /** Name each rail with a heading (the case file) or only with a label (a captioned figure, which may appear more than once on a page). */
+  headings?: boolean;
 }
 
 const Q_UNTRUSTED = "q2a_untrusted_witness";
@@ -30,6 +33,7 @@ interface RailProps {
   onOpen?: (id: string) => void;
   /** How many steps are shown: all of them unless a trace is playing. */
   revealed: number;
+  headings: boolean;
 }
 
 const chip = (s: PathStep) => (
@@ -42,20 +46,34 @@ const chip = (s: PathStep) => (
   </>
 );
 
-function Rail({ kind, steps, query, queryName, onHover, onOpen, revealed }: RailProps) {
+const Wrap = ({ className, title, headings, children }: { className: string; title: string; headings: boolean; children: ReactNode }) =>
+  headings ? (
+    <section className={className} aria-label={title}>
+      {children}
+    </section>
+  ) : (
+    <div className={className} role="group" aria-label={title}>
+      {children}
+    </div>
+  );
+
+const Head = ({ headings, children }: { headings: boolean; children: ReactNode }) =>
+  headings ? <h3 className="pw-path__head">{children}</h3> : <p className="pw-path__head">{children}</p>;
+
+function Rail({ kind, steps, query, queryName, onHover, onOpen, revealed, headings }: RailProps) {
   // a chip is a button only when something happens on hover or activation (the landing page's plate is a static figure)
   const interactive = Boolean(onHover || onOpen);
   const n = stepCount(steps.map((s) => s.id));
   const title = kind === "untrusted" ? "Untrusted path" : "Secret path";
   return (
-    <section className={`pw-path pw-path--${kind}`} aria-label={title}>
-      <h3 className="pw-path__head">
+    <Wrap className={`pw-path pw-path--${kind}`} title={title} headings={headings}>
+      <Head headings={headings}>
         <span className="pw-path__glyph" aria-hidden="true" />
         {title}
         <span className="pw-path__meta">
           {steps.length === 0 ? "none" : `${n} ${n === 1 ? "step" : "steps"}`} · computed by <code>{queryName}</code>
         </span>
-      </h3>
+      </Head>
       {steps.length === 0 ? (
         <p className="pw-muted">No {kind} path: the gate found none for this payload.</p>
       ) : (
@@ -89,18 +107,18 @@ function Rail({ kind, steps, query, queryName, onHover, onOpen, revealed }: Rail
           <p className="pw-muted">Paste it into the FalkorDB Browser with the parameters of this action to run it yourself.</p>
         </details>
       )}
-    </section>
+    </Wrap>
   );
 }
 
 /** The signature component: the two proofs of a hold, each an ordered list from the payload to its source, named by the
  *  key people know (`team_convention:42`) with the id after it. Solid line = untrusted, dotted = secret (also in text). */
-export function WitnessPaths({ untrusted, secret, queries, onHover, onOpen, trace = null, traceReady = true }: WitnessPathsProps) {
+export function WitnessPaths({ untrusted, secret, queries, onHover, onOpen, trace = null, traceReady = true, headings = true }: WitnessPathsProps) {
   const frame = useTraceFrame(trace, Math.max(untrusted.length, secret.length), traceReady);
   return (
     <div className="pw-paths">
-      <Rail kind="untrusted" steps={untrusted} query={queries[Q_UNTRUSTED]} queryName={Q_UNTRUSTED} onHover={onHover} onOpen={onOpen} revealed={revealedSteps(frame, untrusted.length)} />
-      <Rail kind="secret" steps={secret} query={queries[Q_SECRET]} queryName={Q_SECRET} onHover={onHover} onOpen={onOpen} revealed={revealedSteps(frame, secret.length)} />
+      <Rail kind="untrusted" steps={untrusted} query={queries[Q_UNTRUSTED]} queryName={Q_UNTRUSTED} onHover={onHover} onOpen={onOpen} revealed={revealedSteps(frame, untrusted.length)} headings={headings} />
+      <Rail kind="secret" steps={secret} query={queries[Q_SECRET]} queryName={Q_SECRET} onHover={onHover} onOpen={onOpen} revealed={revealedSteps(frame, secret.length)} headings={headings} />
     </div>
   );
 }

@@ -16,7 +16,7 @@ export function WitnessPlate({ plate, scenario }: { plate: Plate; scenario: stri
         <p className="pw-plate__payload">
           <span className="pw-eyebrow">payload</span> <strong>{payload?.label ?? plate.payloadId}</strong> <code>{plate.payloadId}</code>
         </p>
-        <WitnessPaths untrusted={plate.untrusted} secret={plate.secret} queries={{}} trace={`${plate.actionId}:fig1`} traceReady={seen} />
+        <WitnessPaths untrusted={plate.untrusted} secret={plate.secret} queries={{}} trace={`${plate.actionId}:fig1`} traceReady={seen} headings={false} />
         <p className="pw-plate__gate">
           <span className="pw-plate__bar" aria-hidden="true" />
           <StatusPill status={`${plate.verdict} · ${plate.reason}`} family="hold" />

@@ -1,5 +1,6 @@
 import type { Candidate } from "../../../api/types";
 import { Button } from "../../../shared/components/Button";
+import { Scroll } from "../../../shared/components/Scroll";
 import { Icon } from "../../../shared/icons/Icon";
 import { applyBlockedReason, costBars } from "./remediateLogic";
 
@@ -23,6 +24,7 @@ export function CutComparison({ candidates, best, preview, busy, optimum, onPrev
   const bars = costBars(candidates);
   return (
     <div className="pw-cuts">
+      <Scroll label="Candidate cuts">
       <table className="pw-cuts__table">
         <caption className="pw-visually-hidden">Candidate cuts, each verified on a temporary copy of the graph</caption>
         <thead>
@@ -88,6 +90,7 @@ export function CutComparison({ candidates, best, preview, busy, optimum, onPrev
           })}
         </tbody>
       </table>
+      </Scroll>
       {optimum && <p className="pw-muted">{optimum}</p>}
     </div>
   );

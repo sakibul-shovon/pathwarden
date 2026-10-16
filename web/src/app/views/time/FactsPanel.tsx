@@ -20,14 +20,14 @@ export function FactsPanel({ graph, loadingT, onOpenNode, onOpenCase }: FactsPan
   const tainted = taintedSummary(graph);
   return (
     <aside className="pw-facts-panel" aria-label={`The workspace at t = ${graph.t}`}>
-      <h3 className="pw-facts-panel__title">
+      <h2 className="pw-facts-panel__title">
         At t = {graph.t}
         {loadingT !== null && (
           <span className="pw-facts-panel__loading" role="status">
             Loading t = {loadingT}…
           </span>
         )}
-      </h3>
+      </h2>
       <p>{frameSummary(graph)}</p>
       {tainted && (
         <p className="pw-facts-panel__tainted">
@@ -35,7 +35,7 @@ export function FactsPanel({ graph, loadingT, onOpenNode, onOpenCase }: FactsPan
         </p>
       )}
 
-      <h4 className="pw-facts-panel__h">Written at this moment</h4>
+      <h3 className="pw-facts-panel__h">Written at this moment</h3>
       {written.length === 0 ? (
         <p className="pw-muted">Nothing: the clock ticks on other events too.</p>
       ) : (
@@ -56,7 +56,7 @@ export function FactsPanel({ graph, loadingT, onOpenNode, onOpenCase }: FactsPan
 
       {graph.actions.length > 0 && (
         <>
-          <h4 className="pw-facts-panel__h">Actions proposed by now</h4>
+          <h3 className="pw-facts-panel__h">Actions proposed by now</h3>
           <ul className="pw-facts-panel__list">
             {graph.actions.map((a) => (
               <li key={a.action_id}>

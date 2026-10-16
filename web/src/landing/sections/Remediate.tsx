@@ -1,6 +1,7 @@
 import type { EvalSummary } from "../../api/types";
 import { remediationLines } from "../landingLogic";
 import { Section } from "./Section";
+import { Scroll } from "../../shared/components/Scroll";
 
 /** Prevention: the numbers are the generated remediation table, and the "cheaper mixed cut" sentence appears only where the file's gap is above zero. */
 export function Remediate({ summary }: { summary: EvalSummary }) {
@@ -19,7 +20,7 @@ export function Remediate({ summary }: { summary: EvalSummary }) {
       }
     >
       {lines.length > 0 && (
-        <div className="pw-scroll">
+        <Scroll label="Remediation candidates">
           <table className="pw-etable">
             <caption className="pw-visually-hidden">Remediation candidates against the exhaustive optimum, from the generated evaluation</caption>
             <thead>
@@ -45,7 +46,7 @@ export function Remediate({ summary }: { summary: EvalSummary }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </Scroll>
       )}
       {gaps.map((g) => (
         <p key={g.topology} className="pw-prose">
