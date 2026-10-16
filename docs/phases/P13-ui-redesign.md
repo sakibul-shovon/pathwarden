@@ -64,7 +64,7 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] `lanesLayout` (unit-tested, deterministic), Tree toggle, GraphTable, NodeDrawer, trace, dim-unrelated, capability `roots` (lanes are columns, see the P14c notes in DECISIONS)
 
 ### P14d — remaining views
-- [ ] Memory ledger + dialog · Time travel scrubber/markers/replay · Remediate inspector/cut comparison/dialogs · Evaluation report + interval chart + `llm_judges` type
+- [x] Memory ledger + dialog · Time travel scrubber/markers/replay · Remediate inspector/cut comparison/dialogs · Evaluation report + interval chart + `llm_judges` type
 
 ### P15a — landing
 - [ ] Sections §11.1 with data from `summary.json`, `.cypher` and fixture files; CTA reflects the health probe; recorded story data

@@ -3,22 +3,22 @@
 Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the real repository (git state, `make test`) before trusting it. Keep it factual; no history — that belongs in `PROGRESS.md`.
 
 ## Header
-- **Written:** 2026-10-16 (P14c, after the graph presentation) · **Agent / tool / model:** Claude Code / Sonnet 5.5
+- **Written:** 2026-10-16 (P14d, after the remaining views) · **Agent / tool / model:** Claude Code / Sonnet 5.5
 - **Takeover notes** (filled by the next agent: what differed from this file):
   -
 
 ## Git state at stop
-- Branch: `phase/p14c-graph-presentation`, from `phase/p14b-case-file`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
+- Branch: `phase/p14d-memory-time-remediate-eval`, from `phase/p14c-graph-presentation`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
 - Remote: `origin` = `https://github.com/sakibul-shovon/pathwarden.git` (private until the project ends, D-014). Branches of this chain are pushed; **nothing is merged to `main` and no tag is set** (D-034). `main` = `34f1d85`.
 - Verify with `git status -sb`, `git log --oneline -8`, `git ls-remote origin 'phase/p1[3-5]*'`.
 
 ## Where the project stands
-- **Redesign chain:** P13a–P13d (foundation, shell, access), P14a (Run), P14b (Investigate) and P14c (graphs) done. Rebuilt views: `web/src/app/views/run/` and `web/src/app/views/investigate/`. Shared graph module: `web/src/app/graph/` (`lanes.ts`, `graphModel.ts`, `LineageFigure`, `CapabilityFigure`, `GraphTable`, `NodeDrawer`, lazy `LineageCanvas`/`CapabilityCanvas`). Memory, Time travel, Remediate and Evaluation are still the old components in `web/src/tabs/` (restyled via `legacy.css`); Remediate already draws its graph with `CapabilityFigure`, Time travel still uses `web/src/components/LineageGraph.tsx`.
+- **Redesign chain:** P13a–P13d (foundation, shell, access) and P14a–P14d (Run, Investigate, graphs, Memory/Time travel/Remediate/Evaluation) are done: **all six app views are rebuilt** under `web/src/app/views/*`, share `web/src/app/graph/` and `web/src/shared/`, and the original `tabs/`, the old graph components and `legacy.css` are gone. `web/src/landing/Landing.tsx` is still the P13a placeholder (G-004).
 - **Layout deviation to confirm:** lanes are vertical columns with time running down (the spec's horizontal bands were ~1,900 px wide on real data); see the P14c notes in `docs/DECISIONS.md`.
-- Next: **P14d — Memory, Time travel, Remediate, Evaluation** (`ui-redesign.md` §13.6–13.9). Time travel should use `LineageFigure` with `layoutFrom` (the final graph), `tainted` (`doubly_tainted` from `/graph-at`) and `marked` (the marker artifacts), then `LineageGraph.tsx` can be deleted and Cytoscape leaves the main chunk. Remediate needs the inspector, the agent table (the accessible form of the capability graph) and the cut comparison; the drawer (`NodeDrawer`) is ready for Memory rows.
+- Next: **P15a — the public landing page** (`ui-redesign.md` §11, §15 V6/V7). Constraints from the spec: no fabricated content (the FIG. 1 witness plate and the results numbers come from recorded real data: `eval/results/summary.json`, a captured `explain` response), no "open source" wording until a licence exists and the repo is public, falsification criterion 3 is triggered (no content-agnostic-advantage claim against the LLM judges), and the legacy-link redirect in `web/src/landing/main.tsx` must keep working. Then P15b motion, P15c responsive/a11y hardening, P15d full regression, regenerated screenshots and docs.
 
 ## Verification so far (real results)
-- `npm test` 261 passed in 22 files; `npx tsc --noEmit` and `npm run build` clean. In headless Edge against the real API (scripted mode only), with real mouse and wheel events: lanes drawn, hover dims, a tap opens the drawer, content is requested only on demand, the filters, the table, zoom and full screen, reduced motion, dark theme, a 390 px layout, and the capability graph on Remediate with a real click on an agent. **Not verified:** pinch zoom on a touch device; the Time travel props `tainted`/`marked`/`layoutFrom` in a browser; LLM-mode forensics and a live run (they spend tokens: ask the owner first). No change under `api/ tests/ fixtures/ eval/ scripts/`. Backend suites (608 in both modes) are re-run at the end of P15d.
+- `npm test` 359 passed in 29 files; `npx tsc --noEmit` and `npm run build` clean (main app chunk 133 kB). Every rebuilt view was exercised in headless Edge against the real API (scripted mode only) with real mouse, wheel and keyboard events, including the three human-confirmed actions (quarantine release, cut apply, topology reset) with the `X-PW-Human` header and a visual regression pass over all views and the landing page. **Not verified:** pinch zoom on a touch device; the live agent run and LLM-mode forensics (they spend provider tokens: ask the owner first). No change under `api/ tests/ fixtures/ eval/ scripts/`. Backend suites (608 in both modes) are re-run at the end of P15d. One unreproduced backend observation is recorded as I-002 in `docs/PROGRESS.md`.
 
 ## Traps and findings a newcomer must know
 - **Environment:** Python 3.11.9 in `.venv`; GNU Make is **not on PATH in the agent's Git Bash** until `export PATH="$PATH:/c/Users/shovon/AppData/Local/Microsoft/WinGet/Packages/ezwinports.make_Microsoft.Winget.Source_8wekyb3d8bbwe/bin"`; Docker Desktop stops by itself between sessions (start `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`, then `docker compose up -d falkordb`); tests use the real FalkorDB.
@@ -36,4 +36,4 @@ Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the r
 3. Optional: allow one live run and one LLM forensics run (a few cents of tokens) so `LivePanel` and the LLM report wording can be checked against real data.
 
 ## Next action (exactly one)
-Start **P14d** on `phase/p14d-memory-time-remediate-eval` from this branch: `docs/phases/P13-ui-redesign.md` § P14d, `ui-redesign.md` §13.6–13.9.
+Start **P15a** on `phase/p15a-landing` from this branch: `docs/phases/P13-ui-redesign.md` § P15a, `ui-redesign.md` §11.
