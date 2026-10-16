@@ -305,6 +305,13 @@ Source: `ui-redesign.md` (research and specification). Phase slicing: `docs/phas
 ### D-036 — new dev dependency: Vitest
 - Added in P13b as a **dev** dependency of `web/` only (unit tests for pure functions: `whySentence`, `lanesLayout`, `outcomeOf`, legacy redirect, URL parsing). Rationale and alternatives: `ui-redesign.md` §19.5, §21.13. No runtime dependency is added by the redesign.
 
+### P13b notes (design foundation)
+- **Fonts live in `web/src/shared/styles/fonts/`, not `web/public/fonts/`** (plan §16.4 said `public`): CSS `url()` assets are hashed and rebased by Vite, so a `base` path cannot break them. The cost is that the first-view fonts cannot be `<link rel="preload">`ed by a stable URL; if landing CLS needs it (P15a) a `?url` import in the entry HTML script will do. Families, weights and licences: IBM Plex Sans 400/500/600, IBM Plex Mono 400/500/600, Newsreader variable (200–800), all SIL OFL 1.1 from the Fontsource packages (tarballs only, no scripts run); licence texts sit next to the files. The Newsreader package also ships an optical-size (`opsz`) build, which answers the plan's U4 (not used: 132 KB vs 58 KB).
+- **`@types/node` (dev only)** was added next to Vitest (it is Vitest's peer dependency) and enabled in `web/tsconfig.json` so that `fs`-based tests type-check; Vitest replaces plain CSS imports (even `?raw`) with an empty string, so `tokens.test.ts` reads `tokens.css` with `fs`.
+- **`web/system.html` + `src/shared/dev/system-main.tsx`**: a development-only page that renders every primitive and token in the current theme (with a System/Light/Dark switch). It is served by `npm run dev` only; the production build does not contain it (checked: `dist/` has no reference).
+- **Dev proxy fix:** `web/vite.config.ts` now proxies to `127.0.0.1:8000` (was `localhost`), see HANDOFF "Dev proxy trap".
+- **`legacy.css`** is the old stylesheet rewritten on the tokens with the same class names (and the old variable names as aliases, because Cytoscape reads some of them). It shrinks as each view is rebuilt in P14 and is deleted in P14d.
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.

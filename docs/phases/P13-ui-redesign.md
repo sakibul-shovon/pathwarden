@@ -36,11 +36,11 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] Baseline: `make test`, `make test-auth`, `npm run build`, baseline screenshots, human-route header check
 
 ### P13b — design foundation
-- [ ] `tokens.css` (§16.3) incl. dark values; contrast table re-computed from the committed file
-- [ ] Self-hosted WOFF2 + `OFL.txt` for IBM Plex Sans, IBM Plex Mono, Newsreader; `@font-face` with `font-display: swap`
-- [ ] Icon set (§16.7), primitives (§16.8) with `pw-` classes
-- [ ] Existing six tabs restyled with no behaviour change (network log identical to P13a)
-- [ ] Vitest installed (dev only) and one passing test
+- [x] `tokens.css` (§16.3) incl. dark values; contrast table re-computed from the committed file
+- [x] Self-hosted WOFF2 + `OFL.txt` for IBM Plex Sans, IBM Plex Mono, Newsreader; `@font-face` with `font-display: swap`
+- [x] Icon set (§16.7), primitives (§16.8) with `pw-` classes
+- [x] Existing six tabs restyled with no behaviour change (network log identical to P13a)
+- [x] Vitest installed (dev only) and one passing test
 
 ### P13c — app shell and entry
 - [ ] `web/index.html` landing placeholder + `web/app/index.html`; Vite multi-page build emits both
