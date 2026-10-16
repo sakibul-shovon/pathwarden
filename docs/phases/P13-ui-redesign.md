@@ -67,7 +67,7 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] Memory ledger + dialog · Time travel scrubber/markers/replay · Remediate inspector/cut comparison/dialogs · Evaluation report + interval chart + `llm_judges` type
 
 ### P15a — landing
-- [ ] Sections §11.1 with data from `summary.json`, `.cypher` and fixture files; CTA reflects the health probe; recorded story data
+- [x] Sections §11.1 with data from `summary.json`, `.cypher` and fixture files; CTA reflects the health probe; recorded story data (client-rendered, no preload: see the P15a notes)
 
 ### P15b — motion
 - [ ] Every row of §17.4 in both motion modes
