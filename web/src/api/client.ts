@@ -32,22 +32,46 @@ export const setWorkspace = (name: string): void => {
 export const PUBLIC_PAGE_SINK = "sink:public_release_page";
 
 /** Hosted mode (PW_AUTH=on): the workspace key, from `?key=` (kept for the tab session) or VITE_API_KEY. Local mode
- *  needs none. It is sent only in the Authorization header. The URL is read once, when this module loads: the app
- *  later rewrites the address bar (and P13d removes the key from it), so nothing may depend on `?key=` staying there. */
+ *  needs none. It is sent only in the Authorization header, never logged and never shown. The URL is read once, when
+ *  this module loads: the app later rewrites the address bar, so nothing may depend on `?key=` staying there. */
 const KEY_STORAGE = "pw_key";
 const keyFromUrl = new URLSearchParams(window.location.search).get("key");
 try {
   if (keyFromUrl) window.sessionStorage.setItem(KEY_STORAGE, keyFromUrl);
 } catch {
-  // storage can be blocked: the key then lives only in `keyFromUrl` for this page load
+  // storage can be blocked: the key then lives only in memory for this page load
 }
 
-function apiKey(): string | null {
+function initialKey(): string | null {
   const fromEnv = (import.meta.env.VITE_API_KEY as string | undefined) ?? null;
   try {
     return window.sessionStorage.getItem(KEY_STORAGE) ?? keyFromUrl ?? fromEnv;
   } catch {
     return keyFromUrl ?? fromEnv;
+  }
+}
+
+let currentKey: string | null = initialKey();
+const apiKey = (): string | null => currentKey;
+export const hasKey = (): boolean => currentKey !== null;
+
+/** Use a key from the Connect form for the rest of this tab session. */
+export function setKey(key: string): void {
+  currentKey = key;
+  try {
+    window.sessionStorage.setItem(KEY_STORAGE, key);
+  } catch {
+    // memory only
+  }
+}
+
+/** Sign out: forget the key everywhere, including a build-time VITE_API_KEY (otherwise signing out would do nothing). */
+export function clearKey(): void {
+  currentKey = null;
+  try {
+    window.sessionStorage.removeItem(KEY_STORAGE);
+  } catch {
+    // nothing stored
   }
 }
 

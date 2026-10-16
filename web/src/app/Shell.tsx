@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, setWorkspace } from "../api/client";
+import { api, clearKey, hasKey, setWorkspace } from "../api/client";
 import { usePoll } from "../hooks";
 import { Button } from "../shared/components/Button";
 import { Dialog } from "../shared/components/Dialog";
@@ -12,11 +12,14 @@ import { MemoryTab } from "../tabs/Memory";
 import { RemediateTab } from "../tabs/Remediate";
 import { RunTab } from "../tabs/Run";
 import { TimeTravelTab } from "../tabs/TimeTravel";
+import { Connect } from "./Connect";
+import { readOnboarding, writeOnboarding } from "./guide";
 import { Nav } from "./Nav";
 import { navItem } from "./navModel";
 import { StatusFooter } from "./StatusFooter";
 import { Unreachable } from "./Unreachable";
 import { buildSearch, navigateState, parseUrl, type TabId, type UrlState } from "./url";
+import { blocksWorkspaceViews, useAccess } from "./useAccess";
 import { useHealth } from "./useHealth";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import "./shell.css";
@@ -24,7 +27,13 @@ import "./shell.css";
 /** The application shell (ui-redesign.md §13.1): a rail on laptops and up, a top bar with a menu below that, the
  *  attention count, system status, and the view. The URL is the shareable state; views start from it once. */
 export function Shell() {
-  const [url, setUrl] = useState<UrlState>(() => parseUrl(window.location.search));
+  const [url, setUrl] = useState<UrlState>(() => {
+    const parsed = parseUrl(window.location.search);
+    // a returning visitor without a deep link lands on the view they used last
+    const last = window.location.search === "" ? readOnboarding().lastTab : null;
+    return last ? { ...parsed, tab: last } : parsed;
+  });
+  const [announcement, setAnnouncement] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<ThemePreference>(readStoredTheme);
   const { health, retry } = useHealth();
@@ -63,6 +72,7 @@ export function Shell() {
       const next = navigateState(url, tab, ws);
       setWorkspace(next.ws);
       window.history.pushState(null, "", buildSearch(next));
+      writeOnboarding({ ...readOnboarding(), lastTab: next.tab });
       setUrl(next);
       setMenuOpen(false);
     },
@@ -74,20 +84,39 @@ export function Shell() {
     applyTheme(next);
   }, []);
 
-  // held and blocked actions are the ones waiting for a human; the poll pauses while the tab is hidden or a run is in flight
   const healthy = health.status === "ok";
-  const actions = usePoll(() => (healthy ? api.actions() : Promise.resolve([])), 5000);
+  const { access, recheck } = useAccess(url.ws, healthy);
+  const open = healthy && access === "open";
+  // held and blocked actions are the ones waiting for a human; the poll pauses while the tab is hidden or a run is in flight
+  const actions = usePoll(() => (open ? api.actions() : Promise.resolve([])), 5000);
   const attention = (actions.data ?? []).filter((a) => a.status === "held" || a.status === "blocked").length;
+
+  const connected = useCallback(
+    (ws: string) => {
+      setAnnouncement(`Connected to ${ws}.`);
+      go(url.tab, ws);
+      recheck();
+    },
+    [go, recheck, url.tab],
+  );
+  const signOut = useCallback(() => {
+    clearKey();
+    setAnnouncement("Signed out.");
+    recheck();
+  }, [recheck]);
 
   const sidebar = (
     <>
       <WorkspaceSwitcher workspace={url.ws} onChange={(ws) => go(url.tab, ws)} />
       <Nav url={url} attention={attention} onNavigate={(tab) => go(tab)} />
-      <StatusFooter health={health} theme={theme} onTheme={changeTheme} />
+      <StatusFooter health={health} theme={theme} onTheme={changeTheme} signedIn={hasKey()} onSignOut={signOut} />
     </>
   );
 
   const failed = health.status === "unreachable" || health.status === "db_down" || health.status === "error";
+  // the two global views (Remediate, Evaluation) are public demo data: only the workspace views ask for a key
+  const workspaceView = url.tab === "run" || url.tab === "investigate" || url.tab === "memory" || url.tab === "time";
+  const needsConnect = !failed && workspaceView && blocksWorkspaceViews(access);
   return (
     <div className="pw-shell">
       <a className="pw-skip" href="#main">
@@ -123,10 +152,15 @@ export function Shell() {
           </div>
           {failed ? (
             <Unreachable health={health} onRetry={retry} />
+          ) : needsConnect ? (
+            <Connect workspace={url.ws} reason={access as "needs_key" | "rejected" | "forbidden"} onConnected={connected} />
           ) : (
             <ViewHost url={url} key={`${url.tab}:${url.ws}`} />
           )}
         </main>
+        <div role="status" className="pw-visually-hidden">
+          {announcement}
+        </div>
       </div>
     </div>
   );

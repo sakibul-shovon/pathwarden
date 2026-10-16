@@ -7,10 +7,13 @@ interface StatusFooterProps {
   health: HealthState;
   theme: ThemePreference;
   onTheme: (theme: ThemePreference) => void;
+  /** A key is in use for this tab (hosted mode): offer to forget it. */
+  signedIn: boolean;
+  onSignOut: () => void;
 }
 
 /** What the system can do right now: API, live agents, access mode. Text and an icon, never colour alone. */
-export function StatusFooter({ health, theme, onTheme }: StatusFooterProps) {
+export function StatusFooter({ health, theme, onTheme, signedIn, onSignOut }: StatusFooterProps) {
   const api =
     health.status === "ok"
       ? { icon: "check" as const, text: "API connected" }
@@ -37,6 +40,14 @@ export function StatusFooter({ health, theme, onTheme }: StatusFooterProps) {
         {access && (
           <li>
             <Icon name="key" size={14} /> {access}
+            {info && !info.graphs && signedIn && (
+              <>
+                {" "}
+                <button type="button" className="pw-linkbutton" onClick={onSignOut}>
+                  Sign out
+                </button>
+              </>
+            )}
           </li>
         )}
       </ul>
