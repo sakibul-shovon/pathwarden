@@ -85,6 +85,12 @@ svg {
   border-radius: var(--radius-chip);
 }
 
+/* Targets that only receive focus from script (a view title, the verdict after a run) keep the outline but not the halo:
+   they are not controls, and a yellow box around a heading is noise. */
+[tabindex="-1"]:focus-visible {
+  box-shadow: none;
+}
+
 /* Sticky bars must never cover a focused control (WCAG 2.4.11). */
 html {
   scroll-padding-top: 72px;

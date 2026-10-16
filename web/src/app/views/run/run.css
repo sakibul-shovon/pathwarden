@@ -1,0 +1,380 @@
+/* Run view (ui-redesign.md §13.4). Two columns from 1100 px (setup sticks on the left); below that the setup collapses to a
+   summary bar after a run. Colours come from the tokens. */
+
+.pw-run {
+  display: grid;
+  gap: var(--s-6);
+  align-items: start;
+}
+.pw-run__setup {
+  min-width: 0;
+}
+.pw-run__result {
+  display: grid;
+  gap: var(--s-6);
+  min-width: 0;
+}
+.pw-run__panel {
+  display: grid;
+  gap: var(--s-5);
+  padding: var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-run__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-run__h {
+  margin: 0 0 var(--s-2);
+  font-size: var(--t-lg);
+}
+.pw-run__empty {
+  margin: 0;
+}
+
+@media (min-width: 1100px) {
+  .pw-run {
+    grid-template-columns: 360px minmax(0, 1fr);
+  }
+  .pw-run__setup {
+    position: sticky;
+    top: var(--s-4);
+  }
+}
+
+/* ------------------------------------------------------------------ scenario list */
+.pw-scn {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+.pw-scn__legend {
+  padding: 0;
+  margin-bottom: var(--s-1);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+.pw-scn__row {
+  display: grid;
+  gap: 2px;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-button);
+  background: var(--paper);
+  cursor: pointer;
+}
+.pw-scn__row:hover {
+  border-color: var(--ink);
+}
+.pw-scn__row--on {
+  border: 2px solid var(--ink);
+  padding: calc(var(--s-2) - 1px) calc(var(--s-3) - 1px);
+  background: var(--sheet);
+}
+.pw-scn__row:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.pw-scn__name {
+  font-weight: 600;
+}
+.pw-scn__desc {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+.pw-scn__expect {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+/* ------------------------------------------------------------------ run status */
+.pw-runstatus {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-runstatus p {
+  margin: 0;
+}
+.pw-runstatus__bar {
+  position: relative;
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  background: var(--line);
+}
+.pw-runstatus__bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 70% 0 0;
+  background: var(--ink);
+  animation: pw-indeterminate 1.2s linear infinite;
+}
+@keyframes pw-indeterminate {
+  to {
+    transform: translateX(340%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pw-runstatus__bar::after {
+    animation: none;
+    inset: 0;
+    opacity: 0.35;
+  }
+}
+.pw-runstatus__time {
+  font-family: var(--font-mono);
+}
+
+/* ------------------------------------------------------------------ outcome strip */
+.pw-outcome {
+  padding: var(--s-4) var(--s-5);
+  border: 1px solid var(--line-strong);
+  border-left-width: 6px;
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-outcome--hold {
+  border-left-color: var(--hold);
+  background: var(--hold-tint);
+}
+.pw-outcome--allow {
+  border-left-color: var(--allow);
+  background: var(--allow-tint);
+}
+.pw-outcome--block {
+  border-left-color: var(--ink);
+  background: repeating-linear-gradient(135deg, transparent 0 6px, var(--line) 6px 7px), var(--sheet);
+}
+.pw-outcome--neutral {
+  border-left-color: var(--ink-3);
+}
+.pw-outcome__word {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-1);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xl);
+  line-height: 30px;
+  letter-spacing: 0.02em;
+}
+.pw-outcome__text {
+  margin: 0 0 var(--s-2);
+  max-width: var(--prose-max);
+}
+.pw-outcome__case {
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ agent lanes */
+.pw-lanes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+.pw-lane {
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-lane__name {
+  margin: 0;
+  font-size: var(--t-md);
+}
+.pw-lane__role {
+  margin: var(--s-1) 0 var(--s-2);
+  font-size: var(--t-sm);
+}
+.pw-lane__sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+
+/* ------------------------------------------------------------------ release sheet */
+.pw-release {
+  margin: 0;
+}
+.pw-release + .pw-release {
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--line-strong);
+}
+.pw-release__line--leak {
+  display: inline-block;
+  width: 100%;
+  background: var(--hold-tint);
+  font-weight: 600;
+}
+.pw-release__flag {
+  margin-left: var(--s-3);
+  padding: 0 6px;
+  border: 1px solid var(--hold);
+  border-radius: var(--radius-chip);
+  color: var(--hold);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------ event log */
+.pw-log__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-5);
+  margin: var(--s-3) 0;
+}
+.pw-log__group {
+  margin-bottom: var(--s-4);
+}
+.pw-log__session {
+  margin: 0 0 var(--s-1);
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+.pw-log__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--sheet);
+}
+.pw-log__row {
+  display: grid;
+  grid-template-columns: 36px 140px minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: baseline;
+  padding: var(--s-1) var(--s-3);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--t-sm);
+}
+.pw-log__row:last-child {
+  border-bottom: 0;
+}
+.pw-log__row--gate {
+  font-weight: 600;
+  background: var(--hold-tint);
+}
+.pw-log__t {
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+}
+.pw-log__detail {
+  overflow-wrap: anywhere;
+}
+.pw-log__table {
+  width: 100%;
+  font-size: var(--t-sm);
+}
+.pw-log__table th,
+.pw-log__table td {
+  padding: var(--s-1) var(--s-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.pw-log__table th {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.pw-log__gate td {
+  font-weight: 600;
+  background: var(--hold-tint);
+}
+.pw-scroll {
+  overflow-x: auto;
+}
+.pw-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-8);
+  margin: var(--s-3) 0;
+}
+.pw-facts div {
+  display: flex;
+  flex-direction: column;
+}
+.pw-facts dt {
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+.pw-facts dd {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .pw-log__row {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+  .pw-log__detail {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ------------------------------------------------------------------ story guide */
+.pw-guide {
+  padding: var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-guide--hidden {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.pw-guide__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.pw-guide__steps {
+  list-style: none;
+  margin: var(--s-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+.pw-guide__step {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--s-2);
+  color: var(--ink-3);
+}
+.pw-guide__step--next {
+  color: var(--ink);
+}
+.pw-guide__step--done strong {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.pw-guide__text {
+  margin: var(--s-1) 0;
+  max-width: var(--prose-max);
+}
+.pw-guide__done-when {
+  margin: 0 0 var(--s-2);
+  font-size: var(--t-sm);
+}

@@ -10,13 +10,13 @@ import { EvaluationTab } from "../tabs/Evaluation";
 import { InvestigateTab } from "../tabs/Investigate";
 import { MemoryTab } from "../tabs/Memory";
 import { RemediateTab } from "../tabs/Remediate";
-import { RunTab } from "../tabs/Run";
 import { TimeTravelTab } from "../tabs/TimeTravel";
 import { Connect } from "./Connect";
 import { readOnboarding, writeOnboarding } from "./guide";
 import { Nav } from "./Nav";
 import { navItem } from "./navModel";
 import { StatusFooter } from "./StatusFooter";
+import { RunView } from "./views/run/RunView";
 import { Unreachable } from "./Unreachable";
 import { buildSearch, navigateState, parseUrl, type TabId, type UrlState } from "./url";
 import { blocksWorkspaceViews, useAccess } from "./useAccess";
@@ -68,8 +68,8 @@ export function Shell() {
   }, [item.label, url.ws, url.tab]);
 
   const go = useCallback(
-    (tab: TabId, ws?: string) => {
-      const next = navigateState(url, tab, ws);
+    (tab: TabId, ws?: string, patch?: Partial<UrlState>) => {
+      const next: UrlState = { ...navigateState(url, tab, ws), ...patch };
       setWorkspace(next.ws);
       window.history.pushState(null, "", buildSearch(next));
       writeOnboarding({ ...readOnboarding(), lastTab: next.tab });
@@ -155,7 +155,7 @@ export function Shell() {
           ) : needsConnect ? (
             <Connect workspace={url.ws} reason={access as "needs_key" | "rejected" | "forbidden"} onConnected={connected} />
           ) : (
-            <ViewHost url={url} key={`${url.tab}:${url.ws}`} />
+            <ViewHost url={url} key={`${url.tab}:${url.ws}`} onNavigate={(tab, patch) => go(tab, undefined, patch)} />
           )}
         </main>
         <div role="status" className="pw-visually-hidden">
@@ -166,10 +166,10 @@ export function Shell() {
   );
 }
 
-function ViewHost({ url }: { url: UrlState }) {
+function ViewHost({ url, onNavigate }: { url: UrlState; onNavigate: (tab: TabId, patch?: Partial<UrlState>) => void }) {
   switch (url.tab) {
     case "run":
-      return <RunTab initial={{ scenario: url.scenario, guard: url.guard, autorun: url.autorun, mode: url.mode }} />;
+      return <RunView initial={{ scenario: url.scenario, guard: url.guard, autorun: url.autorun, mode: url.mode }} workspace={url.ws} onNavigate={onNavigate} />;
     case "investigate":
       return <InvestigateTab autoForensics={url.autoForensics} autoHeal={url.autoHeal} />;
     case "memory":
