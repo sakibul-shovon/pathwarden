@@ -1,4 +1,4 @@
-/* Reset and element defaults. Component styles live in components.css; old view styles in legacy.css. */
+/* Reset and element defaults. Component styles live in components.css and next to each view. */
 
 :root[data-theme="light"] {
   color-scheme: light;

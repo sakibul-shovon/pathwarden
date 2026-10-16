@@ -1,22 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, clearKey, hasKey, setWorkspace } from "../api/client";
+import type { Topology } from "../api/types";
 import { usePoll } from "../hooks";
 import { Button } from "../shared/components/Button";
 import { Dialog } from "../shared/components/Dialog";
 import { Wordmark } from "../shared/components/Wordmark";
 import { Icon } from "../shared/icons/Icon";
 import { applyTheme, readStoredTheme, type ThemePreference } from "../shared/lib/theme";
-import { EvaluationTab } from "../tabs/Evaluation";
-import { MemoryTab } from "../tabs/Memory";
-import { RemediateTab } from "../tabs/Remediate";
-import { TimeTravelTab } from "../tabs/TimeTravel";
 import { Connect } from "./Connect";
 import { readOnboarding, writeOnboarding } from "./guide";
 import { Nav } from "./Nav";
 import { navItem } from "./navModel";
 import { StatusFooter } from "./StatusFooter";
+import { EvaluationView } from "./views/evaluation/EvaluationView";
 import { InvestigateView } from "./views/investigate/InvestigateView";
+import { MemoryView } from "./views/memory/MemoryView";
+import { RemediateView } from "./views/remediate/RemediateView";
 import { RunView } from "./views/run/RunView";
+import { TimeView } from "./views/time/TimeView";
 import { Unreachable } from "./Unreachable";
 import { buildSearch, navigateState, parseUrl, type TabId, type UrlState } from "./url";
 import { blocksWorkspaceViews, useAccess } from "./useAccess";
@@ -189,6 +190,8 @@ interface ViewHostProps {
 
 function ViewHost({ url, onNavigate, onReplace }: ViewHostProps) {
   const selectAction = useCallback((id: string) => onReplace({ action: id }), [onReplace]);
+  const changeT = useCallback((t: number) => onReplace({ t }), [onReplace]);
+  const changeTopology = useCallback((topology: Topology) => onReplace({ topology }), [onReplace]);
   switch (url.tab) {
     case "run":
       return <RunView initial={{ scenario: url.scenario, guard: url.guard, autorun: url.autorun, mode: url.mode }} workspace={url.ws} onNavigate={onNavigate} />;
@@ -204,12 +207,12 @@ function ViewHost({ url, onNavigate, onReplace }: ViewHostProps) {
         />
       );
     case "memory":
-      return <MemoryTab />;
+      return <MemoryView onNavigate={onNavigate} />;
     case "time":
-      return <TimeTravelTab initialT={url.t} />;
+      return <TimeView initialT={url.t} onNavigate={onNavigate} onChangeT={changeT} />;
     case "remediate":
-      return <RemediateTab initialTopology={url.topology} />;
+      return <RemediateView initialTopology={url.topology} onChangeTopology={changeTopology} />;
     case "evaluation":
-      return <EvaluationTab />;
+      return <EvaluationView />;
   }
 }
