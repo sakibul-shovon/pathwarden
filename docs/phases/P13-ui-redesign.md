@@ -73,7 +73,7 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] Every row of §17.4 in both motion modes (see the P15b notes for the deviations and what was not measured)
 
 ### P15c — responsive and accessibility
-- [ ] Widths 320…1920 × both themes × every view; keyboard-only; reduced motion; 200 % zoom
+- [x] Widths 320…1920 × both themes × every view; keyboard-only; reduced motion; 200 % zoom (no screen reader, touch device or real high-contrast theme: see the P15c notes)
 
 ### P15d — regression and docs
 - [ ] Full regression (§21.2); `docs/img/*` regenerated from the real UI; README, MCP, DEPLOY docs updated

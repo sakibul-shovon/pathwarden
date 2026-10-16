@@ -3,22 +3,22 @@
 Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the real repository (git state, `make test`) before trusting it. Keep it factual; no history — that belongs in `PROGRESS.md`.
 
 ## Header
-- **Written:** 2026-10-16 (P15b, after motion) · **Agent / tool / model:** Claude Code / Sonnet 5.5
+- **Written:** 2026-10-16 (P15c, after responsive and accessibility) · **Agent / tool / model:** Claude Code / Sonnet 5.5
 - **Takeover notes** (filled by the next agent: what differed from this file):
   -
 
 ## Git state at stop
-- Branch: `phase/p15b-motion`, from `phase/p15a-landing`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
+- Branch: `phase/p15c-responsive-a11y`, from `phase/p15b-motion`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
 - Remote: `origin` = `https://github.com/sakibul-shovon/pathwarden.git` (private until the project ends, D-014). Branches of this chain are pushed; **nothing is merged to `main` and no tag is set** (D-034). `main` = `34f1d85`.
 - Verify with `git status -sb`, `git log --oneline -8`, `git ls-remote origin 'phase/p1[3-5]*'`.
 
 ## Where the project stands
-- **Redesign chain:** P13a–P13d, P14a–P14d, P15a (landing) and **P15b (motion)** are done. Motion lives in `web/src/shared/lib/motion.ts` (sequencer, reduced-motion check, duration tokens, `withViewTransition`), `web/src/app/graph/canvasMotion.ts`, the token-driven CSS and `web/src/shared/components/Working.tsx`; its rules are tested in `web/src/shared/styles/motion.test.ts`.
-- **To confirm:** lanes as vertical columns (P14c notes); `scripts/capture_landing_story.py` (P15a notes); the motion deviations (P15b notes).
-- Next: **P15c — responsive and accessibility hardening** (`ui-redesign.md` §18, §21.6–21.7): keyboard behaviour of every view (§18.2), focus management, landmarks and names, the contrast table, target sizes, zoom to 200 % and reflow at 320 px, reduced motion (done), and the automated accessibility run with zero serious violations plus a screen-reader smoke test. **A tool such as axe-core is a new dependency (AGENTS.md: ask first):** do not add it to `package.json`; fetch it into the scratchpad and inject it into the page through the DevTools protocol for the run, and record the result as evidence. Then P15d: full regression (`make test` and `make test-auth`, 608 each), regenerated `docs/img/*` from the real UI, README, MCP and DEPLOY docs, final handoff.
+- **Redesign chain:** P13a–P13d, P14a–P14d and P15a–**P15c** are done: all six views and the landing page are built, animated and audited. Only **P15d** (final regression and docs) is left.
+- **To confirm (owner):** lanes as vertical columns (P14c notes); `scripts/capture_landing_story.py` (P15a notes); the motion deviations (P15b notes); whether to keep the accessibility scan as a repeatable check (P15c notes: it used axe-core from the scratchpad, not a repository dependency).
+- Next: **P15d — regression and docs** (`ui-redesign.md` §21.2, §21.12, §22): (1) `make test` and `make test-auth` against the real FalkorDB (expect 608 passed each; this chain changes no backend file, so a different number is a finding); (2) `make lint` if the tool is in place; (3) regenerate `docs/img/*` from the real UI (run guard-off and guard-on, forensics, the sleeper in Time travel, Remediate with the cuts, Evaluation, the MCP hold: the headless-Edge recipe is described under Traps) and compare with the old set; (4) update `README.md`, `docs/MCP.md`, `docs/DEPLOY.md` (two entry pages `/` and `/app/`, `VITE_API_BASE`, the legacy-link redirect, the new tabs and deep links) and the README's results rows only from generated files; (5) deployment check of §21.12 (`npm run build` emits both entries, a static server with an `/api` proxy serves them, the landing page renders with the API stopped, the legacy link redirects); (6) final handoff, a closing summary of what is verified and what is not, and the list of owner decisions. `README.md` carries an uncommitted P8 edit that is not part of this chain (D-034): leave it.
 
 ## Verification so far (real results)
-- `npm test` 455 passed in 35 files; `npx tsc --noEmit` and `npm run build` clean. Every row of the §17.4 motion catalogue was measured in headless Edge against the real API in normal and in reduced motion (series sampled every 20–25 ms for the dialog, the traces, the zoom). **Not verified:** frame rate in the performance panel, the mobile menu sheet's motion on its own, touch, pinch zoom, a screen reader, the automated accessibility run (P15c); the live agent run and LLM-mode forensics (tokens: ask the owner first). No change under `api/ tests/ fixtures/ eval/ Makefile scripts/`. Backend suites (608 in both modes) are re-run at the end of P15d.
+- `npm test` 462 passed in 36 files; `npx tsc --noEmit` and `npm run build` clean. Accessibility (production build, real API, light and dark): axe **0 violations in 42 scans**, 98 width × theme × page loads with no horizontal scroll, no overflow at 200 % font size or at 200 % and 400 % zoom, every target at least 24 × 24 px (inline glossary words excepted), a keyboard walk of every page, forced-colours screenshots. **Not verified:** a screen reader (NVDA, VoiceOver), a touch device, a real Windows high-contrast theme, the live agent run and LLM-mode forensics (tokens: ask the owner first). No change under `api/ tests/ fixtures/ eval/ Makefile scripts/`. Backend suites (608 in both modes) are re-run in P15d.
 
 ## Traps and findings a newcomer must know
 - **Environment:** Python 3.11.9 in `.venv`; GNU Make is **not on PATH in the agent's Git Bash** until `export PATH="$PATH:/c/Users/shovon/AppData/Local/Microsoft/WinGet/Packages/ezwinports.make_Microsoft.Winget.Source_8wekyb3d8bbwe/bin"`; Docker Desktop stops by itself between sessions (start `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`, then `docker compose up -d falkordb`); tests use the real FalkorDB.
@@ -37,4 +37,4 @@ Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the r
 4. Optional: allow one live run and one LLM forensics run (a few cents of tokens) so `LivePanel` and the LLM report wording can be checked against real data.
 
 ## Next action (exactly one)
-Start **P15c** on `phase/p15c-responsive-a11y` from this branch: `docs/phases/P13-ui-redesign.md` § P15c, `ui-redesign.md` §18 and §21.6–21.7.
+Start **P15d** on `phase/p15d-regression-docs` from this branch: `docs/phases/P13-ui-redesign.md` § P15d, `ui-redesign.md` §21.2, §21.12 and §22.
