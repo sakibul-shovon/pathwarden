@@ -76,7 +76,7 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] Widths 320…1920 × both themes × every view; keyboard-only; reduced motion; 200 % zoom (no screen reader, touch device or real high-contrast theme: see the P15c notes)
 
 ### P15d — regression and docs
-- [ ] Full regression (§21.2); `docs/img/*` regenerated from the real UI; README, MCP, DEPLOY docs updated
+- [x] Full regression (§21.2); `docs/img/*` regenerated from the real UI; README, MCP, DEPLOY docs updated (see the P15d notes: 608 + 608 backend, 463 web, lint, deployment check)
 
 ## Definition of Done (per sub-phase)
 
