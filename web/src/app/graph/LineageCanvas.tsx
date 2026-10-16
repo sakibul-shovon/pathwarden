@@ -2,6 +2,8 @@ import cytoscape from "cytoscape";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { LineageEdge, LineageNode } from "../../api/types";
 import { useThemeTick } from "../../hooks";
+import { prefersReducedMotion, tokenMs } from "../../shared/lib/motion";
+import { fadeIn, fitView, newIds, zoomTo } from "./canvasMotion";
 import { lineageStyle, readPalette } from "./canvasStyle";
 import { canvasLabel, focusSet, neighbourhood, traceFrames, witnessNodes, witnessPairs } from "./graphModel";
 import { lanesLayout } from "./lanes";
@@ -34,6 +36,8 @@ export interface LineageCanvasProps {
   witnessOnly: boolean;
   /** Play the witness trace once for each new value (it is skipped under reduced motion). */
   traceKey: string | null;
+  /** Time travel stepping by hand: nodes that are new since the last frame fade in. Off while a replay runs, and always off under reduced motion. */
+  fadeNew?: boolean;
   onHover: (id: string | null) => void;
   onOpen: (id: string) => void;
   ariaLabel: string;
@@ -59,6 +63,9 @@ const LineageCanvas = forwardRef<CanvasHandle, LineageCanvasProps>(function Line
   const handlers = useRef({ onHover: props.onHover, onOpen: props.onOpen });
   handlers.current = { onHover: props.onHover, onOpen: props.onOpen };
   const played = useRef<string | null>(null);
+  const prevIds = useRef<Set<string> | null>(null);
+  const fadeNewRef = useRef(Boolean(props.fadeNew));
+  fadeNewRef.current = Boolean(props.fadeNew);
   const labels = useRef<HTMLDivElement>(null);
   const lanes = useMemo(() => (layout === "lanes" ? lanesLayout((layoutFrom ?? { nodes, edges }).nodes, (layoutFrom ?? { nodes, edges }).edges) : null), [layout, layoutFrom, nodes, edges]);
 
@@ -68,12 +75,14 @@ const LineageCanvas = forwardRef<CanvasHandle, LineageCanvasProps>(function Line
       const el = container.current;
       if (!cy || !el) return;
       const level = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, cy.zoom() * factor));
-      cy.zoom({ level, renderedPosition: { x: el.clientWidth / 2, y: el.clientHeight / 2 } });
+      zoomTo(cy, level, { x: el.clientWidth / 2, y: el.clientHeight / 2 });
     };
     return {
       zoomIn: () => zoomBy(1.25),
       zoomOut: () => zoomBy(0.8),
-      fit: () => cyRef.current?.fit(undefined, FIT_PADDING),
+      fit: () => {
+        if (cyRef.current) fitView(cyRef.current, FIT_PADDING);
+      },
     };
   }, []);
 
@@ -189,6 +198,17 @@ const LineageCanvas = forwardRef<CanvasHandle, LineageCanvasProps>(function Line
       });
       el.dataset.zoom = cy.zoom().toFixed(2);
       placeLabels();
+      // a step in Time travel: the nodes that were not in the last frame fade in with their edges (never during a replay or under reduced motion)
+      const ids = nodes.map((n) => n.id);
+      const fresh = new Set(newIds(prevIds.current, ids));
+      prevIds.current = new Set(ids);
+      const fading = fadeNewRef.current && fresh.size > 0 && !prefersReducedMotion();
+      el.dataset.faded = String(fading ? fresh.size : 0);
+      if (fading) {
+        const added = cy.nodes().filter((n) => fresh.has(n.id()));
+        fadeIn(added.union(added.connectedEdges()), tokenMs("--dur-1", 120));
+      }
+      el.dataset.builds = String(Number(el.dataset.builds ?? "0") + 1);
       cyRef.current = cy;
       observer.observe(el);
       setBuilt((n) => n + 1);

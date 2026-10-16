@@ -1,4 +1,5 @@
 import type cytoscape from "cytoscape";
+import { prefersReducedMotion, tokenMs } from "../../shared/lib/motion";
 
 /** The Cytoscape style sheets (ui-redesign.md §15.4). Colours come from the design tokens at the moment the canvas is built,
  *  so both themes work; every colour is paired with a shape, a line style or a word (the labels in `graphModel.canvasLabel`). */
@@ -16,6 +17,8 @@ export interface Palette {
   hold: string;
   highlight: string;
   mono: string;
+  /** Milliseconds, read from the motion tokens (and zero where reduced motion makes the change instant). */
+  motion: { dimMs: number; previewMs: number; applyMs: number };
 }
 
 const FALLBACK: Palette = {
@@ -31,6 +34,7 @@ const FALLBACK: Palette = {
   hold: "#b3261e",
   highlight: "#ffd84a",
   mono: "ui-monospace, monospace",
+  motion: { dimMs: 120, previewMs: 180, applyMs: 260 },
 };
 
 export function readPalette(): Palette {
@@ -49,6 +53,8 @@ export function readPalette(): Palette {
     hold: read("--hold", FALLBACK.hold),
     highlight: read("--highlight", FALLBACK.highlight),
     mono: read("--font-mono", FALLBACK.mono),
+    // dimming stays at --dur-1 (it is not in the reduced-motion override) but is instant when motion is reduced; the others are 0 there already
+    motion: { dimMs: prefersReducedMotion() ? 0 : tokenMs("--dur-1", 120), previewMs: tokenMs("--dur-2", 180), applyMs: tokenMs("--dur-3", 260) },
   };
 }
 
@@ -65,6 +71,9 @@ export function hatchUri(color: string, width: number = NODE.width, height: numb
 }
 
 type Sheet = cytoscape.StylesheetJson;
+
+/** A style transition over `ms` for the listed properties; nothing at all for no time, so a reduced-motion change is a plain jump. */
+const transition = (properties: string, ms: number): Record<string, string> => (ms > 0 ? { "transition-property": properties, "transition-duration": `${ms / 1000}s` } : {});
 
 /** The lineage canvas: artifacts by kind, sources as diamonds, witness paths thick (solid untrusted, dotted secret). */
 export function lineageStyle(p: Palette): Sheet {
@@ -88,6 +97,7 @@ export function lineageStyle(p: Palette): Sheet {
         "border-width": 1.5,
         "border-color": p.lineStrong,
         "border-style": "solid",
+        ...transition("opacity", p.motion.dimMs),
       },
     },
     { selector: "node.memory", style: { shape: "barrel" } },
@@ -142,6 +152,7 @@ export function lineageStyle(p: Palette): Sheet {
         "text-background-opacity": 0.9,
         "text-background-padding": "2px",
         "arrow-scale": 1.1,
+        ...transition("opacity", p.motion.dimMs),
       },
     },
     { selector: "edge.taxi", style: { "curve-style": "taxi", "taxi-direction": "vertical", "taxi-turn": "50%", "taxi-turn-min-distance": 12 } },
@@ -205,9 +216,11 @@ export function capabilityStyle(p: Palette): Sheet {
         "text-background-color": p.sheet,
         "text-background-opacity": 0.9,
         "text-background-padding": "2px",
+        ...transition("width, line-color, target-arrow-color, opacity", p.motion.previewMs),
       },
     },
-    { selector: "edge.revoked", style: { "line-style": "dashed", opacity: 0.35 } },
+    // applying a cut: the revoked flows fade (the dash style changes with them)
+    { selector: "edge.revoked", style: { "line-style": "dashed", opacity: 0.35, ...transition("width, line-color, target-arrow-color, opacity", p.motion.applyMs) } },
     { selector: "edge.cut", style: { width: 4, "line-color": p.hold, "target-arrow-color": p.hold } },
     { selector: ".dim", style: { opacity: 0.25 } },
     { selector: ".gone", style: { display: "none" } },

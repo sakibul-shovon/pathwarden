@@ -195,6 +195,7 @@ export function TimeView({ initialT, onNavigate, onChangeT }: TimeViewProps) {
                 onOpen={setOpenNode}
                 selected={openNode}
                 traceKey={null}
+                fadeNew={!playing}
                 source={`GET /graph-at?t=${graph.t}`}
               />
             ) : (

@@ -37,6 +37,8 @@ interface LineageFigureProps {
   tainted?: string[];
   marked?: string[];
   layoutFrom?: { nodes: LineageNode[]; edges: LineageEdge[] };
+  /** Time travel: new nodes fade in as time steps (off during a replay). */
+  fadeNew?: boolean;
   /** Where the data came from, shown under the figure. */
   source: string;
 }
@@ -147,6 +149,7 @@ export function LineageFigure(props: LineageFigureProps) {
               focusOn={focusOn}
               witnessOnly={witnessOnly}
               traceKey={effectiveTrace}
+              fadeNew={props.fadeNew}
               onHover={onHover}
               onOpen={onOpen}
               ariaLabel={`Lineage graph of ${subject}: ${caption}`}

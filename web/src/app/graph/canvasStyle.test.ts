@@ -4,6 +4,7 @@ import { capabilityStyle, hatchUri, lineageStyle, type Palette } from "./canvasS
 const p: Palette = {
   ink: "#111111", ink2: "#222222", ink3: "#333333", line: "#aaaaaa", lineStrong: "#888888", sheet: "#ffffff", paper: "#eeeeee",
   untrusted: "#b4450c", secret: "#8f1c6b", hold: "#b3261e", highlight: "#ffd84a", mono: "monospace",
+  motion: { dimMs: 120, previewMs: 180, applyMs: 260 },
 };
 
 const rule = (sheet: ReturnType<typeof lineageStyle>, selector: string): Record<string, unknown> => {
@@ -73,6 +74,29 @@ describe("capability style sheet", () => {
   it("dashes and fades a revoked flow and draws the previewed cut thick", () => {
     expect(rule(sheet, "edge.revoked")).toMatchObject({ "line-style": "dashed", opacity: 0.35 });
     expect(rule(sheet, "edge.cut")).toMatchObject({ width: 4, "line-color": p.hold });
+  });
+});
+
+describe("motion in the style sheets (§17.4)", () => {
+  const still = { ...p, motion: { dimMs: 0, previewMs: 0, applyMs: 0 } };
+
+  it("dims over --dur-1: nodes and edges of the lineage transition their opacity", () => {
+    const lineage = lineageStyle(p);
+    expect(rule(lineage, "node")).toMatchObject({ "transition-property": "opacity", "transition-duration": "0.12s" });
+    expect(rule(lineage, "edge")).toMatchObject({ "transition-property": "opacity", "transition-duration": "0.12s" });
+  });
+
+  it("previews a cut over --dur-2 and fades a revoked flow over --dur-3, in the capability graph", () => {
+    const cap = capabilityStyle(p);
+    expect(rule(cap, "edge")).toMatchObject({ "transition-duration": "0.18s" });
+    expect(String(rule(cap, "edge")["transition-property"])).toContain("width");
+    expect(rule(cap, "edge.revoked")).toMatchObject({ "transition-duration": "0.26s" });
+  });
+
+  it("has no transition at all when the durations are zero (reduced motion): a change is a jump", () => {
+    for (const sheet of [lineageStyle(still), capabilityStyle(still)]) {
+      expect(JSON.stringify(sheet)).not.toContain("transition-");
+    }
   });
 });
 
