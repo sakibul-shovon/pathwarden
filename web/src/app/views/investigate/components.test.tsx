@@ -101,6 +101,10 @@ describe("investigate.css", () => {
     }
   });
 
+  it("lets the button in the memories table wrap, so its column is not clipped at 1280 px", () => {
+    expect(css).toMatch(/\.pw-log__table td:last-child \.pw-btn\s*\{[^}]*white-space: normal/);
+  });
+
   it("tells untrusted from secret by line style as well as colour", () => {
     expect(css).toMatch(/\.pw-path--untrusted\s*\{[^}]*border-left: 4px solid/);
     expect(css).toMatch(/\.pw-path--secret\s*\{[^}]*border-left: 4px dotted/);

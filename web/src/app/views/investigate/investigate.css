@@ -25,6 +25,11 @@
   overflow-wrap: normal;
   white-space: nowrap;
 }
+/* the one wide button may take two lines: the table then fits the case column at 1280 px */
+.pw-case .pw-log__table td:last-child .pw-btn {
+  white-space: normal;
+  text-align: left;
+}
 .pw-case__head {
   display: flex;
   align-items: baseline;
