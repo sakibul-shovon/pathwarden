@@ -3,22 +3,22 @@
 Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the real repository (git state, `make test`) before trusting it. Keep it factual; no history — that belongs in `PROGRESS.md`.
 
 ## Header
-- **Written:** 2026-10-16 (P15a, after the landing page) · **Agent / tool / model:** Claude Code / Sonnet 5.5
+- **Written:** 2026-10-16 (P15b, after motion) · **Agent / tool / model:** Claude Code / Sonnet 5.5
 - **Takeover notes** (filled by the next agent: what differed from this file):
   -
 
 ## Git state at stop
-- Branch: `phase/p15a-landing`, from `phase/p14d-memory-time-remediate-eval`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
+- Branch: `phase/p15b-motion`, from `phase/p15a-landing`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
 - Remote: `origin` = `https://github.com/sakibul-shovon/pathwarden.git` (private until the project ends, D-014). Branches of this chain are pushed; **nothing is merged to `main` and no tag is set** (D-034). `main` = `34f1d85`.
 - Verify with `git status -sb`, `git log --oneline -8`, `git ls-remote origin 'phase/p1[3-5]*'`.
 
 ## Where the project stands
-- **Redesign chain:** P13a–P13d, P14a–P14d and **P15a (the landing page)** are done. All six app views and the public page are rebuilt: `web/src/app/views/*`, `web/src/app/graph/`, `web/src/landing/` (data, logic, `sections/`, the recorded run in `recorded/story.json`), `web/src/shared/`.
-- **Layout deviation to confirm:** lanes are vertical columns with time running down (P14c notes). **New script to confirm:** `scripts/capture_landing_story.py` (spec §11.4 lists it as needing approval; see the P15a notes in `docs/DECISIONS.md`). Re-run it with `python scripts/capture_landing_story.py` (local API, resets the demo workspace) if the demo scenarios change.
-- Next: **P15b — motion** (`ui-redesign.md` §17): every row of the interaction catalogue in both motion modes. Already in place: the witness-trace on the lineage graph (once per case, `--dur-trace-step`, skipped under reduced motion) and the drawer slide. Not yet: the landing page's FIG. 1 trace when it is half visible, the story figure transitions, the new-node fade in Time travel (§13.7 row 18), the revoked-edge fade and the cut thickening in Remediate (§13.8 row 18). Then P15c responsive/a11y hardening (the automated accessibility run and a screen-reader smoke test are still to do, for the landing page too), P15d full regression, regenerated screenshots and docs.
+- **Redesign chain:** P13a–P13d, P14a–P14d, P15a (landing) and **P15b (motion)** are done. Motion lives in `web/src/shared/lib/motion.ts` (sequencer, reduced-motion check, duration tokens, `withViewTransition`), `web/src/app/graph/canvasMotion.ts`, the token-driven CSS and `web/src/shared/components/Working.tsx`; its rules are tested in `web/src/shared/styles/motion.test.ts`.
+- **To confirm:** lanes as vertical columns (P14c notes); `scripts/capture_landing_story.py` (P15a notes); the motion deviations (P15b notes).
+- Next: **P15c — responsive and accessibility hardening** (`ui-redesign.md` §18, §21.6–21.7): keyboard behaviour of every view (§18.2), focus management, landmarks and names, the contrast table, target sizes, zoom to 200 % and reflow at 320 px, reduced motion (done), and the automated accessibility run with zero serious violations plus a screen-reader smoke test. **A tool such as axe-core is a new dependency (AGENTS.md: ask first):** do not add it to `package.json`; fetch it into the scratchpad and inject it into the page through the DevTools protocol for the run, and record the result as evidence. Then P15d: full regression (`make test` and `make test-auth`, 608 each), regenerated `docs/img/*` from the real UI, README, MCP and DEPLOY docs, final handoff.
 
 ## Verification so far (real results)
-- `npm test` 408 passed in 31 files; `npx tsc --noEmit` and `npm run build` clean. The landing page was exercised in headless Edge on the dev server (API up, `/api/health` blocked) and on the production build (hero above the fold, layout shift 0.005–0.008, JS about 75 kB gzip). **Not verified:** pinch zoom on a touch device; a screen reader; the automated accessibility run (P15c); the live agent run and LLM-mode forensics (tokens: ask the owner first). No change under `api/ tests/ fixtures/ eval/ Makefile`; `scripts/` gained the capture script. Backend suites (608 in both modes) are re-run at the end of P15d.
+- `npm test` 455 passed in 35 files; `npx tsc --noEmit` and `npm run build` clean. Every row of the §17.4 motion catalogue was measured in headless Edge against the real API in normal and in reduced motion (series sampled every 20–25 ms for the dialog, the traces, the zoom). **Not verified:** frame rate in the performance panel, the mobile menu sheet's motion on its own, touch, pinch zoom, a screen reader, the automated accessibility run (P15c); the live agent run and LLM-mode forensics (tokens: ask the owner first). No change under `api/ tests/ fixtures/ eval/ Makefile scripts/`. Backend suites (608 in both modes) are re-run at the end of P15d.
 
 ## Traps and findings a newcomer must know
 - **Environment:** Python 3.11.9 in `.venv`; GNU Make is **not on PATH in the agent's Git Bash** until `export PATH="$PATH:/c/Users/shovon/AppData/Local/Microsoft/WinGet/Packages/ezwinports.make_Microsoft.Winget.Source_8wekyb3d8bbwe/bin"`; Docker Desktop stops by itself between sessions (start `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`, then `docker compose up -d falkordb`); tests use the real FalkorDB.
@@ -37,4 +37,4 @@ Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the r
 4. Optional: allow one live run and one LLM forensics run (a few cents of tokens) so `LivePanel` and the LLM report wording can be checked against real data.
 
 ## Next action (exactly one)
-Start **P15b** on `phase/p15b-motion` from this branch: `docs/phases/P13-ui-redesign.md` § P15b, `ui-redesign.md` §17.
+Start **P15c** on `phase/p15c-responsive-a11y` from this branch: `docs/phases/P13-ui-redesign.md` § P15c, `ui-redesign.md` §18 and §21.6–21.7.

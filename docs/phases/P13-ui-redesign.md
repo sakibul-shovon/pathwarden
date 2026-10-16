@@ -70,7 +70,7 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] Sections §11.1 with data from `summary.json`, `.cypher` and fixture files; CTA reflects the health probe; recorded story data (client-rendered, no preload: see the P15a notes)
 
 ### P15b — motion
-- [ ] Every row of §17.4 in both motion modes
+- [x] Every row of §17.4 in both motion modes (see the P15b notes for the deviations and what was not measured)
 
 ### P15c — responsive and accessibility
 - [ ] Widths 320…1920 × both themes × every view; keyboard-only; reduced motion; 200 % zoom
