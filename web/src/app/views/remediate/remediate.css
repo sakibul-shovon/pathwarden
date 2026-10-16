@@ -1,0 +1,180 @@
+/* Remediate (ui-redesign.md §13.8): topology controls, graph with an inspector, and the cut comparison. */
+
+.pw-remediate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+}
+.pw-remediate p {
+  margin: 0;
+}
+.pw-remediate__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s-4);
+}
+.pw-remediate__toxic {
+  align-self: center;
+}
+.pw-remediate__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+}
+.pw-remediate__graph {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+}
+@media (min-width: 1100px) {
+  .pw-remediate__body {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+.pw-remediate__h {
+  margin: 0 0 var(--s-2);
+  font-size: var(--t-lg);
+}
+
+/* ------------------------------------------------------------------ inspector */
+.pw-inspector {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-inspector__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  font-size: var(--t-lg);
+}
+.pw-inspector__paths {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+}
+.pw-inspector__paths dt {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.pw-inspector__paths dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+}
+
+/* ------------------------------------------------------------------ cut comparison */
+.pw-cuts {
+  display: grid;
+  gap: var(--s-3);
+}
+.pw-cuts__table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--sheet);
+  border: 1px solid var(--line-strong);
+  font-size: var(--t-sm);
+}
+.pw-cuts__table th,
+.pw-cuts__table td {
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.pw-cuts__table th {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.pw-cuts__row--best {
+  background: var(--allow-tint);
+}
+.pw-cuts__best {
+  margin-left: var(--s-2);
+  padding: 0 var(--s-2);
+  border: 1px solid var(--allow);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pw-cuts__caps {
+  overflow-wrap: anywhere;
+  font-size: var(--t-xs);
+}
+.pw-cuts__bar {
+  display: block;
+  width: 140px;
+  height: 10px;
+  margin-bottom: 2px;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+}
+.pw-cuts__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+.pw-cuts__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.pw-cuts__why {
+  margin-top: var(--s-1);
+  max-width: 260px;
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+}
+.pw-review__list {
+  margin: 0;
+  padding-left: var(--s-4);
+}
+
+@media (max-width: 767px) {
+  .pw-cuts__table,
+  .pw-cuts__table tbody,
+  .pw-cuts__table tr,
+  .pw-cuts__table td {
+    display: block;
+  }
+  .pw-cuts__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .pw-cuts__table {
+    border: 0;
+    background: none;
+  }
+  .pw-cuts__table tr {
+    margin-bottom: var(--s-3);
+    border: 1px solid var(--line-strong);
+    background: var(--sheet);
+  }
+  .pw-cuts__row--best {
+    background: var(--allow-tint);
+  }
+  .pw-cuts__table td {
+    border-bottom: 1px solid var(--line);
+  }
+  .pw-cuts__table td::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--ink-3);
+    font-size: var(--t-xs);
+    font-weight: 600;
+  }
+}
