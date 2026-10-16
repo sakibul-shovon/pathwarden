@@ -54,7 +54,7 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] Story-guide data model (localStorage in try/catch)
 
 ### P14a — Run view
-- [ ] ScenarioList, segmented controls, reset notice, RunStatus, OutcomeStrip (7 variants), AgentLanes, ReleaseSheet, EventLog, LivePanel mapping, MCP-workspace rule
+- [x] ScenarioList, segmented controls, reset notice, RunStatus, OutcomeStrip (7 variants), AgentLanes, ReleaseSheet, EventLog, LivePanel mapping, MCP-workspace rule (LivePanel not run against a real live run, see D notes)
 
 ### P14b — case file
 - [ ] ReviewQueue, VerdictPair, `whySentence` (unit-tested), WitnessPaths, laundering, ForensicsPanel/steps, PayloadDiff, DecisionPanel + ReviewDialog

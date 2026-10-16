@@ -330,6 +330,16 @@ Source: `ui-redesign.md` (research and specification). Phase slicing: `docs/phas
 - **Returning visitors** (no query string) land on the view they used last (`pw_onboarding.lastTab` in `localStorage`, convenience only, try/catch). A deep link always wins.
 - **Story guide:** only the data model and its storage are built here (`app/guide.ts`, tested: six steps, presets never carry `autorun`, corrupt storage falls back to a fresh start); the guide UI arrives with the Run view in P14a.
 
+### P14a notes (Run view)
+- **A display bug of the old Run tab was fixed, not ported.** It called a run LEAKED whenever the public page matched `PWDEMO-` or `### Checksum`, so the benign `benign_lookalike` (which quotes the documented example key `PWDEMO-SECRET-00000000-NOT-A-REAL-KEY`) was labelled LEAKED even with the guard on. The plan's rule is now implemented and tested: LEAKED needs the guard to be off (`reason GUARD_OFF`) **and** a matching page; a gated release is POSTED. The check stays a display check of the page text, labelled as such, never a gate verdict.
+- **Outcome wording** is a pure function of the API's last action (`runLogic.outcomeOf`, `OutcomeStrip.presentOutcome`): HELD, BLOCKED, LEAKED, POSTED, POSTED · WARNING (`SECRET_EGRESS_WARNING`), POSTED · GUARD OFF, NOTHING PROPOSED, and an `other` that shows an unknown status in capitals instead of guessing. The strip does not show `0 LLM calls` (the run result has no such field); that figure comes from `GET /actions/{id}` and is shown on the case file (P14b).
+- **First view moved to `app/views/run/`**; the other five stay in `web/src/tabs/` until they are rebuilt. `api/client.ts` re-exports `ApiError` from the new side-effect-free `api/errors.ts` (importing the client touches `window`, which broke unit tests). The error catalogue (`app/errorCatalogue.ts`, plan §13.12) is shared by all views from here on.
+- **`?autorun=1` runs once per page load** (a ref guards React StrictMode's double effect run; the old tab ran twice in development).
+- **Feedback during a run** follows the response-time limits: under 1 s only the button label changes; after 1 s a status block says what is running and for how long (no percent, no estimate: the API reports none); the result is announced politely and focus moves to the verdict heading.
+- **Story guide:** steps 1 and 2 are completed by the Run view (a LEAKED run, a HELD run with the guard on); steps 3–6 will be completed by the views they belong to. The guide never runs anything for the user.
+- **Disabled options say why in visible text** (shared `SegmentedControl` fix): a disabled option's hint is always shown next to the selected option's hint.
+- **Not exercised:** `LivePanel` renders the live-agent summary of `RunResult.live` but was not run against a real live run (it spends provider tokens; the repo rules say to ask first). Its stop-reason mapping is unit-tested.
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.
