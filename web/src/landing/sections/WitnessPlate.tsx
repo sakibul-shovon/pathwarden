@@ -1,4 +1,5 @@
 import { StatusPill } from "../../shared/components/StatusPill";
+import { useOnceVisible } from "../../shared/lib/motion";
 import { WitnessPaths } from "../../app/views/investigate/WitnessPaths";
 import type { Plate } from "../landingLogic";
 
@@ -7,13 +8,15 @@ import type { Plate } from "../landingLogic";
  *  gate's own answer (`q2a_untrusted_witness`, `q2b_secret_witness`), recorded by `scripts/capture_landing_story.py`. */
 export function WitnessPlate({ plate, scenario }: { plate: Plate; scenario: string }) {
   const payload = plate.untrusted[0];
+  // the trace runs once, when the figure is half visible (an IntersectionObserver, not a scroll listener)
+  const [ref, seen] = useOnceVisible<HTMLElement>(0.5);
   return (
-    <figure className="pw-plate">
+    <figure className="pw-plate" ref={ref}>
       <div className="pw-plate__sheet">
         <p className="pw-plate__payload">
           <span className="pw-eyebrow">payload</span> <strong>{payload?.label ?? plate.payloadId}</strong> <code>{plate.payloadId}</code>
         </p>
-        <WitnessPaths untrusted={plate.untrusted} secret={plate.secret} queries={{}} />
+        <WitnessPaths untrusted={plate.untrusted} secret={plate.secret} queries={{}} trace={`${plate.actionId}:fig1`} traceReady={seen} />
         <p className="pw-plate__gate">
           <span className="pw-plate__bar" aria-hidden="true" />
           <StatusPill status={`${plate.verdict} · ${plate.reason}`} family="hold" />

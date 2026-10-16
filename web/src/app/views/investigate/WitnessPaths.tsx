@@ -1,5 +1,6 @@
 import { CodeBlock } from "../../../shared/components/CodeBlock";
 import { Icon } from "../../../shared/icons/Icon";
+import { revealedSteps, useTraceFrame } from "../../../shared/lib/motion";
 import { stepCount, type PathStep } from "./caseLogic";
 
 interface WitnessPathsProps {
@@ -11,6 +12,10 @@ interface WitnessPathsProps {
   onHover?: (id: string | null) => void;
   /** A chip is activated: the node drawer opens. */
   onOpen?: (id: string) => void;
+  /** Play the witness trace once for each new value: the chips appear in order from the payload to the source, both rails together. */
+  trace?: string | null;
+  /** Hold the trace on its first step until this is true (the landing page waits until the figure is half visible). */
+  traceReady?: boolean;
 }
 
 const Q_UNTRUSTED = "q2a_untrusted_witness";
@@ -23,6 +28,8 @@ interface RailProps {
   queryName: string;
   onHover?: (id: string | null) => void;
   onOpen?: (id: string) => void;
+  /** How many steps are shown: all of them unless a trace is playing. */
+  revealed: number;
 }
 
 const chip = (s: PathStep) => (
@@ -35,7 +42,7 @@ const chip = (s: PathStep) => (
   </>
 );
 
-function Rail({ kind, steps, query, queryName, onHover, onOpen }: RailProps) {
+function Rail({ kind, steps, query, queryName, onHover, onOpen, revealed }: RailProps) {
   // a chip is a button only when something happens on hover or activation (the landing page's plate is a static figure)
   const interactive = Boolean(onHover || onOpen);
   const n = stepCount(steps.map((s) => s.id));
@@ -54,7 +61,7 @@ function Rail({ kind, steps, query, queryName, onHover, onOpen }: RailProps) {
       ) : (
         <ol className="pw-path__steps">
           {steps.map((s, i) => (
-            <li key={s.id} className={s.isSource ? "pw-step pw-step--source" : "pw-step"}>
+            <li key={s.id} className={[s.isSource ? "pw-step pw-step--source" : "pw-step", i >= revealed ? "pw-step--pending" : ""].filter(Boolean).join(" ")}>
               {interactive ? (
                 <button
                   type="button"
@@ -88,11 +95,12 @@ function Rail({ kind, steps, query, queryName, onHover, onOpen }: RailProps) {
 
 /** The signature component: the two proofs of a hold, each an ordered list from the payload to its source, named by the
  *  key people know (`team_convention:42`) with the id after it. Solid line = untrusted, dotted = secret (also in text). */
-export function WitnessPaths({ untrusted, secret, queries, onHover, onOpen }: WitnessPathsProps) {
+export function WitnessPaths({ untrusted, secret, queries, onHover, onOpen, trace = null, traceReady = true }: WitnessPathsProps) {
+  const frame = useTraceFrame(trace, Math.max(untrusted.length, secret.length), traceReady);
   return (
     <div className="pw-paths">
-      <Rail kind="untrusted" steps={untrusted} query={queries[Q_UNTRUSTED]} queryName={Q_UNTRUSTED} onHover={onHover} onOpen={onOpen} />
-      <Rail kind="secret" steps={secret} query={queries[Q_SECRET]} queryName={Q_SECRET} onHover={onHover} onOpen={onOpen} />
+      <Rail kind="untrusted" steps={untrusted} query={queries[Q_UNTRUSTED]} queryName={Q_UNTRUSTED} onHover={onHover} onOpen={onOpen} revealed={revealedSteps(frame, untrusted.length)} />
+      <Rail kind="secret" steps={secret} query={queries[Q_SECRET]} queryName={Q_SECRET} onHover={onHover} onOpen={onOpen} revealed={revealedSteps(frame, secret.length)} />
     </div>
   );
 }

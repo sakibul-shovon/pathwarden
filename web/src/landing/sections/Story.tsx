@@ -95,6 +95,11 @@ export function Story({ story, issue }: { story: LandingStory; issue: string }) 
   const parts = issueParts(issue);
   const wide = useMediaQuery("(min-width: 1100px)");
   const [active, setActive] = useActive(wide);
+  // the first figure is there from the start; only a change of exhibit crossfades
+  const [swapped, setSwapped] = useState(false);
+  useEffect(() => {
+    if (active !== "a") setSwapped(true);
+  }, [active]);
   const sessions = story.guard_off.run.sessions;
   const triage = sessions.find((s) => s.agent === "triage");
   const allGreen = sessions.every((s) => s.rule_of_two.green);
@@ -175,7 +180,9 @@ export function Story({ story, issue }: { story: LandingStory; issue: string }) 
         </ol>
         {wide && (
           <div className="pw-story__sticky" aria-live="polite">
-            {current.figure}
+            <div key={current.id} className={swapped ? "pw-story__fig pw-story__fig--swap" : "pw-story__fig"}>
+              {current.figure}
+            </div>
           </div>
         )}
       </div>

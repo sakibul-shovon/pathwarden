@@ -376,6 +376,10 @@ html {
   position: sticky;
   top: 88px;
 }
+/* exhibit to exhibit: the new figure fades in (--dur-2; instant under reduced motion because the token is 0 there) */
+.pw-story__fig--swap {
+  animation: pw-fade-in var(--dur-2) linear;
+}
 .pw-issue__text {
   margin: var(--s-2) 0;
   white-space: pre-wrap;

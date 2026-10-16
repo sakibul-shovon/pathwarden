@@ -282,7 +282,7 @@ export function InvestigateView({ workspace, initialAction, autoForensics, autoH
               {view.untrusted.length === 0 && view.secret.length === 0 ? (
                 <p className="pw-muted">No witness paths: the gate found no complete untrusted-and-secret pair.</p>
               ) : null}
-              <WitnessPaths untrusted={view.untrusted} secret={view.secret} queries={loaded.explain.queries} onHover={setHighlight} onOpen={open} />
+              <WitnessPaths untrusted={view.untrusted} secret={view.secret} queries={loaded.explain.queries} onHover={setHighlight} onOpen={open} trace={heldNow.id} />
             </Section>
 
             <Section n={3} id="pw-lineage" title="Lineage">
