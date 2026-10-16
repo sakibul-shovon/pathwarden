@@ -302,7 +302,9 @@
   font-weight: 600;
   background: var(--hold-tint);
 }
+/* positioned so the visually-hidden header cells inside a wide table cannot escape the scroll box and widen the page */
 .pw-scroll {
+  position: relative;
   overflow-x: auto;
 }
 .pw-facts {
