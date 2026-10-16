@@ -21,6 +21,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // the landing page reads the generated evaluation, the gate queries, the issue fixture and the docs from the repository root
+    fs: { allow: [resolve(import.meta.dirname, "..")] },
     proxy: { "/api": { target: "http://127.0.0.1:8000", changeOrigin: true } },
   },
 });
