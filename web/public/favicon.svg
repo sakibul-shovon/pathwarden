@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 20" width="24" height="20" fill="none" stroke-width="2">
+  <title>Pathwarden</title>
+  <style>
+    path { stroke: #16191d; }
+    @media (prefers-color-scheme: dark) { path { stroke: #f3f1ea; } }
+  </style>
+  <path d="M1 5h14" />
+  <path d="M1 15h14" stroke-dasharray="1.5 3" />
+  <path d="M19 2v16" />
+</svg>
