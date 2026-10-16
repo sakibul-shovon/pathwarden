@@ -5,6 +5,7 @@ import { Button } from "../../../shared/components/Button";
 import { ErrorPanel } from "../../../shared/components/ErrorPanel";
 import { Notice } from "../../../shared/components/Notice";
 import { Skeleton } from "../../../shared/components/Skeleton";
+import { Term } from "../../../shared/components/Term";
 import { useElapsed } from "../../../shared/lib/useElapsed";
 import { usePoll } from "../../../hooks";
 import { describeError } from "../../errorCatalogue";
@@ -39,7 +40,7 @@ interface InvestigateViewProps {
   onSelectAction: (id: string) => void;
 }
 
-const Section = ({ n, id, title, children }: { n: number; id: string; title: string; children: ReactNode }) => (
+const Section = ({ n, id, title, children }: { n: number; id: string; title: ReactNode; children: ReactNode }) => (
   <section className="pw-case__section" aria-labelledby={id}>
     <h2 id={id} className="pw-case__h">
       <span className="pw-case__n" aria-hidden="true">
@@ -278,7 +279,7 @@ export function InvestigateView({ workspace, initialAction, autoForensics, autoH
               {view.why ? <p className="pw-case__why">{view.why}</p> : <p className="pw-case__why">The gate reason is <code>{loaded.explain.gate.reason}</code>.</p>}
             </Section>
 
-            <Section n={2} id="pw-paths" title="Witness paths">
+            <Section n={2} id="pw-paths" title={<><Term term="witness">Witness</Term> paths</>}>
               {view.untrusted.length === 0 && view.secret.length === 0 ? (
                 <p className="pw-muted">No witness paths: the gate found no complete untrusted-and-secret pair.</p>
               ) : null}

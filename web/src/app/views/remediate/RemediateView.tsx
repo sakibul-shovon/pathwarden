@@ -7,6 +7,7 @@ import { ErrorPanel } from "../../../shared/components/ErrorPanel";
 import { Notice } from "../../../shared/components/Notice";
 import { SegmentedControl } from "../../../shared/components/SegmentedControl";
 import { Skeleton } from "../../../shared/components/Skeleton";
+import { Term } from "../../../shared/components/Term";
 import { Working } from "../../../shared/components/Working";
 import { useElapsed } from "../../../shared/lib/useElapsed";
 import { describeError } from "../../errorCatalogue";
@@ -170,7 +171,7 @@ export function RemediateView({ initialTopology, onChangeTopology }: RemediateVi
         </Button>
       </div>
       <p className="pw-muted pw-prose">
-        An agent is <strong>toxic</strong> when it can receive untrusted data, can receive secrets and can reach an external sink. Each candidate cut is a
+        An agent is <strong><Term term="toxic">toxic</Term></strong> when it can receive untrusted data, can receive secrets and can reach an external sink. Each candidate cut is a
         complete fix, computed with <code>algo.maxFlow</code> and verified on a temporary copy of the graph. Apply changes the demo topology; Reset restores it.
       </p>
       {busy === "suggest" && suggesting.slow && <Working elapsedMs={suggesting.elapsedMs}>Computing four cuts with algo.maxFlow and verifying each on a copy of the graph…</Working>}
@@ -214,7 +215,7 @@ export function RemediateView({ initialTopology, onChangeTopology }: RemediateVi
 
       <section aria-labelledby="pw-cuts-title" className="pw-remediate__cuts">
         <h2 id="pw-cuts-title" className="pw-remediate__h">
-          Cut comparison
+          <Term term="cut">Cut</Term> comparison
         </h2>
         <CutComparison candidates={candidates} best={best} preview={preview} busy={busy !== null} optimum={optimum} onPreview={setPreview} onApply={setApplying} />
       </section>

@@ -8,6 +8,7 @@ import { EmptyState } from "../../../shared/components/EmptyState";
 import { ErrorPanel } from "../../../shared/components/ErrorPanel";
 import { Notice } from "../../../shared/components/Notice";
 import { SegmentedControl } from "../../../shared/components/SegmentedControl";
+import { Term } from "../../../shared/components/Term";
 import { Skeleton } from "../../../shared/components/Skeleton";
 import { describeError } from "../../errorCatalogue";
 import { NodeDrawer } from "../../graph/NodeDrawer";
@@ -60,7 +61,7 @@ export function MemoryView({ onNavigate }: { onNavigate: (tab: TabId) => void })
     <div className="pw-memory">
       <p className="pw-muted pw-prose">
         Every entry written to shared team memory. An <em>untrusted origin</em> means the entry descends from an untrusted source without passing the
-        sanitizer; the list comes from the q8 inventory, not from reading the text.
+        <Term term="sanitized">sanitizer</Term>; the list comes from the q8 inventory, not from reading the text.
       </p>
 
       {memory.error && entries === null && <ErrorPanel title="Could not load team memory" code="load_error">{memory.error}</ErrorPanel>}

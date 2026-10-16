@@ -3,6 +3,7 @@ import { Button } from "../../../shared/components/Button";
 import { Notice } from "../../../shared/components/Notice";
 import { SegmentedControl } from "../../../shared/components/SegmentedControl";
 import { StatusPill } from "../../../shared/components/StatusPill";
+import { Term } from "../../../shared/components/Term";
 import { Icon } from "../../../shared/icons/Icon";
 import { Working } from "../../../shared/components/Working";
 import { forensicSteps } from "./caseLogic";
@@ -25,7 +26,7 @@ export function ForensicsPanel({ mode, onMode, llm, busy, elapsedMs, slow, onRun
   return (
     <div className="pw-forensics">
       <Notice variant="consequence">
-        Runs the Forensic Agent. It <strong>quarantines</strong> everything derived from the untrusted source in this workspace now
+        Runs the Forensic Agent. It <strong><Term term="quarantine">quarantines</Term></strong> everything derived from the untrusted source in this workspace now
         (risk-reducing, and reversible in Memory) and replays Fixer and Release in a sandbox copy of the graph. It never reads content.
       </Notice>
       <div className="pw-forensics__controls">

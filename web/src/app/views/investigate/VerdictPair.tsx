@@ -1,5 +1,6 @@
 import type { ActionDetail } from "../../../api/types";
 import { StatusPill } from "../../../shared/components/StatusPill";
+import { Term } from "../../../shared/components/Term";
 import { verdictsDiffer } from "./caseLogic";
 
 /** "Decided" is the status recorded in the graph; "Gate now" is the verdict computed again when this page was opened. They
@@ -18,7 +19,8 @@ export function VerdictPair({ action }: { action: ActionDetail }) {
         <div className="pw-verdicts__box">
           <p className="pw-eyebrow">Gate now</p>
           <p className="pw-verdicts__now">
-            <StatusPill status={g.verdict} /> <strong className="pw-mono">{g.reason}</strong>
+            <StatusPill status={g.verdict} />{" "}
+            <strong className="pw-mono">{g.reason === "TRIFECTA" ? <Term term="trifecta">TRIFECTA</Term> : g.reason}</strong>
           </p>
           <p className="pw-muted pw-verdicts__note">
             Re-checked in {g.latency_ms.toFixed(1)} ms · {g.llm_calls} LLM calls
