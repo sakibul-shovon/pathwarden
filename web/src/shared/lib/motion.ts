@@ -8,19 +8,6 @@ const QUERY = "(prefers-reduced-motion: reduce)";
 
 export const prefersReducedMotion = (): boolean => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(QUERY).matches;
 
-/** True while the person asks for reduced motion (updates when the setting changes). */
-export function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(prefersReducedMotion);
-  useEffect(() => {
-    const media = window.matchMedia(QUERY);
-    const onChange = (): void => setReduced(media.matches);
-    onChange();
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
-}
-
 /** `120ms`, `0.12s`, `0ms`, ` 180ms ` to milliseconds; anything else is `fallback`. */
 export function parseDuration(value: string, fallback = 0): number {
   const m = /^\s*(-?\d*\.?\d+)\s*(ms|s)\s*$/.exec(value);
