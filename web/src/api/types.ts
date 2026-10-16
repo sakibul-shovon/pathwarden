@@ -283,6 +283,19 @@ export interface RemediationSummary {
   candidates: { id: string; total_cost: number; flows: number; verified: boolean }[];
 }
 
+/** The LLM judges B1 and B3 (mirror of `llm_judges` in `summary.json`): which model judged, at what temperature, how many calls. */
+export interface LlmJudgesSummary {
+  model: string;
+  temperature: number;
+  calls: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  /** Judgements made per defense (`B1`, `B3`). */
+  judgements: Record<string, number>;
+  /** Answers that were not valid JSON, per defense. */
+  invalid_json: Record<string, number>;
+}
+
 export interface EvalSummary {
   dataset: { seed: number; scenarios: number; attacks: number; benign: number; families: Record<string, number> };
   defenses: Record<string, DefenseSummary>;
@@ -291,6 +304,7 @@ export interface EvalSummary {
   falsification_criteria: { text: string; status: string }[];
   limitations: string[];
   remediation?: Record<string, RemediationSummary>;
+  llm_judges?: LlmJudgesSummary | null;
 }
 
 export interface LlmInfo {

@@ -1,0 +1,182 @@
+/* Evaluation report (ui-redesign.md §13.9). A data report: a 960 px column, the app's only serif title, no motion. */
+
+.pw-report {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-6);
+  max-width: 960px;
+}
+.pw-report p,
+.pw-report ul {
+  margin: 0;
+}
+.pw-report__head {
+  display: grid;
+  gap: var(--s-2);
+  padding-bottom: var(--s-4);
+  border-bottom: 2px solid var(--ink);
+}
+.pw-report__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  line-height: 1.15;
+}
+.pw-report__section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-3);
+}
+.pw-report__h {
+  margin: 0;
+  font-size: var(--t-lg);
+}
+.pw-report__files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* ------------------------------------------------------------------ tables */
+.pw-etable {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--sheet);
+  border: 1px solid var(--line-strong);
+  font-size: var(--t-sm);
+}
+.pw-etable th,
+.pw-etable td {
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.pw-etable thead th {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.pw-etable tbody th {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pw-etable__pw {
+  background: var(--allow-tint);
+}
+.pw-etable__note {
+  display: block;
+  font-size: var(--t-xs);
+  font-weight: 400;
+  color: var(--ink-2);
+  white-space: normal;
+}
+.pw-etable__bar {
+  display: block;
+  width: 72px;
+  height: 6px;
+  margin-top: 3px;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+}
+.pw-etable__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+
+/* ------------------------------------------------------------------ criteria and prose */
+.pw-criteria {
+  display: grid;
+  gap: var(--s-3);
+  padding: 0;
+  list-style: none;
+}
+.pw-criteria li {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-2) var(--s-3);
+  border-left: 3px solid var(--line-strong);
+  background: var(--sheet);
+}
+.pw-criteria__text {
+  font-weight: 600;
+}
+.pw-criteria__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2);
+  color: var(--ink-2);
+}
+.pw-prose-list {
+  display: grid;
+  gap: var(--s-2);
+  padding-left: var(--s-5);
+  max-width: var(--prose-max);
+}
+
+/* ------------------------------------------------------------------ interval chart */
+.pw-chart {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-5);
+}
+.pw-chart__panel {
+  margin: 0;
+  min-width: 0;
+}
+.pw-chart__title {
+  margin-bottom: var(--s-1);
+  font-weight: 600;
+  font-size: var(--t-sm);
+}
+.pw-chart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line-strong);
+  background: var(--sheet);
+}
+.pw-chart__grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.pw-chart__tick,
+.pw-chart__k,
+.pw-chart__notrun {
+  fill: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.pw-chart__name {
+  fill: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.pw-chart__row--pw .pw-chart__name {
+  font-weight: 700;
+}
+.pw-chart__interval {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+.pw-chart__dot {
+  fill: var(--ink);
+}
+.pw-chart__dot--pw {
+  fill: var(--allow);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.pw-chart__row:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* the table holds the same numbers; on a phone it is the whole answer */
+@media (max-width: 767px) {
+  .pw-chart {
+    display: none;
+  }
+}
