@@ -3,21 +3,21 @@
 Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the real repository (git state, `make test`) before trusting it. Keep it factual; no history — that belongs in `PROGRESS.md`.
 
 ## Header
-- **Written:** 2026-10-16 (P14a, after the Run view) · **Agent / tool / model:** Claude Code / Sonnet 5.5
+- **Written:** 2026-10-16 (P14b, after the Investigate case file) · **Agent / tool / model:** Claude Code / Sonnet 5.5
 - **Takeover notes** (filled by the next agent: what differed from this file):
   -
 
 ## Git state at stop
-- Branch: `phase/p14a-run-view`, from `phase/p13d-access-onboarding`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
+- Branch: `phase/p14b-case-file`, from `phase/p14a-run-view`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
 - Remote: `origin` = `https://github.com/sakibul-shovon/pathwarden.git` (private until the project ends, D-014). Branches of this chain are pushed; **nothing is merged to `main` and no tag is set** (D-034). `main` = `34f1d85`.
 - Verify with `git status -sb`, `git log --oneline -8`, `git ls-remote origin 'phase/p1[3-5]*'`.
 
 ## Where the project stands
-- **Redesign chain:** P13a–P13d (foundation, shell, access) and P14a (Run view) done. `web/src/app/views/run/` is the first rebuilt view; Investigate, Memory, Time travel, Remediate and Evaluation are still the old components in `web/src/tabs/` (restyled via `legacy.css`). Shared pieces ready for the next views: `app/errorCatalogue.ts`, `app/guideStore.ts` (`completeStep`), `SegmentedControl`, `Dialog`/`Drawer`, `StatusPill`, `RuleOfTwoLetters`, `Sheet`, `ErrorPanel`.
-- Next: **P14b — the Investigate case file** (`ui-redesign.md` §13.5, §13.11, §14.5–14.7): review queue, verdict pair, why-sentence, witness paths, forensics steps, held-vs-healed diff, review dialog. The Run view already links to it with `?tab=investigate&action=act-…` (the `action` parameter is parsed by `app/url.ts`; the old Investigate tab ignores it, P14b reads it).
+- **Redesign chain:** P13a–P13d (foundation, shell, access), P14a (Run) and P14b (Investigate) done. `web/src/app/views/run/` and `web/src/app/views/investigate/` are the rebuilt views; Memory, Time travel, Remediate and Evaluation are still the old components in `web/src/tabs/` (restyled via `legacy.css`), and the lineage and capability graphs are still `web/src/components/{LineageGraph,CapabilityGraph}.tsx`.
+- Next: **P14c — graph presentation** (`ui-redesign.md` §15, §13.10): deterministic `lanesLayout` (unit-tested, `preset` layout only, built-in layouts), Tree toggle, GraphTable, NodeDrawer (native `<dialog>` drawer variant already in `shared/components/Dialog`), trace, dim-unrelated, capability `roots`. The Investigate view already passes `untrustedWitness`/`secretWitness` into `LineageGraph` and has the caption text for it.
 
 ## Verification so far (real results)
-- `npm test` 162 passed; `npm run build` strict OK; Run acceptance (a)–(g), the no-model state and the in-flight status verified in headless Edge. **`LivePanel` was not run against a real live run** (spends provider tokens: ask the owner first). No change under `api/ tests/ fixtures/ eval/ scripts/`. Backend suites (608 in both modes) are re-run at the end of P15d.
+- `npm test` 200 passed; `npx tsc --noEmit` and `npm run build` clean; the Investigate acceptance flow, the sleeper jump to Time travel, the stale link, the review dialog focus handling and a 390 px layout check were run in headless Edge against the real API (scripted mode only). **LLM-mode forensics was not run** (spends provider tokens; ask the owner first). No change under `api/ tests/ fixtures/ eval/ scripts/`. Backend suites (608 in both modes) are re-run at the end of P15d.
 
 ## Traps and findings a newcomer must know
 - **Environment:** Python 3.11.9 in `.venv`; GNU Make is **not on PATH in the agent's Git Bash** until `export PATH="$PATH:/c/Users/shovon/AppData/Local/Microsoft/WinGet/Packages/ezwinports.make_Microsoft.Winget.Source_8wekyb3d8bbwe/bin"`; Docker Desktop stops by itself between sessions (start `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`, then `docker compose up -d falkordb`); tests use the real FalkorDB.
@@ -31,7 +31,7 @@ Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the r
 ## Blocked / questions for the human
 1. Please merge **P8** to `main` first, then this chain in order (D-034).
 2. Confirm D-032…D-036 (see P13a).
-3. Optional: allow one live run (a few cents of tokens) so `LivePanel` can be checked against real data.
+3. Optional: allow one live run and one LLM forensics run (a few cents of tokens) so `LivePanel` and the LLM report wording can be checked against real data.
 
 ## Next action (exactly one)
-Start **P14b** on `phase/p14b-case-file` from this branch: `docs/phases/P13-ui-redesign.md` § P14b, `ui-redesign.md` §13.5.
+Start **P14c** on `phase/p14c-graph-presentation` from this branch: `docs/phases/P13-ui-redesign.md` § P14c, `ui-redesign.md` §15 and §13.10.
