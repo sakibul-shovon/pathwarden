@@ -49,9 +49,9 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] Typed `unreachable` error; unreachable state
 
 ### P13d — access and onboarding
-- [ ] Probe via `GET /ws/{ws}/scenarios`; Connect form with error summary
-- [ ] `?key=` stored then removed from the URL; referrer policy; sign out
-- [ ] Story-guide data model (localStorage in try/catch)
+- [x] Probe via `GET /ws/{ws}/scenarios`; Connect form with error summary
+- [x] `?key=` stored then removed from the URL; referrer policy; sign out
+- [x] Story-guide data model (localStorage in try/catch)
 
 ### P14a — Run view
 - [ ] ScenarioList, segmented controls, reset notice, RunStatus, OutcomeStrip (7 variants), AgentLanes, ReleaseSheet, EventLog, LivePanel mapping, MCP-workspace rule

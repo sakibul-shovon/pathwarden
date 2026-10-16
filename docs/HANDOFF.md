@@ -3,21 +3,21 @@
 Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the real repository (git state, `make test`) before trusting it. Keep it factual; no history — that belongs in `PROGRESS.md`.
 
 ## Header
-- **Written:** 2026-10-16 (P13c, after the app shell) · **Agent / tool / model:** Claude Code / Sonnet 5.5
+- **Written:** 2026-10-16 (P13d, after access and onboarding) · **Agent / tool / model:** Claude Code / Sonnet 5.5
 - **Takeover notes** (filled by the next agent: what differed from this file):
   -
 
 ## Git state at stop
-- Branch: `phase/p13c-app-shell-entry`, from `phase/p13b-design-foundation`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
+- Branch: `phase/p13d-access-onboarding`, from `phase/p13c-app-shell-entry`. The next sub-phase branches from this one. Uncommitted and not mine: `README.md` (P8 results rows).
 - Remote: `origin` = `https://github.com/sakibul-shovon/pathwarden.git` (private until the project ends, D-014). Branches of this chain are pushed; **nothing is merged to `main` and no tag is set** (D-034). `main` = `34f1d85`.
 - Verify with `git status -sb`, `git log --oneline -8`, `git ls-remote origin 'phase/p1[3-5]*'`.
 
 ## Where the project stands
-- **Redesign chain:** P13a, P13b, P13c done. The app now lives at `/app/` (`web/app/index.html` → `src/app/main.tsx` → `Shell.tsx`); `/` is a placeholder landing page (G-004) whose only job besides the tagline is the legacy redirect (`/?tab=…` → `/app/?tab=…`, so the MCP gateway's "Review at" link keeps working). The six views are still the old components in `web/src/tabs/` inside the new shell. State of the URL: `src/app/url.ts`; navigation model: `src/app/navModel.ts`.
-- Next: P13d (Connect state for hosted mode, key stripping already partly done, sign out, story-guide model). Spec: `ui-redesign.md` §12.
+- **Redesign chain:** P13a–P13d done = baseline, foundation (tokens, fonts, primitives), shell and entry split, and access. What the app can do now: `/` landing placeholder (G-004), `/app/` shell with rail/top bar/menu, hosted-mode Connect + sign out, status footer with theme switch, unreachable state. The six views are still the old components in `web/src/tabs/`.
+- Next: **P14a — the Run view** (`ui-redesign.md` §13.4, §14.3–14.4) including the story-guide UI that uses `app/guide.ts`.
 
 ## Verification so far (real results)
-- `npm test` 102 passed; `npm run build` strict OK with two entries; legacy links, navigation/history, workspace switch, theme, menu drawer, keyboard and the unreachable state were exercised in headless Edge (see PROGRESS evidence). No change under `api/ tests/ fixtures/ eval/ scripts/`. Backend suites (608 in both modes) are re-run at the end of P15d.
+- `npm test` 123 passed; `npm run build` strict OK; hosted-mode Connect verified against a real `PW_AUTH=on` API with the committed demo keys (401, 403, success, sign out, `?key=` link, stale key); local mode unchanged. No change under `api/ tests/ fixtures/ eval/ scripts/`. Backend suites (608 in both modes) are re-run at the end of P15d.
 
 ## Traps and findings a newcomer must know
 - **Environment:** Python 3.11.9 in `.venv`; GNU Make is **not on PATH in the agent's Git Bash** until `export PATH="$PATH:/c/Users/shovon/AppData/Local/Microsoft/WinGet/Packages/ezwinports.make_Microsoft.Winget.Source_8wekyb3d8bbwe/bin"`; Docker Desktop stops by itself between sessions (start `%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`, then `docker compose up -d falkordb`); tests use the real FalkorDB.
@@ -33,4 +33,4 @@ Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the r
 2. Confirm D-032…D-036 (see P13a).
 
 ## Next action (exactly one)
-Start **P13d** on `phase/p13d-access-onboarding` from this branch: `docs/phases/P13-ui-redesign.md` § P13d, `ui-redesign.md` §12.
+Start **P14a** on `phase/p14a-run-view` from this branch: `docs/phases/P13-ui-redesign.md` § P14a, `ui-redesign.md` §13.4.

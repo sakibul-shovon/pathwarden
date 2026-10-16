@@ -323,6 +323,13 @@ Source: `ui-redesign.md` (research and specification). Phase slicing: `docs/phas
 - **Manual theme switch (O6)** lives in the status footer; the stored choice is applied before the app renders.
 - **The landing page is a placeholder** until P15a (Known gap G-004).
 
+### P13d notes (access and onboarding)
+- **No new authentication model.** Hosted access is still one bearer key per workspace (`docs/SECURITY.md`); the UI only gained a usable front end for it. Client-side checks (workspace pattern, key length 8) mirror `api/auth.py` to save a round trip; what the server answers (401, 403) is what the user is told. No accounts, no password recovery, no client-only access control.
+- **The probe is `GET /api/ws/{ws}/scenarios`**: it passes the same access dependency as every workspace route but only returns the static scenario list, so it touches no graph. Only the four workspace views (Run, Investigate, Memory, Time travel) show the Connect screen; Remediate and Evaluation stay readable without a key (public demo data, `ui-redesign.md` §10.5). Remediation apply/reset still need a key and report their own 401.
+- **Key handling:** kept in `sessionStorage` (`pw_key`, tab-scoped) and in memory; sent only as `Authorization: Bearer`; removed from the address bar after load (`?key=` is captured when `api/client.ts` loads); `<meta name="referrer" content="no-referrer">` on `/app/`; **Sign out also forgets a build-time `VITE_API_KEY`** (otherwise signing out would do nothing). The key is never rendered, not even masked.
+- **Returning visitors** (no query string) land on the view they used last (`pw_onboarding.lastTab` in `localStorage`, convenience only, try/catch). A deep link always wins.
+- **Story guide:** only the data model and its storage are built here (`app/guide.ts`, tested: six steps, presets never carry `autorun`, corrupt storage falls back to a fresh start); the guide UI arrives with the Run view in P14a.
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.

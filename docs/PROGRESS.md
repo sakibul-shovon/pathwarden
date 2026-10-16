@@ -3,9 +3,9 @@
 **The one place to see where the project stands.** Update rules: `docs/WORKFLOW.md` §4. Status words: `NOT_STARTED` · `IN_PROGRESS` · `VERIFYING` · `DONE` · `BLOCKED`.
 Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `docs/phases/P*.md`.
 
-- **Last updated:** 2026-10-16 (P13c app shell) · **by:** Claude Code (Sonnet 5.5)
+- **Last updated:** 2026-10-16 (P13d access and onboarding) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** UI redesign chain P13a–P15d (`docs/phases/P13-ui-redesign.md`, spec `ui-redesign.md`), stacked on `phase/p8-live-llm`; P13c VERIFYING. P12's human items and P8's merge are still open.
+- **Active phase:** UI redesign chain P13a–P15d (`docs/phases/P13-ui-redesign.md`, spec `ui-redesign.md`), stacked on `phase/p8-live-llm`; P13d VERIFYING. P12's human items and P8's merge are still open.
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -32,7 +32,7 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | P13a | UI redesign: baseline, decisions, hook | 2 | VERIFYING | `phase/p13a-redesign-baseline` | P8 branch as base | 608 tests in both auth modes, strict web build, lint, scan; baseline UI flows recorded | D-032…D-036; chain is NOT merged to main (D-034); CI not observed |
 | P13b | UI redesign: design foundation | 2 | VERIFYING | `phase/p13b-design-foundation` | P13a | 63 unit tests (contrast of the palette enforced), strict build, six tabs unchanged in the browser, dialog focus verified | dev-proxy bug fixed; Vitest + @types/node are dev-only; CI not observed |
 | P13c | UI redesign: app shell and entry split | 2 | VERIFYING | `phase/p13c-app-shell-entry` | P13b | 102 unit tests; two-entry build; legacy links, nav, history, workspace switch, theme, menu and the unreachable state verified in the browser | landing is a placeholder (G-004); backend untouched; CI not observed |
-| P13d | UI redesign: access and onboarding | 2 | NOT_STARTED | `phase/p13d-access-onboarding` | P13c | — |  |
+| P13d | UI redesign: access and onboarding | 2 | VERIFYING | `phase/p13d-access-onboarding` | P13c | 123 unit tests; every Connect path verified in the browser against a real PW_AUTH=on API; local mode unchanged | demo keys only; backend untouched; CI not observed |
 | P14a | UI redesign: Run view | 2 | NOT_STARTED | `phase/p14a-run-view` | P13d | — |  |
 | P14b | UI redesign: Investigate case file | 2 | NOT_STARTED | `phase/p14b-case-file` | P14a | — |  |
 | P14c | UI redesign: graph presentation | 2 | NOT_STARTED | `phase/p14c-graph-presentation` | P14b | — |  |
@@ -125,6 +125,11 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-16 | P13c unreachable | killed the local uvicorn, loaded `/app/`, restarted it, clicked Retry | 0 | panel `Can't reach the Pathwarden API`, raw code `unreachable`, footer `API unreachable`, commands `make up` / `make api`, no JSON/SyntaxError text anywhere; after the restart **Retry restores the view** (`Run`, footer `API connected`). `?key=pwdemo-key-test` was in `sessionStorage` after the address bar had been cleaned | Claude Code |
 | 2026-10-16 | P13c bugs found | tsc, browser | — | (1) `nav.ts` vs `Nav.tsx` collide on case-insensitive filesystems → `navModel.ts`; (2) initial focus jumped to the heading in dev because StrictMode runs effects twice → focus only when the view really changes; (3) the `cut` icon looked like a close button and Investigate's barrier icon like an H → scissors and a magnifier | Claude Code |
 | 2026-10-16 | P13c scope | `git diff --stat phase/p13b-design-foundation -- api tests fixtures eval scripts Makefile` | 0 | empty: no backend change | Claude Code |
+| 2026-10-16 | P13d tests | `cd web && npm test` | 0 | **123 passed in 13 files**; new: Connect validation incl. the server's workspace pattern and key length (8), story guide model incl. corrupt storage (8), form primitives' ARIA wiring (5) | Claude Code |
+| 2026-10-16 | P13d build | `npm run build` | 0 | strict `tsc` + vite OK | Claude Code |
+| 2026-10-16 | P13d hosted mode | stopped the local uvicorn, ran it with `PW_AUTH=on` (committed demo keys), drove the UI in headless Edge, restored the local API | 0 | no key → `Connect to a workspace` with `This deployment needs a workspace key…`, footer `Access: workspace key (hosted mode)`, `<meta name=referrer content=no-referrer>`; **Evaluation readable without a key**; empty submit → `There is a problem` summary with focus on it, `Error:` at the start of the title, field `aria-invalid` + `Error: Enter the access key.`, summary link focuses the field; 5-character key → `The access key has at least 8 characters.`; wrong key → server 401 → `This key was not accepted.` and nothing stored; `pwdemo-key-tenant-a-…` for `tinyqueue` → server 403 → `This key can't open workspace "tinyqueue"…`; right key → Run opens, announcement `Connected to tinyqueue.`, key in `sessionStorage`, **not** in the address bar, every `/api/ws/` request carries a bearer token, `attack_pipeline_42` runs and is `HELD`; **Sign out** → Connect again, key removed, `Signed out.`; `/?key=…&tab=memory` opens Memory directly and the address bar is `/app/?tab=memory`; a stale stored key → `The key stored for this tab was not accepted.`; 0 console errors | Claude Code |
+| 2026-10-16 | P13d local mode | re-ran the P13c shell flow against the normal API | 0 | unchanged: legacy links, nav, attention badge, heal flow with `X-PW-Human` only on heal approve, workspace switch, theme, menu, 390 px, 0 console errors; the first Tab stop is `Skip to content` | Claude Code |
+| 2026-10-16 | P13d scope | `git diff --stat phase/p13c-app-shell-entry -- api tests fixtures eval scripts Makefile` | 0 | empty: no backend change | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 
@@ -189,3 +194,4 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-16 | Claude Code / Sonnet 5.5 | P13a-T1…T4 | decisions D-032…D-036; hook widened to P19; `ui-redesign.md` and the phase file committed; baseline recorded; chain based on `phase/p8-live-llm` (main lacks P8), nothing merged | see `git log` |
 | 2026-10-16 | Claude Code / Sonnet 5.5 | P13b-T1…T5 | dev proxy fixed (127.0.0.1); Vitest + @types/node; tokens, fonts, base/typography; 24 icons and 13 primitives with tests; six tabs restyled on the tokens; dev-only system page. 5 commits | see `git log` |
 | 2026-10-16 | Claude Code / Sonnet 5.5 | P13c-T1…T4 | api client: unreachable classification, switchable workspace, key captured at load; polling pauses; URL, legacy-redirect and theme modules; rail/top bar/menu shell with attention count, status, theme switch and unreachable state; landing + app entries. 4 bugs found by tsc/browser and fixed. 4 commits | see `git log` |
+| 2026-10-16 | Claude Code / Sonnet 5.5 | P13d-T1…T3 | Connect screen (field/password/error-summary primitives), access probe, sign out, key never in the URL, last-view memory, story-guide model. 3 commits | see `git log` |
