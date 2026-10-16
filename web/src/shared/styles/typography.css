@@ -14,7 +14,7 @@
 .pw-eyebrow {
   font-family: var(--font-mono);
   font-size: var(--t-xs);
-  line-height: 16px;
+  line-height: 1rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -36,36 +36,36 @@
 /* App scale */
 .pw-t-xs {
   font-size: var(--t-xs);
-  line-height: 16px;
+  line-height: 1rem;
 }
 .pw-t-sm {
   font-size: var(--t-sm);
-  line-height: 18px;
+  line-height: 1.125rem;
 }
 .pw-t-md {
   font-size: var(--t-md);
-  line-height: 20px;
+  line-height: 1.25rem;
 }
 .pw-t-lg {
   font-size: var(--t-lg);
-  line-height: 24px;
+  line-height: 1.5rem;
 }
 .pw-t-xl {
   font-size: var(--t-xl);
-  line-height: 28px;
+  line-height: 1.75rem;
 }
 .pw-t-2xl {
   font-size: var(--t-2xl);
-  line-height: 30px;
+  line-height: 1.875rem;
 }
 
 /* Landing scale: body 17/28 and fluid display sizes (ui-redesign.md §16.4). Applied under .pw-landing. */
 .pw-landing {
-  --t-sm: 15px;
-  --t-md: 17px;
-  --t-lg: 20px;
+  --t-sm: 0.9375rem;
+  --t-md: 1.0625rem;
+  --t-lg: 1.25rem;
   font-size: var(--t-md);
-  line-height: 28px;
+  line-height: 1.75rem;
 }
 .pw-landing .pw-h1 {
   font-family: var(--font-display);

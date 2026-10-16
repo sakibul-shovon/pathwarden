@@ -207,6 +207,9 @@
   cursor: pointer;
 }
 .pw-gtable__open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;

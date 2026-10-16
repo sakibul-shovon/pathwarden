@@ -34,6 +34,7 @@ function Panel({ rows, which, title }: PanelProps) {
           return (
             <g key={m.name} tabIndex={0} role="img" aria-label={m.text} className={isPw ? "pw-chart__row pw-chart__row--pw" : "pw-chart__row"}>
               <title>{m.text}</title>
+              <rect x={0} y={m.y - CHART.row / 2} width={chartWidth} height={CHART.row} className="pw-chart__hit" />
               <text x={CHART.label - 8} y={m.y + 4} textAnchor="end" className="pw-chart__name">
                 {m.name}
               </text>

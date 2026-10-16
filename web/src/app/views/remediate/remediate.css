@@ -141,7 +141,8 @@
   padding-left: var(--s-4);
 }
 
-@media (max-width: 767px) {
+/* em, not px: at a larger font size the table needs the cards sooner */
+@media (max-width: 47.9375em) {
   .pw-cuts__table,
   .pw-cuts__table tbody,
   .pw-cuts__table tr,

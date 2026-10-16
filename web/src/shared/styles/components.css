@@ -64,8 +64,8 @@
   border: 1px solid currentColor;
   border-radius: var(--radius-chip);
   font-family: var(--font-mono);
-  font-size: 11.5px;
-  line-height: 18px;
+  font-size: 0.7188rem;
+  line-height: 1.125rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -104,7 +104,7 @@
   border-radius: var(--radius-chip);
   background: var(--sheet);
   font-size: var(--t-xs);
-  line-height: 18px;
+  line-height: 1.125rem;
 }
 .pw-chip__copy {
   display: inline-flex;
@@ -139,7 +139,7 @@
   padding: var(--s-4);
   font-family: var(--font-mono);
   font-size: var(--t-sm);
-  line-height: 20px;
+  line-height: 1.25rem;
 }
 
 /* ------------------------------------------------------------------ notices, empty, error, skeleton */
@@ -461,7 +461,7 @@
   overflow-x: auto;
   white-space: pre;
   font-size: var(--t-sm);
-  line-height: 20px;
+  line-height: 1.25rem;
 }
 .pw-code__copy {
   position: absolute;
@@ -625,4 +625,37 @@
     inset: 0;
     opacity: 0.35;
   }
+}
+
+/* ------------------------------------------------------------------ glossary: a word that explains itself on request (native popover) */
+.pw-term {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.pw-term:hover {
+  text-decoration-style: solid;
+}
+.pw-term__card {
+  max-width: min(380px, calc(100vw - 32px));
+  padding: var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+}
+.pw-term__card::backdrop {
+  background: transparent;
+}
+.pw-term__card p {
+  margin: 0 0 var(--s-3);
+}
+.pw-term__title {
+  font-weight: 600;
 }

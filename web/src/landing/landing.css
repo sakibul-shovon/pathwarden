@@ -35,8 +35,9 @@ html {
 }
 .pw-top__inner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--s-5);
+  gap: var(--s-2) var(--s-5);
   max-width: 1240px;
   margin: 0 auto;
   padding: var(--s-2) var(--s-4);
@@ -55,9 +56,15 @@ html {
   gap: var(--s-5);
 }
 .pw-topnav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   color: var(--ink);
   font-size: var(--t-sm);
   text-decoration: none;
+}
+.pw-topnav--stack .pw-topnav__link {
+  min-height: 40px;
 }
 .pw-topnav__link:hover {
   text-decoration: underline;
@@ -298,6 +305,11 @@ html {
   margin-top: var(--s-2);
   font-size: var(--t-sm);
 }
+.pw-problem__quote footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
 .pw-problem__note {
   margin-top: var(--s-2);
   font-size: var(--t-sm);
@@ -400,7 +412,7 @@ html {
   padding: 0 6px;
   border: 1px solid var(--untrusted);
   background: var(--sheet);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;

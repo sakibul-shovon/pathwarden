@@ -21,7 +21,7 @@ body {
   color: var(--ink);
   font-family: var(--font-ui);
   font-size: var(--t-md);
-  line-height: 20px;
+  line-height: 1.25rem;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }

@@ -45,6 +45,7 @@
 }
 .pw-scrub__track input[type="range"] {
   width: 100%;
+  height: 24px;
   margin: 0;
   accent-color: var(--ink);
 }

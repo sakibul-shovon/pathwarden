@@ -35,12 +35,12 @@
   --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   --font-display: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
 
-  --t-xs: 12px;
-  --t-sm: 13px;
-  --t-md: 14px;
-  --t-lg: 16px;
-  --t-xl: 20px;
-  --t-2xl: 24px;
+  --t-xs: 0.75rem;
+  --t-sm: 0.8125rem;
+  --t-md: 0.875rem;
+  --t-lg: 1rem;
+  --t-xl: 1.25rem;
+  --t-2xl: 1.5rem;
 
   /* spacing (4 px base) */
   --s-1: 4px;

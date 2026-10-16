@@ -169,6 +169,10 @@
   stroke: var(--ink);
   stroke-width: 1.5;
 }
+.pw-chart__hit {
+  fill: transparent;
+  pointer-events: all;
+}
 .pw-chart__row:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 1px;
