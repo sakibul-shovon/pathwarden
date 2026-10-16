@@ -1,0 +1,115 @@
+/* Memory ledger (ui-redesign.md §13.6). On a phone each row becomes a stacked card whose cells carry their own labels. */
+
+.pw-memory {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+}
+.pw-memory p {
+  margin: 0;
+}
+
+.pw-ledger {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--sheet);
+  border: 1px solid var(--line-strong);
+  font-size: var(--t-sm);
+}
+.pw-ledger th,
+.pw-ledger td {
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.pw-ledger th {
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.pw-ledger__row--sealed {
+  background: repeating-linear-gradient(135deg, transparent 0 7px, var(--line) 7px 8px);
+}
+.pw-ledger__open {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pw-ledger__open strong {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.pw-ledger__origins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+.pw-ledger__origin {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 var(--s-1);
+  border: 1px solid var(--untrusted);
+  background: var(--untrusted-tint);
+}
+.pw-ledger__qid {
+  margin-left: var(--s-2);
+}
+.pw-ledger__action {
+  display: grid;
+  gap: var(--s-1);
+  max-width: 280px;
+}
+.pw-ledger__why {
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+}
+
+@media (max-width: 767px) {
+  .pw-ledger,
+  .pw-ledger tbody,
+  .pw-ledger tr,
+  .pw-ledger td {
+    display: block;
+  }
+  .pw-ledger thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .pw-ledger {
+    border: 0;
+    background: none;
+  }
+  .pw-ledger tr {
+    margin-bottom: var(--s-3);
+    border: 1px solid var(--line-strong);
+    background: var(--sheet);
+  }
+  .pw-ledger td {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: var(--s-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .pw-ledger td::before {
+    content: attr(data-label);
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+  .pw-ledger td:last-child {
+    border-bottom: 0;
+  }
+  .pw-ledger td:last-child:empty {
+    display: none;
+  }
+}

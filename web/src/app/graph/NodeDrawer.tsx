@@ -16,6 +16,8 @@ interface NodeDrawerProps {
   secretWitness: string[];
   /** Fetches the artifact's content. It is called only when the person opens "Show content" (the gate never reads content). */
   loadContent: (id: string) => Promise<string>;
+  /** Show the edges and what they mean. Off where the caller has the node but not its edges (the memory ledger). */
+  showEdges?: boolean;
   onClose: () => void;
   onOpenNode: (id: string) => void;
 }
@@ -64,7 +66,7 @@ function ContentDisclosure({ id, loadContent }: { id: string; loadContent: (id: 
 
 /** Everything the page knows about one node (ui-redesign.md §13.10): what it is, its flags, who wrote it and when, the
  *  relationships in and out in plain words, and its content on request. */
-export function NodeDrawer({ node, nodes, edges, untrustedWitness, secretWitness, loadContent, onClose, onOpenNode }: NodeDrawerProps) {
+export function NodeDrawer({ node, nodes, edges, untrustedWitness, secretWitness, loadContent, showEdges = true, onClose, onOpenNode }: NodeDrawerProps) {
   const incident = node ? incidentEdges(node.id, edges) : { incoming: [], outgoing: [] };
   const rels = [...new Set([...incident.incoming, ...incident.outgoing].map((e) => e.rel))].sort();
   const isArtifact = node !== null && node.label !== "Source";
@@ -118,12 +120,17 @@ export function NodeDrawer({ node, nodes, edges, untrustedWitness, secretWitness
             {secretWitness.includes(node.id) && <StatusPill status="on the secret path" family="hold" />}
           </p>
 
-          <h3 className="pw-drawer__h">Made from</h3>
-          {incident.outgoing.length === 0 ? <p className="pw-muted">Nothing: this is where the lineage ends.</p> : neighbours(incident.outgoing, "dst")}
-          <h3 className="pw-drawer__h">Used to make</h3>
-          {incident.incoming.length === 0 ? <p className="pw-muted">Nothing in this graph was made from it.</p> : neighbours(incident.incoming, "src")}
+          {!showEdges && <p className="pw-muted">The edges of this entry are in the case file of an action that used it, and in Time travel.</p>}
+          {showEdges && (
+            <>
+              <h3 className="pw-drawer__h">Made from</h3>
+              {incident.outgoing.length === 0 ? <p className="pw-muted">Nothing: this is where the lineage ends.</p> : neighbours(incident.outgoing, "dst")}
+              <h3 className="pw-drawer__h">Used to make</h3>
+              {incident.incoming.length === 0 ? <p className="pw-muted">Nothing in this graph was made from it.</p> : neighbours(incident.incoming, "src")}
+            </>
+          )}
 
-          {rels.length > 0 && (
+          {showEdges && rels.length > 0 && (
             <>
               <h3 className="pw-drawer__h">What the relationships mean</h3>
               <dl className="pw-drawer__glossary">
