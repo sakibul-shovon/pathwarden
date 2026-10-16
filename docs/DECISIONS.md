@@ -281,6 +281,30 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **`make setup` and `scripts/wait_for_db.py`** were added so the plan's quickstart `make up && make demo` works from a clean clone: without a virtualenv `make demo` had no dependencies, and `make up` returned before the database accepted commands. Both were found by running the clean-clone test, not by reading.
 - **Deployment is not done**: it needs the owner's accounts, and the FalkorDB capability probe must run against the chosen host first (A-15, `docs/DEPLOY.md`).
 
+## Part B15 — UI redesign (P13–P15, 2026-10-16)
+
+Source: `ui-redesign.md` (research and specification). Phase slicing: `docs/phases/P13-ui-redesign.md`.
+
+### D-032 — the owner's go-ahead and how the open questions were applied
+- **Status:** Accepted (agent), based on the owner's instruction of 2026-10-16: do the whole plan ("sob gulai kora lagbe"), split into phases, push each phase.
+- The plan's questions Q1–Q13 (`ui-redesign.md` §23.4) were shown to the owner with a recommendation each. The instruction to implement everything is applied as acceptance of the **recommended** answer to every question, with one narrowing: Q6 (test tooling) is limited to **Vitest** (dev dependency); Playwright and axe are not installed (a ~hundreds-of-MB browser download for little gain next to the existing headless-Edge recipe). Declined options stay declined: no approve-as-is/reject UI (Q7), no workspace-reset button (Q8), no backend changes B1–B4 (Q10, Q11).
+- If the owner meant otherwise for any question, each answer is independent and easy to revert.
+
+### D-033 — deviations from plan §19 (plan.md is not edited)
+- Plan §19 describes six tabs, plain CSS and polling. The redesign keeps plain CSS, polling and the six views, and adds: a public landing page at `/`, the application at `/app/`, a navigation rail, review dialogs instead of `window.confirm`, and an optional manual theme switch. Binding precedence says plan.md wins, so this entry is the explicit override the plan asked for (`ui-redesign.md` §3.8, Q2); the owner confirms or reverts it.
+- `AGENTS.md` §3 "Cytoscape built-in layouts only" is kept: the lanes layout is the built-in `preset` layout with positions computed in TypeScript.
+
+### D-034 — branch base and no merge
+- `main` does not contain P8 (live mode UI, LLM judges). The redesign must preserve live mode, so P13a branches from `phase/p8-live-llm` and every later sub-phase from the previous one. The pushed branches therefore also carry the P8 commits.
+- Agents do **not** merge to `main` or tag for this chain: the owner asked for pushes only, and P8 itself is not verified. Merge order for the owner: P8, then P13a … P15d.
+- The uncommitted edit to `README.md` that existed when this work began (B1/B3 rows of the results table) belongs to P8 and is left untouched; every commit stages explicit paths.
+
+### D-035 — commit hook widened to P19
+- `.githooks/commit-msg` accepted only `P0`–`P12`. The redesign needs P13a–P15d, so the pattern is widened to `P0`–`P19` with an optional `a`–`d` suffix. Nothing else in the hook changed; no commit was made with `--no-verify`.
+
+### D-036 — new dev dependency: Vitest
+- Added in P13b as a **dev** dependency of `web/` only (unit tests for pure functions: `whySentence`, `lanesLayout`, `outcomeOf`, legacy redirect, URL parsing). Rationale and alternatives: `ui-redesign.md` §19.5, §21.13. No runtime dependency is added by the redesign.
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.

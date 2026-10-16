@@ -3,9 +3,9 @@
 **The one place to see where the project stands.** Update rules: `docs/WORKFLOW.md` §4. Status words: `NOT_STARTED` · `IN_PROGRESS` · `VERIFYING` · `DONE` · `BLOCKED`.
 Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `docs/phases/P*.md`.
 
-- **Last updated:** 2026-10-15 (blueprint preparation) · **by:** Claude Code (Sonnet 5.5)
+- **Last updated:** 2026-10-16 (P13a baseline) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** P12 (VERIFYING: the agent's part is done, the human items are open); P0-P7, P9, P11, P10a-c DONE. P8 is blocked on the human (Groq model name).
+- **Active phase:** UI redesign chain P13a–P15d (`docs/phases/P13-ui-redesign.md`, spec `ui-redesign.md`), stacked on `phase/p8-live-llm`; P13a VERIFYING. P12's human items and P8's merge are still open.
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -29,6 +29,18 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 | P12 | Ship | 1 | VERIFYING | `phase/p12-ship` | everything that will ship | README, docs, clean-clone test, traceability and final checklist done (517 tests); tag `phase-p12-done` is NOT set until the human items are done | **open [human]: T4 deployment, T5 video, T6 license + public repo, T9 submission**; see `docs/FINAL_CHECKLIST.md` |
 
 Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · Tier 3 = depth. Nothing is removed from scope; cuts are a human decision (D-010).
+| P13a | UI redesign: baseline, decisions, hook | 2 | VERIFYING | `phase/p13a-redesign-baseline` | P8 branch as base | 608 tests in both auth modes, strict web build, lint, scan; baseline UI flows recorded | D-032…D-036; chain is NOT merged to main (D-034); CI not observed |
+| P13b | UI redesign: design foundation | 2 | NOT_STARTED | `phase/p13b-design-foundation` | P13a | — |  |
+| P13c | UI redesign: app shell and entry split | 2 | NOT_STARTED | `phase/p13c-app-shell-entry` | P13b | — |  |
+| P13d | UI redesign: access and onboarding | 2 | NOT_STARTED | `phase/p13d-access-onboarding` | P13c | — |  |
+| P14a | UI redesign: Run view | 2 | NOT_STARTED | `phase/p14a-run-view` | P13d | — |  |
+| P14b | UI redesign: Investigate case file | 2 | NOT_STARTED | `phase/p14b-case-file` | P14a | — |  |
+| P14c | UI redesign: graph presentation | 2 | NOT_STARTED | `phase/p14c-graph-presentation` | P14b | — |  |
+| P14d | UI redesign: Memory, Time travel, Remediate, Evaluation | 2 | NOT_STARTED | `phase/p14d-memory-time-remediate-eval` | P14c | — |  |
+| P15a | UI redesign: public landing page | 2 | NOT_STARTED | `phase/p15a-landing` | P14d, C2 | — |  |
+| P15b | UI redesign: motion | 2 | NOT_STARTED | `phase/p15b-motion` | P15a | — |  |
+| P15c | UI redesign: responsive and accessibility | 2 | NOT_STARTED | `phase/p15c-responsive-a11y` | P15b | — |  |
+| P15d | UI redesign: regression and docs | 2 | NOT_STARTED | `phase/p15d-regression-docs` | P15c | — |  |
 
 ## Suggested checkpoints — ASSUMPTION, adjust freely (times are +06; ~78 h of wall-clock remained at 2026-10-15 18:15)
 
@@ -92,6 +104,12 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-16 | P6-T7 | measured (not predicted): tinyqueue3 toxic {fixer, release}; candidates C1=3 C2=6 C3=3 C4=6, best 3 = optimum 3, gap 0; enterprise12 toxic 5 agents; C1=17 C2=22 C3=16 C4=23, best 16 vs brute-force optimum 14 (4 flows), **gap 2** | - | all candidates verified on a temporary copy of the graph; after apply the toxic list is empty on both topologies | Claude Code |
 | 2026-10-16 | P6 | `make eval` x2 with the remediation section | 0 | results.csv / summary.json / summary.md byte-identical again; no `pw_eval_*` / `pw_cap_*` graph left behind | Claude Code |
 | 2026-10-16 | P6-T8 | sabotage S1-S6 (restored byte-identical): residual BFS never backward; every edge residual; C3 wrong target set; revoke does not delete; r4 forgets the secret requirement; brute-force toxicity ignores external sinks | - | **first run: 2 escapes** - S1 (no test needed the backward step) and S3 (an *equivalent mutant* for the property tests: a wrong target set still yields a complete fix, only the cost differs). Added a crafted backward-residual test and a test pinning each candidate's cost to an independent max flow of its definition; re-run: 6/6 CAUGHT | Claude Code |
+| 2026-10-16 | P13a-T4 baseline | `env -u PW_LLM_API_KEY -u PW_LLM_MODEL make test` (Docker up, real FalkorDB) | 0 | **608 passed** in 96 s (on `phase/p8-live-llm` + docs only) | Claude Code |
+| 2026-10-16 | P13a-T4 baseline | `make test-auth` (PW_AUTH=on) | 0 | **608 passed** in 77 s | Claude Code |
+| 2026-10-16 | P13a-T4 baseline | `cd web && npm run build`; `make lint`; `sh scripts/scan_secrets.sh` | 0 | strict `tsc` + vite build OK (one 500 kB chunk warning, 621 kB JS / ≈193 kB gzip); ruff: all checks passed, 99 files formatted; scan ok | Claude Code |
+| 2026-10-16 | P13a-T4 baseline UI | headless Edge over DevTools protocol against `make api` + vite dev (real FalkorDB, scripted mode only) | 0 | `attack_pipeline_42` guard on → banner `HELD act-0001: TRIFECTA`, 3 × `Rule of Two OK`; guard off → `LEAKED act-0001 (GUARD_OFF)`, 2 leak lines; `?tab=investigate&autoforensics=1&autoheal=1` → `Healed release act-0002 executed; act-0001 is superseded`; sleeper `?tab=time&t=16` → markers `t=4 issue_summary:42` and `t=16 changelog:44`; Memory 5 rows; Remediate enterprise12 candidates `C3=16, C1=17, C2=22, C4=23`; Evaluation shows B0…PW-coarse with 0 `not_run` rows; 390 px: no horizontal overflow; console errors none | Claude Code |
+| 2026-10-16 | P13a-T4 human header | network log of the same flow | 0 | `X-PW-Human: true` sent on `POST …/heal/act-0001/approve` only; `POST …/forensics/act-0001` sent without it (risk-reducing). The UI makes 4 human calls in total (heal approve, quarantine release, remediation apply, remediation reset) | Claude Code |
+| 2026-10-16 | P13a-env | open the app through the Vite proxy | — | **Trap found:** `/api` → `http://localhost:8000` fails with Bad Gateway because Node resolves `localhost` to `::1` while uvicorn listens on IPv4; verified with a throwaway Vite config targeting `127.0.0.1` (not committed). Fix scheduled in P13b | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 
@@ -152,3 +170,4 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-16 | P12-T3 | clean clone of `phase/p12-ship` into a temp folder (no `.env`), then exactly the README quickstart; the dev containers were stopped for it and restarted afterwards | 0 | `make setup` exit 0, `make up` exit 0 (new `scripts/wait_for_db.py` waits until the database answers), `make demo` exit 0: 3 held and 3 clean with the guard on, 3 leaks with it off; `make test` **517 passed**; `make eval` byte-identical to the committed results (sha256); clone and containers removed | Claude Code |
 | 2026-10-16 | P12-T8 | `make probe`, `make probe-mcp`, `npm audit --omit=dev`, `sh scripts/scan_secrets.sh`, history scan | 0 | probe 36 passed / 0 failed; MCP probe 7/7; **0 vulnerabilities**; scan ok; `git log -p --all` has 3 lines matching provider-shaped patterns: the AGENTS.md rule that forbids them (twice) and the scanner's own pattern list, no key values; the only tracked `.env*` is `.env.example` | Claude Code |
 | 2026-10-16 | P12-T7/T8 | `docs/TRACEABILITY.md` (F1-F15) and `docs/FINAL_CHECKLIST.md` (the 10 items of plan §24.6) | - | F6/F11/F12/F14 are marked Partial or Done-with-scripted-clients because P8 (live LLM) is not implemented; items 1 (public), 5 (video), 6 (live URL), 10 (submitted) are marked open [human] and NOT ticked | Claude Code |
+| 2026-10-16 | Claude Code / Sonnet 5.5 | P13a-T1…T4 | decisions D-032…D-036; hook widened to P19; `ui-redesign.md` and the phase file committed; baseline recorded; chain based on `phase/p8-live-llm` (main lacks P8), nothing merged | see `git log` |
