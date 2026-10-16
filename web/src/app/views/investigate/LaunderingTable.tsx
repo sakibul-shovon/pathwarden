@@ -3,7 +3,7 @@ import { Button } from "../../../shared/components/Button";
 
 /** The memories that carried untrusted text into this payload, written in an earlier session (q3). Each row can jump to the
  *  moment it was written in Time travel; the moment itself comes from `GET /graph-at`, never from this page. */
-export function LaunderingTable({ rows, onWhen }: { rows: LaunderingMemory[]; onWhen: (row: LaunderingMemory) => void }) {
+export function LaunderingTable({ rows, onWhen, onOpen }: { rows: LaunderingMemory[]; onWhen: (row: LaunderingMemory) => void; onOpen?: (id: string) => void }) {
   return (
     <div>
       <p className="pw-muted pw-prose">
@@ -29,7 +29,13 @@ export function LaunderingTable({ rows, onWhen }: { rows: LaunderingMemory[]; on
             {rows.map((m) => (
               <tr key={m.memory_id}>
                 <td>
-                  <code>{m.memory_id}</code>
+                  {onOpen ? (
+                    <button type="button" className="pw-gtable__open" onClick={() => onOpen(m.memory_id)}>
+                      <code>{m.memory_id}</code>
+                    </button>
+                  ) : (
+                    <code>{m.memory_id}</code>
+                  )}
                 </td>
                 <td>{m.memory_key}</td>
                 <td>{m.written_by}</td>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { AgentWitness, ApplyResult, Candidate, CapState, EvalSummary, Topology } from "../api/types";
-import { CapabilityGraph } from "../components/CapabilityGraph";
+import { CapabilityFigure } from "../app/graph/CapabilityFigure";
 import { errorText } from "../hooks";
 
 const TOPOLOGIES: Topology[] = ["enterprise12", "tinyqueue3"];
@@ -145,12 +145,13 @@ export function RemediateTab({ initialTopology }: { initialTopology: Topology })
           <p>
             Toxic agents ({state.toxic_agents.length}): <Names items={state.toxic_agents} />
           </p>
-          <CapabilityGraph
+          <CapabilityFigure
             nodes={state.nodes}
             edges={state.edges}
             selected={selected}
             cut={previewed?.cap_ids ?? []}
             onSelect={setSelected}
+            source={`GET /remediation/${state.topology}`}
           />
           {witness && selected === witness.agent && (
             <div className="card">

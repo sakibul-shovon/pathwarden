@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, ApiError, PUBLIC_PAGE_SINK } from "../../../api/client";
 import type { ActionDetail, Explain, ForensicReport, HealResult, LaunderingMemory, LlmInfo, PostedEntry } from "../../../api/types";
-import { LineageGraph } from "../../../components/LineageGraph";
 import { Button } from "../../../shared/components/Button";
 import { ErrorPanel } from "../../../shared/components/ErrorPanel";
 import { Notice } from "../../../shared/components/Notice";
@@ -9,10 +8,12 @@ import { Skeleton } from "../../../shared/components/Skeleton";
 import { useElapsed } from "../../../shared/lib/useElapsed";
 import { usePoll } from "../../../hooks";
 import { describeError } from "../../errorCatalogue";
+import { LineageFigure } from "../../graph/LineageFigure";
+import { NodeDrawer } from "../../graph/NodeDrawer";
 import { completeStep } from "../../guideStore";
 import type { TabId, UrlState } from "../../url";
 import { ReleaseSheet } from "../run/ReleaseSheet";
-import { canRelease, initialSelection, needsDecision, stepCount, whySentence, witnessSteps } from "./caseLogic";
+import { canRelease, initialSelection, needsDecision, whySentence, witnessSteps } from "./caseLogic";
 import { DecisionPanel, ReleaseResult } from "./DecisionPanel";
 import { ForensicsPanel } from "./ForensicsPanel";
 import { LaunderingTable } from "./LaunderingTable";
@@ -64,6 +65,11 @@ export function InvestigateView({ workspace, initialAction, autoForensics, autoH
   const [postedAfter, setPostedAfter] = useState<PostedEntry[]>([]);
   const [busy, setBusy] = useState<"forensics" | "heal" | null>(null);
   const [version, setVersion] = useState(0);
+  /** The graph, the witness chips and the tables share one hovered node and one open node. */
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [openNode, setOpenNode] = useState<string | null>(null);
+  /** The node last picked: it stays marked in the graph after its drawer closes, and "focus" works from it. */
+  const [pickedNode, setPickedNode] = useState<string | null>(null);
   /** The action asked for in the URL when it is not in this workspace (a run resets it and ids start again). */
   const [staleLink, setStaleLink] = useState<string | null>(null);
   const [mode, setMode] = useState<"scripted" | "llm">("scripted");
@@ -115,6 +121,9 @@ export function InvestigateView({ workspace, initialAction, autoForensics, autoH
     (id: string) => {
       setSelected(id);
       setStaleLink(null);
+      setHighlight(null);
+      setOpenNode(null);
+      setPickedNode(null);
       setLoaded(null);
       setLoadError(null);
       setError(null);
@@ -183,6 +192,13 @@ export function InvestigateView({ workspace, initialAction, autoForensics, autoH
     if (autoHeal && loaded && report?.recommendation === "APPROVE_HEALED_RELEASE" && !heal && busy === null) void approveHeal(loaded.action.id);
   }, [autoHeal, loaded, report, heal, busy, approveHeal]);
 
+  const open = useCallback((id: string) => {
+    setOpenNode(id);
+    setPickedNode(id);
+  }, []);
+
+  const loadContent = useCallback((id: string) => api.artifact(id, "main").then((a) => a.content), []);
+
   const whenWritten = useCallback(
     async (_row: LaunderingMemory) => {
       try {
@@ -214,8 +230,6 @@ export function InvestigateView({ workspace, initialAction, autoForensics, autoH
       }),
       untrusted: witnessSteps(g.untrusted_witness, nodes, explain.laundering),
       secret: witnessSteps(g.secret_witness, nodes, explain.laundering),
-      artifacts: nodes.filter((n) => n.label === "Artifact").length,
-      sources: nodes.filter((n) => n.label === "Source").length,
     };
   }, [loaded]);
 
@@ -268,27 +282,30 @@ export function InvestigateView({ workspace, initialAction, autoForensics, autoH
               {view.untrusted.length === 0 && view.secret.length === 0 ? (
                 <p className="pw-muted">No witness paths: the gate found no complete untrusted-and-secret pair.</p>
               ) : null}
-              <WitnessPaths untrusted={view.untrusted} secret={view.secret} queries={loaded.explain.queries} />
+              <WitnessPaths untrusted={view.untrusted} secret={view.secret} queries={loaded.explain.queries} onHover={setHighlight} onOpen={open} />
             </Section>
 
             <Section n={3} id="pw-lineage" title="Lineage">
-              <figure className="pw-case__figure">
-                <LineageGraph
-                  nodes={loaded.explain.subgraph.nodes}
-                  edges={loaded.explain.subgraph.edges}
-                  untrustedWitness={loaded.explain.gate.untrusted_witness}
-                  secretWitness={loaded.explain.gate.secret_witness}
-                />
-                <figcaption className="pw-muted">
-                  Lineage of {heldNow.id}: {view.artifacts} artifacts, {view.sources} sources, {loaded.explain.subgraph.edges.length} edges. Untrusted path{" "}
-                  {stepCount(loaded.explain.gate.untrusted_witness)} steps, secret path {stepCount(loaded.explain.gate.secret_witness)} steps.
-                </figcaption>
-              </figure>
+              <LineageFigure
+                scope="investigate"
+                subject={heldNow.id}
+                nodes={loaded.explain.subgraph.nodes}
+                edges={loaded.explain.subgraph.edges}
+                untrustedWitness={loaded.explain.gate.untrusted_witness}
+                secretWitness={loaded.explain.gate.secret_witness}
+                payloadId={heldNow.payload_id}
+                highlight={highlight}
+                onHover={setHighlight}
+                onOpen={open}
+                selected={pickedNode}
+                traceKey={heldNow.id}
+                source={`GET /actions/${heldNow.id}/explain (queries q6, q6b)`}
+              />
             </Section>
 
             {loaded.explain.laundering.length > 0 && (
               <Section n={4} id="pw-laundering" title="How it got there">
-                <LaunderingTable rows={loaded.explain.laundering} onWhen={(r) => void whenWritten(r)} />
+                <LaunderingTable rows={loaded.explain.laundering} onWhen={(r) => void whenWritten(r)} onOpen={open} />
               </Section>
             )}
 
@@ -323,6 +340,16 @@ export function InvestigateView({ workspace, initialAction, autoForensics, autoH
                 )}
               </Section>
             )}
+            <NodeDrawer
+              node={openNode === null ? null : (loaded.explain.subgraph.nodes.find((n) => n.id === openNode) ?? null)}
+              nodes={loaded.explain.subgraph.nodes}
+              edges={loaded.explain.subgraph.edges}
+              untrustedWitness={loaded.explain.gate.untrusted_witness}
+              secretWitness={loaded.explain.gate.secret_witness}
+              loadContent={loadContent}
+              onClose={() => setOpenNode(null)}
+              onOpenNode={open}
+            />
             {error !== null && (
               <ErrorPanel title={describeError(error).title} code={describeError(error).code}>
                 {describeError(error).hint && <p>{describeError(error).hint}</p>}

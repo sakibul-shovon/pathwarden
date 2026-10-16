@@ -237,6 +237,23 @@
   background: var(--paper);
   font-size: var(--t-sm);
 }
+.pw-step__btn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-1) var(--s-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pw-step__btn:hover .pw-step__label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .pw-step--source {
   border-width: 2px;
   font-weight: 600;

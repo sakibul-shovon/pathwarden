@@ -7,12 +7,25 @@ interface WitnessPathsProps {
   secret: PathStep[];
   /** The exact text of the two gate queries, as the API returns it. */
   queries: Record<string, string>;
+  /** A chip is hovered or focused (the graph dims what is unrelated) or left (`null`). */
+  onHover?: (id: string | null) => void;
+  /** A chip is activated: the node drawer opens. */
+  onOpen?: (id: string) => void;
 }
 
 const Q_UNTRUSTED = "q2a_untrusted_witness";
 const Q_SECRET = "q2b_secret_witness";
 
-function Rail({ kind, steps, query, queryName }: { kind: "untrusted" | "secret"; steps: PathStep[]; query: string | undefined; queryName: string }) {
+interface RailProps {
+  kind: "untrusted" | "secret";
+  steps: PathStep[];
+  query: string | undefined;
+  queryName: string;
+  onHover?: (id: string | null) => void;
+  onOpen?: (id: string) => void;
+}
+
+function Rail({ kind, steps, query, queryName, onHover, onOpen }: RailProps) {
   const n = stepCount(steps.map((s) => s.id));
   const title = kind === "untrusted" ? "Untrusted path" : "Secret path";
   return (
@@ -30,11 +43,21 @@ function Rail({ kind, steps, query, queryName }: { kind: "untrusted" | "secret";
         <ol className="pw-path__steps">
           {steps.map((s, i) => (
             <li key={s.id} className={s.isSource ? "pw-step pw-step--source" : "pw-step"}>
-              <span className="pw-step__label">
-                {s.isSource && <Icon name="diamond" size={14} />} {s.label}
-              </span>
-              {s.label !== s.id && <code className="pw-step__id">{s.id}</code>}
-              {s.tags.length > 0 && <span className="pw-step__tags">{s.tags.join(" · ")}</span>}
+              <button
+                type="button"
+                className="pw-step__btn"
+                onClick={() => onOpen?.(s.id)}
+                onMouseEnter={() => onHover?.(s.id)}
+                onMouseLeave={() => onHover?.(null)}
+                onFocus={() => onHover?.(s.id)}
+                onBlur={() => onHover?.(null)}
+              >
+                <span className="pw-step__label">
+                  {s.isSource && <Icon name="diamond" size={14} />} {s.label}
+                </span>
+                {s.label !== s.id && <code className="pw-step__id">{s.id}</code>}
+                {s.tags.length > 0 && <span className="pw-step__tags">{s.tags.join(" · ")}</span>}
+              </button>
               {i < steps.length - 1 && <Icon name="arrow-right" size={14} className="pw-step__arrow" />}
             </li>
           ))}
@@ -53,11 +76,11 @@ function Rail({ kind, steps, query, queryName }: { kind: "untrusted" | "secret";
 
 /** The signature component: the two proofs of a hold, each an ordered list from the payload to its source, named by the
  *  key people know (`team_convention:42`) with the id after it. Solid line = untrusted, dotted = secret (also in text). */
-export function WitnessPaths({ untrusted, secret, queries }: WitnessPathsProps) {
+export function WitnessPaths({ untrusted, secret, queries, onHover, onOpen }: WitnessPathsProps) {
   return (
     <div className="pw-paths">
-      <Rail kind="untrusted" steps={untrusted} query={queries[Q_UNTRUSTED]} queryName={Q_UNTRUSTED} />
-      <Rail kind="secret" steps={secret} query={queries[Q_SECRET]} queryName={Q_SECRET} />
+      <Rail kind="untrusted" steps={untrusted} query={queries[Q_UNTRUSTED]} queryName={Q_UNTRUSTED} onHover={onHover} onOpen={onOpen} />
+      <Rail kind="secret" steps={secret} query={queries[Q_SECRET]} queryName={Q_SECRET} onHover={onHover} onOpen={onOpen} />
     </div>
   );
 }
