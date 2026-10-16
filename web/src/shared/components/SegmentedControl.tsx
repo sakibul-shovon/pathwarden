@@ -4,7 +4,7 @@ export interface SegmentOption<T extends string> {
   value: T;
   label: string;
   disabled?: boolean;
-  /** Visible helper text shown under the control when this option is selected or disabled (not a hover tooltip). */
+  /** Visible helper text shown under the control when this option is selected, or always when it is disabled (never a hover tooltip). */
   hint?: string;
 }
 
@@ -19,7 +19,9 @@ interface SegmentedControlProps<T extends string> {
 /** Radio-group semantics: arrow keys move the selection, Tab leaves the group. */
 export function SegmentedControl<T extends string>({ legend, options, value, onChange, disabled }: SegmentedControlProps<T>) {
   const name = useId();
-  const hint = options.find((o) => o.value === value)?.hint ?? options.find((o) => o.disabled && o.hint)?.hint;
+  // the selected option explains itself, and a disabled option always says why it is disabled (never only on hover)
+  const hints = [options.find((o) => o.value === value), ...options.filter((o) => o.disabled && o.value !== value)]
+    .flatMap((o) => (o?.hint ? [o.hint] : []));
   return (
     <fieldset className="pw-seg" disabled={disabled}>
       <legend className="pw-seg__legend">{legend}</legend>
@@ -39,7 +41,11 @@ export function SegmentedControl<T extends string>({ legend, options, value, onC
           </label>
         ))}
       </div>
-      {hint && <p className="pw-seg__hint">{hint}</p>}
+      {hints.map((h) => (
+        <p key={h} className="pw-seg__hint">
+          {h}
+        </p>
+      ))}
     </fieldset>
   );
 }

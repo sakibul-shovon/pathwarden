@@ -108,6 +108,22 @@ describe("SegmentedControl", () => {
     );
     expect(out).toContain("Needs PW_LLM_API_KEY.");
   });
+
+  it("shows the reason of a disabled option even when the selected option has its own hint", () => {
+    const out = html(
+      <SegmentedControl
+        legend="Agents"
+        value="scripted"
+        onChange={() => undefined}
+        options={[
+          { value: "scripted", label: "Scripted", hint: "No key, no cost." },
+          { value: "live", label: "Live", disabled: true, hint: "Needs PW_LLM_API_KEY." },
+        ]}
+      />,
+    );
+    expect(out).toContain("No key, no cost.");
+    expect(out).toContain("Needs PW_LLM_API_KEY.");
+  });
 });
 
 describe("RuleOfTwoLetters", () => {
