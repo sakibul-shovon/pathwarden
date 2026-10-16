@@ -99,6 +99,7 @@
   border-radius: 0 var(--radius-button) var(--radius-button) 0;
   color: var(--ink-2);
   text-decoration: none;
+  transition: background-color var(--dur-1) linear, color var(--dur-1) linear;
 }
 .pw-nav__link:hover {
   background: var(--sheet);

@@ -123,6 +123,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background-color var(--dur-1) linear, border-color var(--dur-1) linear;
 }
 .pw-queue__item:hover {
   border-color: var(--ink);
@@ -249,6 +250,13 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+.pw-step {
+  transition: opacity var(--dur-1) linear;
+}
+/* the witness trace has not reached this step yet: it is still there for assistive technology, only quieter */
+.pw-step--pending {
+  opacity: 0.2;
 }
 .pw-step__btn--static {
   cursor: default;

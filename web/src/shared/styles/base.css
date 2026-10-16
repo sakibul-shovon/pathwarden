@@ -131,3 +131,10 @@ html {
     scroll-behavior: auto !important;
   }
 }
+
+/* A view switch is a crossfade of the page where the browser supports view transitions (the script skips it under reduced motion). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-2);
+  animation-timing-function: var(--ease-out);
+}

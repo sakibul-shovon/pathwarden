@@ -7,6 +7,8 @@ import { ErrorPanel } from "../../../shared/components/ErrorPanel";
 import { Notice } from "../../../shared/components/Notice";
 import { SegmentedControl } from "../../../shared/components/SegmentedControl";
 import { Skeleton } from "../../../shared/components/Skeleton";
+import { Working } from "../../../shared/components/Working";
+import { useElapsed } from "../../../shared/lib/useElapsed";
 import { describeError } from "../../errorCatalogue";
 import { CapabilityFigure } from "../../graph/CapabilityFigure";
 import { completeStep } from "../../guideStore";
@@ -43,6 +45,7 @@ export function RemediateView({ initialTopology, onChangeTopology }: RemediateVi
   const [applying, setApplying] = useState<Candidate | null>(null);
   const [resetting, setResetting] = useState(false);
   const [showAs, setShowAs] = useState<"graph" | "table">("graph");
+  const suggesting = useElapsed(busy === "suggest");
 
   const load = useCallback((name: Topology) => {
     let cancelled = false;
@@ -170,11 +173,7 @@ export function RemediateView({ initialTopology, onChangeTopology }: RemediateVi
         An agent is <strong>toxic</strong> when it can receive untrusted data, can receive secrets and can reach an external sink. Each candidate cut is a
         complete fix, computed with <code>algo.maxFlow</code> and verified on a temporary copy of the graph. Apply changes the demo topology; Reset restores it.
       </p>
-      {busy === "suggest" && (
-        <p role="status" className="pw-muted">
-          Computing four cuts with algo.maxFlow and verifying each on a copy of the graph…
-        </p>
-      )}
+      {busy === "suggest" && suggesting.slow && <Working elapsedMs={suggesting.elapsedMs}>Computing four cuts with algo.maxFlow and verifying each on a copy of the graph…</Working>}
 
       {failure && (
         <ErrorPanel title={failure.title} code={failure.code}>

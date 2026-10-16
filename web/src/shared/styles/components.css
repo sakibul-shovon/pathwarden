@@ -251,6 +251,7 @@
   padding: 0 var(--s-4);
   cursor: pointer;
   background: var(--sheet);
+  transition: background-color var(--dur-1) linear, color var(--dur-1) linear;
 }
 .pw-seg__opt + .pw-seg__opt {
   border-left: 1px solid var(--line-strong);
@@ -314,6 +315,7 @@
   border-radius: var(--radius-button);
   background: transparent;
   cursor: pointer;
+  transition: border-color var(--dur-1) linear;
 }
 .pw-dialog__close:hover {
   border-color: var(--line-strong);
@@ -331,22 +333,65 @@
   padding: var(--s-4) var(--s-5);
   border-top: 1px solid var(--line);
 }
-.pw-dialog[open] {
-  animation: pw-dialog-in var(--dur-2) var(--ease-out);
+/* A centred dialog fades and scales in over --dur-2 and out over --dur-1 (§17.4). `allow-discrete` keeps it on screen while it fades out
+   (browsers without it simply close at once); under reduced motion it is a fade only. */
+.pw-dialog--dialog {
+  opacity: 0;
+  transform: scale(0.98);
+  transition:
+    opacity var(--dur-1) var(--ease-in),
+    transform var(--dur-1) var(--ease-in),
+    overlay var(--dur-1) allow-discrete,
+    display var(--dur-1) allow-discrete;
 }
-@keyframes pw-dialog-in {
-  from {
+.pw-dialog--dialog[open] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    transform var(--dur-2) var(--ease-out),
+    overlay var(--dur-2) allow-discrete,
+    display var(--dur-2) allow-discrete;
+}
+@starting-style {
+  .pw-dialog--dialog[open] {
     opacity: 0;
     transform: scale(0.98);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .pw-dialog[open] {
-    animation: pw-fade-in var(--dur-1) linear;
+.pw-dialog--dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity var(--dur-1) var(--ease-in),
+    overlay var(--dur-1) allow-discrete,
+    display var(--dur-1) allow-discrete;
+}
+.pw-dialog--dialog[open]::backdrop {
+  opacity: 1;
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    overlay var(--dur-2) allow-discrete,
+    display var(--dur-2) allow-discrete;
+}
+@starting-style {
+  .pw-dialog--dialog[open]::backdrop {
+    opacity: 0;
   }
-  @keyframes pw-fade-in {
-    from {
-      opacity: 0;
+}
+@keyframes pw-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pw-dialog--dialog,
+  .pw-dialog--dialog[open] {
+    transform: none;
+    transition-duration: var(--dur-1);
+  }
+  @starting-style {
+    .pw-dialog--dialog[open] {
+      transform: none;
     }
   }
 }
@@ -376,6 +421,12 @@
   from {
     opacity: 0;
     transform: translateX(16px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* a drawer or sheet only fades: no travel */
+  .pw-dialog--drawer[open] {
+    animation: pw-fade-in var(--dur-1) linear;
   }
 }
 @media (max-width: 767px) {
@@ -532,4 +583,46 @@
 .pw-error-summary a {
   color: var(--hold);
   font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ operation in flight (> 1 s): an indeterminate bar and the time */
+.pw-working {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-working p {
+  margin: 0;
+}
+.pw-working__bar {
+  position: relative;
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  background: var(--line);
+}
+.pw-working__bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 70% 0 0;
+  background: var(--ink);
+  animation: pw-indeterminate 1.2s linear infinite;
+}
+@keyframes pw-indeterminate {
+  to {
+    transform: translateX(340%);
+  }
+}
+.pw-working__time {
+  font-family: var(--font-mono);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pw-working__bar::after {
+    animation: none;
+    inset: 0;
+    opacity: 0.35;
+  }
 }

@@ -105,11 +105,7 @@ const STOP_LABEL: Record<string, string> = {
 export const stopLabel = (stopped: string): string => STOP_LABEL[stopped] ?? stopped;
 
 // ------------------------------------------------------------------ small formatters
-/** `m:ss`, never negative. */
-export function formatElapsed(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
+export { formatElapsed } from "../../../shared/lib/format";
 
 export const scenarioExpectation = (expected: { status: string; reason: string }): string =>
   `with the guard on: ${expected.status} · ${expected.reason}`;

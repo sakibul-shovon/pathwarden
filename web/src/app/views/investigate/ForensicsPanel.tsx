@@ -4,7 +4,7 @@ import { Notice } from "../../../shared/components/Notice";
 import { SegmentedControl } from "../../../shared/components/SegmentedControl";
 import { StatusPill } from "../../../shared/components/StatusPill";
 import { Icon } from "../../../shared/icons/Icon";
-import { formatElapsed } from "../run/runLogic";
+import { Working } from "../../../shared/components/Working";
 import { forensicSteps } from "./caseLogic";
 
 interface ForensicsPanelProps {
@@ -43,11 +43,7 @@ export function ForensicsPanel({ mode, onMode, llm, busy, elapsedMs, slow, onRun
           {busy ? "Investigating…" : "Run forensics"}
         </Button>
       </div>
-      {busy && slow && (
-        <p className="pw-muted" role="status">
-          Investigating — quarantining and replaying in a sandbox… <span aria-hidden="true">{formatElapsed(elapsedMs)}</span>
-        </p>
-      )}
+      {busy && slow && <Working elapsedMs={elapsedMs}>Investigating: quarantining and replaying in a sandbox…</Working>}
       {report && <Report report={report} />}
     </div>
   );
