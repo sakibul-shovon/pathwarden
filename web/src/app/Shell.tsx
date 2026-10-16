@@ -7,7 +7,6 @@ import { Wordmark } from "../shared/components/Wordmark";
 import { Icon } from "../shared/icons/Icon";
 import { applyTheme, readStoredTheme, type ThemePreference } from "../shared/lib/theme";
 import { EvaluationTab } from "../tabs/Evaluation";
-import { InvestigateTab } from "../tabs/Investigate";
 import { MemoryTab } from "../tabs/Memory";
 import { RemediateTab } from "../tabs/Remediate";
 import { TimeTravelTab } from "../tabs/TimeTravel";
@@ -16,6 +15,7 @@ import { readOnboarding, writeOnboarding } from "./guide";
 import { Nav } from "./Nav";
 import { navItem } from "./navModel";
 import { StatusFooter } from "./StatusFooter";
+import { InvestigateView } from "./views/investigate/InvestigateView";
 import { RunView } from "./views/run/RunView";
 import { Unreachable } from "./Unreachable";
 import { buildSearch, navigateState, parseUrl, type TabId, type UrlState } from "./url";
@@ -78,6 +78,16 @@ export function Shell() {
     },
     [url],
   );
+
+  // in-view state (the open action) is reflected in the address bar without adding a history entry
+  const urlRef = useRef(url);
+  urlRef.current = url;
+  const replaceUrl = useCallback((patch: Partial<UrlState>) => {
+    const next: UrlState = { ...urlRef.current, ...patch };
+    urlRef.current = next;
+    window.history.replaceState(null, "", buildSearch(next));
+    setUrl(next);
+  }, []);
 
   const changeTheme = useCallback((next: ThemePreference) => {
     setTheme(next);
@@ -155,7 +165,12 @@ export function Shell() {
           ) : needsConnect ? (
             <Connect workspace={url.ws} reason={access as "needs_key" | "rejected" | "forbidden"} onConnected={connected} />
           ) : (
-            <ViewHost url={url} key={`${url.tab}:${url.ws}`} onNavigate={(tab, patch) => go(tab, undefined, patch)} />
+            <ViewHost
+              url={url}
+              key={`${url.tab}:${url.ws}`}
+              onNavigate={(tab, patch) => go(tab, undefined, patch)}
+              onReplace={replaceUrl}
+            />
           )}
         </main>
         <div role="status" className="pw-visually-hidden">
@@ -166,12 +181,28 @@ export function Shell() {
   );
 }
 
-function ViewHost({ url, onNavigate }: { url: UrlState; onNavigate: (tab: TabId, patch?: Partial<UrlState>) => void }) {
+interface ViewHostProps {
+  url: UrlState;
+  onNavigate: (tab: TabId, patch?: Partial<UrlState>) => void;
+  onReplace: (patch: Partial<UrlState>) => void;
+}
+
+function ViewHost({ url, onNavigate, onReplace }: ViewHostProps) {
+  const selectAction = useCallback((id: string) => onReplace({ action: id }), [onReplace]);
   switch (url.tab) {
     case "run":
       return <RunView initial={{ scenario: url.scenario, guard: url.guard, autorun: url.autorun, mode: url.mode }} workspace={url.ws} onNavigate={onNavigate} />;
     case "investigate":
-      return <InvestigateTab autoForensics={url.autoForensics} autoHeal={url.autoHeal} />;
+      return (
+        <InvestigateView
+          workspace={url.ws}
+          initialAction={url.action}
+          autoForensics={url.autoForensics}
+          autoHeal={url.autoHeal}
+          onNavigate={onNavigate}
+          onSelectAction={selectAction}
+        />
+      );
     case "memory":
       return <MemoryTab />;
     case "time":

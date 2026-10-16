@@ -18,8 +18,6 @@
   --dark: var(--ink-2);
   --quarantine: var(--ink-3);
   --leak-bg: var(--hold-tint);
-  --add-bg: var(--allow-tint);
-  --del-bg: var(--hold-tint);
 }
 
 h2 { margin: 28px 0 8px; font-size: 18px; }
@@ -52,12 +50,6 @@ table { width: 100%; font-size: 13px; }
 th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
 th { color: var(--muted); font-weight: 600; }
 
-.split { display: grid; grid-template-columns: 220px 1fr; gap: 14px; align-items: start; }
-@media (max-width: 760px) { .split { grid-template-columns: 1fr; } }
-.actions { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.item { width: 100%; text-align: left; background: none; border: 1px solid var(--edge); border-radius: var(--radius-button); padding: 6px 10px; color: var(--fg); cursor: pointer; }
-.item.active { border-color: var(--ink); border-width: 2px; padding: 5px 9px; background: var(--bg); }
-.status { font-size: 12px; margin-left: 6px; }
 .status.held, .status.blocked { color: var(--red); font-weight: 700; }
 .status.executed { color: var(--green); }
 .status.superseded, .status.rejected { color: var(--muted); }
@@ -81,13 +73,7 @@ th { color: var(--muted); font-weight: 600; }
 .sw-quarantined { background: var(--quarantine); }
 .sw-source { transform: rotate(45deg) scale(0.75); }
 details { margin-top: 8px; }
-.query { background: var(--bg); border: 1px solid var(--edge); border-radius: var(--radius-sheet); padding: 10px; margin-top: 6px; }
 
-.diff { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 760px) { .diff { grid-template-columns: 1fr; } }
-.diff pre { background: var(--bg); border: 1px solid var(--edge); border-radius: var(--radius-sheet); padding: 10px; }
-.del { background: var(--del-bg); display: inline-block; width: 100%; }
-.add { background: var(--add-bg); display: inline-block; width: 100%; }
 .inline { margin-right: 14px; }
 
 .sw-marked { background: var(--card); border-color: var(--highlight); box-shadow: 0 0 0 3px var(--highlight); }
