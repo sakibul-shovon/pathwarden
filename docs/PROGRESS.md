@@ -3,9 +3,9 @@
 **The one place to see where the project stands.** Update rules: `docs/WORKFLOW.md` §4. Status words: `NOT_STARTED` · `IN_PROGRESS` · `VERIFYING` · `DONE` · `BLOCKED`.
 Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `docs/phases/P*.md`.
 
-- **Last updated:** 2026-10-16 (P13b design foundation) · **by:** Claude Code (Sonnet 5.5)
+- **Last updated:** 2026-10-16 (P13c app shell) · **by:** Claude Code (Sonnet 5.5)
 - **Overall:** workflow approved; P0 merged and tagged; P1 (runtime) implemented and verified locally; CI runs on GitHub are not observable from here (private repo, no `gh`).
-- **Active phase:** UI redesign chain P13a–P15d (`docs/phases/P13-ui-redesign.md`, spec `ui-redesign.md`), stacked on `phase/p8-live-llm`; P13b VERIFYING. P12's human items and P8's merge are still open.
+- **Active phase:** UI redesign chain P13a–P15d (`docs/phases/P13-ui-redesign.md`, spec `ui-redesign.md`), stacked on `phase/p8-live-llm`; P13c VERIFYING. P12's human items and P8's merge are still open.
 - **Deadline:** submit before **18 Oct 2026 23:59 IST = 19 Oct 00:29 Bangladesh time (+06)**. Repo must be public with incremental commits after 15 Oct 12:01 AM IST (plan §24.6).
 
 ## Phase dashboard
@@ -31,7 +31,7 @@ Details of *how to resume* live in `docs/HANDOFF.md`; task checkboxes live in `d
 Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · Tier 3 = depth. Nothing is removed from scope; cuts are a human decision (D-010).
 | P13a | UI redesign: baseline, decisions, hook | 2 | VERIFYING | `phase/p13a-redesign-baseline` | P8 branch as base | 608 tests in both auth modes, strict web build, lint, scan; baseline UI flows recorded | D-032…D-036; chain is NOT merged to main (D-034); CI not observed |
 | P13b | UI redesign: design foundation | 2 | VERIFYING | `phase/p13b-design-foundation` | P13a | 63 unit tests (contrast of the palette enforced), strict build, six tabs unchanged in the browser, dialog focus verified | dev-proxy bug fixed; Vitest + @types/node are dev-only; CI not observed |
-| P13c | UI redesign: app shell and entry split | 2 | NOT_STARTED | `phase/p13c-app-shell-entry` | P13b | — |  |
+| P13c | UI redesign: app shell and entry split | 2 | VERIFYING | `phase/p13c-app-shell-entry` | P13b | 102 unit tests; two-entry build; legacy links, nav, history, workspace switch, theme, menu and the unreachable state verified in the browser | landing is a placeholder (G-004); backend untouched; CI not observed |
 | P13d | UI redesign: access and onboarding | 2 | NOT_STARTED | `phase/p13d-access-onboarding` | P13c | — |  |
 | P14a | UI redesign: Run view | 2 | NOT_STARTED | `phase/p14a-run-view` | P13d | — |  |
 | P14b | UI redesign: Investigate case file | 2 | NOT_STARTED | `phase/p14b-case-file` | P14a | — |  |
@@ -116,6 +116,15 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-16 | P13b dialog | same page: keyboard-open the review dialog, Esc, drawer | 0 | opener focused + Enter → dialog open, **focus on Cancel** (`data-autofocus`), background inert, **Esc closes and focus returns to the opener**, drawer closes with its button, console errors none. **Bug found by looking and fixed:** React `autoFocus` ran before `showModal()` so focus landed on the Close button; the `gate` icon was identical to `pause` and was redrawn as a barrier | Claude Code |
 | 2026-10-16 | P13b no regression | `node baseline.mjs` against the restyled six tabs (same script as P13a) | 0 | identical to the P13a observations: `HELD act-0001: TRIFECTA`, 3 × Rule of Two OK, `LEAKED … (GUARD_OFF)` with 2 leak lines, heal banner `Healed release act-0002 executed; act-0001 is superseded`, human header on `POST …/heal/…/approve` only, markers `t=4`/`t=16`, 5 memory rows, candidates `C3=16, C1=17, C2=22, C4=23`, 390 px no horizontal overflow, 0 console errors | Claude Code |
 | 2026-10-16 | P13b scope | `git diff --stat phase/p13a-redesign-baseline -- api tests fixtures eval scripts Makefile` | 0 | empty: no backend, test, fixture or script change; `make test` / `make test-auth` stay as in P13a (608 / 608) and are re-run at the end of P15d | Claude Code |
+| 2026-10-16 | P13c tests | `cd web && npm test` | 0 | **102 passed in 9 files**; new: URL parse/build incl. every documented deep link (14), legacy redirect incl. the MCP gateway link (13), API failure classification incl. proxy 'Bad Gateway' and HTML-instead-of-JSON (8), activity store (3), theme (2) | Claude Code |
+| 2026-10-16 | P13c build | `npm run build` | 0 | strict `tsc` + vite OK; emits `dist/index.html` and `dist/app/index.html`; landing chunk 1.06 kB + shared chunk 141 kB (46 kB gzip), app chunk 495 kB (155 kB gzip, Cytoscape still inside: dynamic import comes in P14c) | Claude Code |
+| 2026-10-16 | P13c legacy links | headless Edge against `npm run dev` | 0 | `/?tab=investigate&ws=tinyqueue-mcp` → `/app/?tab=investigate&ws=tinyqueue-mcp`; `/?tab=run&scenario=attack_pipeline_42&guard=off&autorun=1` → app (flags consumed); `/?tab=time&t=16`, `/?ws=tinyqueue-mcp`, `/?key=…&tab=run` all land in the app; plain `/` shows the landing placeholder and `/?utm_source=x` stays on it | Claude Code |
+| 2026-10-16 | P13c shell | same session, 1280 px | 0 | nav order Run, Investigate (badge `1 needs a decision` after a held run), Memory, Time travel | Remediate, Evaluation; address bar after `autorun` is `/app/?tab=run`; click Memory → URL `?tab=memory`, focus on the `h1`, `aria-current=Memory`; Back returns to Run; title `Run · tinyqueue · Pathwarden`; `?tab=investigate&autoforensics=1&autoheal=1` completes (`Healed release act-0002 executed; act-0001 is superseded`), POST forensics without and heal approve **with** `X-PW-Human: true` | Claude Code |
+| 2026-10-16 | P13c workspace + theme | same session | 0 | switching to `tinyqueue-mcp` changes the URL and every later request goes to `/api/ws/tinyqueue-mcp/…`; theme Dark sets `data-theme=dark`, `--paper=#0f1114`, survives a reload; System removes it | Claude Code |
+| 2026-10-16 | P13c responsive + keyboard | same session | 0 | 900 px: rail hidden, top bar shown, Menu opens a drawer with the 6 views, choosing one closes it and navigates; 390 px: no horizontal overflow; first Tab stop is the skip link; console errors none | Claude Code |
+| 2026-10-16 | P13c unreachable | killed the local uvicorn, loaded `/app/`, restarted it, clicked Retry | 0 | panel `Can't reach the Pathwarden API`, raw code `unreachable`, footer `API unreachable`, commands `make up` / `make api`, no JSON/SyntaxError text anywhere; after the restart **Retry restores the view** (`Run`, footer `API connected`). `?key=pwdemo-key-test` was in `sessionStorage` after the address bar had been cleaned | Claude Code |
+| 2026-10-16 | P13c bugs found | tsc, browser | — | (1) `nav.ts` vs `Nav.tsx` collide on case-insensitive filesystems → `navModel.ts`; (2) initial focus jumped to the heading in dev because StrictMode runs effects twice → focus only when the view really changes; (3) the `cut` icon looked like a close button and Investigate's barrier icon like an H → scissors and a magnifier | Claude Code |
+| 2026-10-16 | P13c scope | `git diff --stat phase/p13b-design-foundation -- api tests fixtures eval scripts Makefile` | 0 | empty: no backend change | Claude Code |
 
 ## Known issues (bugs and debt found but not fixed)
 
@@ -130,6 +139,7 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | G-001 | Independent cross-agent review of P2 (recommended by the phase file) was not possible: only one agent is available | P2 | n/a — process gap; the 4 sabotage checks partly compensate | when a second agent reviews (optional) |
 | G-002 | ~~No caller authentication on approve/reject/reset/run, heal-approve and quarantine release~~ **Closed in P11**: workspace keys (hosted mode) and the human-only guard (both modes), see `docs/SECURITY.md`. Remaining by design: the MCP tool server and gateway are local stdio processes without authentication; `X-PW-Human` is not authentication | api layer | documented | - |
 | G-003 | LLM forensic mode (`mode:"llm"`) answers 501 `llm_not_configured` | `POST /forensics` | fails loudly | P8 |
+| G-004 | The public landing page (`ui-redesign.md` §11) is a **placeholder**: it shows the tagline, a link to `app/` and the sentence 'The full project page is not built yet.' | `web/src/landing/Landing.tsx` (served at `/`) | visibly says it is not built; every legacy link still reaches the app | P15a |
 
 ## Session log (append-only: one line per work session)
 
@@ -178,3 +188,4 @@ Tier 1 = submission-critical · Tier 2 = differentiators shown in the video · T
 | 2026-10-16 | P12-T7/T8 | `docs/TRACEABILITY.md` (F1-F15) and `docs/FINAL_CHECKLIST.md` (the 10 items of plan §24.6) | - | F6/F11/F12/F14 are marked Partial or Done-with-scripted-clients because P8 (live LLM) is not implemented; items 1 (public), 5 (video), 6 (live URL), 10 (submitted) are marked open [human] and NOT ticked | Claude Code |
 | 2026-10-16 | Claude Code / Sonnet 5.5 | P13a-T1…T4 | decisions D-032…D-036; hook widened to P19; `ui-redesign.md` and the phase file committed; baseline recorded; chain based on `phase/p8-live-llm` (main lacks P8), nothing merged | see `git log` |
 | 2026-10-16 | Claude Code / Sonnet 5.5 | P13b-T1…T5 | dev proxy fixed (127.0.0.1); Vitest + @types/node; tokens, fonts, base/typography; 24 icons and 13 primitives with tests; six tabs restyled on the tokens; dev-only system page. 5 commits | see `git log` |
+| 2026-10-16 | Claude Code / Sonnet 5.5 | P13c-T1…T4 | api client: unreachable classification, switchable workspace, key captured at load; polling pauses; URL, legacy-redirect and theme modules; rail/top bar/menu shell with attention count, status, theme switch and unreachable state; landing + app entries. 4 bugs found by tsc/browser and fixed. 4 commits | see `git log` |

@@ -43,10 +43,10 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] Vitest installed (dev only) and one passing test
 
 ### P13c — app shell and entry
-- [ ] `web/index.html` landing placeholder + `web/app/index.html`; Vite multi-page build emits both
-- [ ] Legacy redirect covers every parameter in §3.2; MCP gateway link reaches the same state as before
-- [ ] `url.ts` (read/write, `action=`); rail + top bar + menu sheet; status footer
-- [ ] Typed `unreachable` error; unreachable state
+- [x] `web/index.html` landing placeholder + `web/app/index.html`; Vite multi-page build emits both
+- [x] Legacy redirect covers every parameter in §3.2; MCP gateway link reaches the same state as before
+- [x] `url.ts` (read/write, `action=`); rail + top bar + menu sheet; status footer
+- [x] Typed `unreachable` error; unreachable state
 
 ### P13d — access and onboarding
 - [ ] Probe via `GET /ws/{ws}/scenarios`; Connect form with error summary

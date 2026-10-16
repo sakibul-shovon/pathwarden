@@ -312,6 +312,17 @@ Source: `ui-redesign.md` (research and specification). Phase slicing: `docs/phas
 - **Dev proxy fix:** `web/vite.config.ts` now proxies to `127.0.0.1:8000` (was `localhost`), see HANDOFF "Dev proxy trap".
 - **`legacy.css`** is the old stylesheet rewritten on the tokens with the same class names (and the old variable names as aliases, because Cytoscape reads some of them). It shrinks as each view is rebuilt in P14 and is deleted in P14d.
 
+### P13c notes (app shell and entry split)
+- **History:** switching view or workspace uses `pushState` (the Back button returns to the previous view); the plan said `replaceState` for URL updates. In-view state will use `replaceState` (P14b `action=`). The address bar is normalised once on load: the one-shot flags (`autorun`, `autoforensics`, `autoheal`) and `key` are dropped from it after the first render, so reloading a deep link no longer re-runs the scenario (the flags still work from a pasted link; the key is stored first, see below).
+- **`?key=`** is captured when `api/client.ts` loads (stored in `sessionStorage` under the same name `pw_key`), because the app now rewrites the address bar. P13d adds the visible Connect flow.
+- **Legacy links:** the redirect is a tested TypeScript function (`shared/lib/legacyRedirect.ts`) run by the landing entry before anything renders, not an inline script, so the list of parameters cannot drift from its tests. It forwards `/?tab=…&ws=…` (the MCP gateway's "Review at" link) to `/app/` with the identical query and hash; a plain visit or unrelated parameters (`?utm_source=…`) show the landing page.
+- **Navigation order** is Run, Investigate, Memory, Time travel | Remediate, Evaluation (plan Q9, labels unchanged). Tab ids and deep-link parameters are unchanged.
+- **Views were not moved** to `app/views/` (plan §19.2): they stay in `web/src/tabs/` until each is rebuilt in P14, to avoid renames that carry no behaviour. `App.tsx` became `app/Shell.tsx` + `app/url.ts`; `main.tsx` became `app/main.tsx`.
+- **Polling:** every `usePoll` now skips ticks while the tab is hidden or a POST is in flight (the POST holds the workspace lock) and refreshes when the tab is visible again / the POST ends. The rail polls `GET /actions` every 5 s for the attention count; like opening Investigate it creates the workspace graph from the registry if it does not exist yet.
+- **Case-insensitive filesystems:** `nav.ts` next to `Nav.tsx` is a collision on Windows and macOS (found by `tsc`); the model file is `navModel.ts`.
+- **Manual theme switch (O6)** lives in the status footer; the stored choice is applied before the app renders.
+- **The landing page is a placeholder** until P15a (Known gap G-004).
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.
