@@ -96,10 +96,10 @@ export function graphCounts(nodes: LineageNode[], edges: LineageEdge[]): { artif
 /** The caption under a canvas, so the figure never says anything the text does not. */
 export function graphCaption(subject: string, nodes: LineageNode[], edges: LineageEdge[], untrusted: string[], secret: string[]): string {
   const c = graphCounts(nodes, edges);
-  return (
-    `Lineage of ${subject}: ${plural(c.artifacts, "artifact")}, ${plural(c.sources, "source")}, ${plural(c.edges, "edge")}. ` +
-    `Untrusted path ${plural(pathSteps(untrusted), "step")}, secret path ${plural(pathSteps(secret), "step")}.`
-  );
+  const counts = `Lineage of ${subject}: ${plural(c.artifacts, "artifact")}, ${plural(c.sources, "source")}, ${plural(c.edges, "edge")}.`;
+  // a view without witness paths (Time travel) has nothing to say about them
+  if (untrusted.length === 0 && secret.length === 0) return counts;
+  return `${counts} Untrusted path ${plural(pathSteps(untrusted), "step")}, secret path ${plural(pathSteps(secret), "step")}.`;
 }
 
 /** The canvas label of a node: the key people know, then the id, then the facts that matter, never colour alone (§15.4). */

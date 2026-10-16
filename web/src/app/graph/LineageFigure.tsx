@@ -6,7 +6,7 @@ import { SegmentedControl } from "../../shared/components/SegmentedControl";
 import { Skeleton } from "../../shared/components/Skeleton";
 import { CanvasToolbar } from "./CanvasToolbar";
 import { graphCaption } from "./graphModel";
-import { GraphLegend, LINEAGE_LEGEND } from "./GraphLegend";
+import { GraphLegend, lineageLegend } from "./GraphLegend";
 import { readPrefs, writePrefs, type GraphPrefs } from "./graphPrefs";
 import { GraphTable } from "./GraphTable";
 import { chooseLayout } from "./lanes";
@@ -160,7 +160,7 @@ export function LineageFigure(props: LineageFigureProps) {
               {focusOn !== null && `only ancestors and descendants of ${focusOn}`}. It hides drawn elements of the returned graph; it is not a security computation.
             </p>
           )}
-          <GraphLegend items={LINEAGE_LEGEND} label="Graph legend" />
+          <GraphLegend items={lineageLegend({ witness: hasWitness, payload: Boolean(payloadId), marked: Boolean(marked && marked.length > 0), tainted: Boolean(tainted && tainted.length > 0) })} label="Graph legend" />
         </>
       ) : (
         <GraphTable nodes={nodes} edges={edges} untrustedWitness={untrustedWitness} secretWitness={secretWitness} onOpen={onOpen} onHover={onHover} />

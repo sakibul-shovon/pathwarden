@@ -98,6 +98,10 @@ describe("words", () => {
     );
   });
 
+  it("leaves the witness sentence out of a view that has no witness path", () => {
+    expect(graphCaption("the workspace at t = 4", nodes, edges, [], [])).toBe("Lineage of the workspace at t = 4: 2 artifacts, 1 source, 7 edges.");
+  });
+
   it("labels a source with its trust and an artifact with its key, id and facts", () => {
     expect(canvasLabel(node({ id: "src:issue:42", label: "Source", trust: "untrusted" }))).toBe("◆ src:issue:42\nuntrusted");
     expect(canvasLabel(node({ id: "a-0004", kind: "memory", key: "team_convention:42" }))).toBe("team_convention:42\na-0004 · memory");

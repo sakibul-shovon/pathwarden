@@ -69,12 +69,17 @@
   background: var(--sheet);
   touch-action: pan-y;
 }
+/* the capability graph has a few dozen nodes in several levels */
+.pw-canvas[data-roots] {
+  height: clamp(460px, 68vh, 640px);
+}
 /* lanes run down the page, so they get more height than the tree */
 .pw-canvas[data-layout="lanes"] {
   height: clamp(520px, 78vh, 760px);
 }
 @media (max-width: 767px) {
   .pw-canvas,
+  .pw-canvas[data-roots],
   .pw-canvas[data-layout="lanes"] {
     height: 420px;
   }
@@ -172,6 +177,13 @@
 }
 .pw-key--toxic {
   border: 4px double var(--hold);
+}
+.pw-key--marked {
+  border-color: var(--ink);
+  background: var(--highlight);
+}
+.pw-key--tainted {
+  border: 4px double var(--secret);
 }
 
 /* ------------------------------------------------------------------ table form */

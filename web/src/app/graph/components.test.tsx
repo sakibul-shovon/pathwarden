@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { LineageEdge, LineageNode } from "../../api/types";
-import { CAPABILITY_LEGEND, GraphLegend, LINEAGE_LEGEND } from "./GraphLegend";
+import { CAPABILITY_LEGEND, GraphLegend, LINEAGE_LEGEND, lineageLegend } from "./GraphLegend";
 import { GraphTable } from "./GraphTable";
 import { NodeDrawer } from "./NodeDrawer";
 
@@ -114,6 +114,14 @@ describe("GraphLegend", () => {
       for (const i of items) expect(i.text.split(" ").length).toBeGreaterThanOrEqual(2);
       expect(html).toContain('aria-hidden="true"');
     }
+  });
+
+  it("lists only what the figure draws: witness paths and payload in a case, markers and taint in Time travel", () => {
+    const glyphs = (u: Parameters<typeof lineageLegend>[0]): string[] => lineageLegend(u).map((i) => i.glyph);
+    const none = { witness: false, payload: false, marked: false, tainted: false };
+    expect(glyphs(none)).toEqual(["source", "memory", "sanitized", "approved", "quarantined"]);
+    expect(glyphs({ ...none, witness: true, payload: true })).toEqual(["u", "s", "source", "memory", "sanitized", "approved", "payload", "quarantined"]);
+    expect(glyphs({ ...none, marked: true, tainted: true })).toEqual(["source", "memory", "sanitized", "approved", "quarantined", "marked", "tainted"]);
   });
 
   it("explains witness paths by line style and quarantine by hatching", () => {
