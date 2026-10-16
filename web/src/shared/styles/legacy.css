@@ -22,22 +22,11 @@
   --del-bg: var(--hold-tint);
 }
 
-h1 { font-size: 22px; }
 h2 { margin: 28px 0 8px; font-size: 18px; }
 h3 { margin: 0 0 6px; font-size: 16px; }
 h4 { margin: 0 0 4px; font-size: 14px; }
 .muted { color: var(--muted); }
 
-.app { max-width: 1240px; margin: 0 auto; padding: 0 16px 48px; }
-header { padding: 18px 0 0; }
-.tagline { margin: 2px 0 12px; color: var(--muted); }
-nav { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border); }
-.tab { background: none; border: none; border-bottom: 3px solid transparent; padding: 8px 14px; color: var(--fg); cursor: pointer; }
-.tab:hover { border-bottom-color: var(--edge); }
-.tab.active { border-bottom-color: var(--ink); font-weight: 600; }
-.tab:disabled { color: var(--muted); cursor: not-allowed; }
-.soon { font-size: 12px; }
-main { padding-top: 16px; }
 
 .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-panel); padding: 14px 16px; margin: 12px 0; }
 .scroll { overflow-x: auto; }
