@@ -61,7 +61,7 @@ Tick a box only with evidence (command + result) in `docs/PROGRESS.md`.
 - [x] `?autoforensics=1&autoheal=1` completes the flow
 
 ### P14c — graph presentation
-- [ ] `lanesLayout` (unit-tested, deterministic), Tree toggle, GraphTable, NodeDrawer, trace, dim-unrelated, capability `roots`
+- [x] `lanesLayout` (unit-tested, deterministic), Tree toggle, GraphTable, NodeDrawer, trace, dim-unrelated, capability `roots` (lanes are columns, see the P14c notes in DECISIONS)
 
 ### P14d — remaining views
 - [ ] Memory ledger + dialog · Time travel scrubber/markers/replay · Remediate inspector/cut comparison/dialogs · Evaluation report + interval chart + `llm_judges` type
