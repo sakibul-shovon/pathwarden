@@ -1,0 +1,467 @@
+/* Primitives of the design system (ui-redesign.md §16.8). Colours come from tokens only. */
+
+.pw-icon {
+  flex: none;
+  vertical-align: -3px;
+}
+
+/* ------------------------------------------------------------------ buttons */
+.pw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 40px;
+  padding: 0 var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-button);
+  background: var(--sheet);
+  color: var(--ink);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--dur-1) linear, border-color var(--dur-1) linear;
+}
+.pw-btn:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+.pw-btn--sm {
+  min-height: 32px;
+  padding: 0 var(--s-3);
+  font-size: var(--t-sm);
+}
+.pw-btn--primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+.pw-btn--quiet {
+  border-color: transparent;
+  background: transparent;
+}
+.pw-btn--quiet:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+.pw-btn--danger {
+  border-color: var(--hold);
+  color: var(--hold);
+  background: transparent;
+}
+.pw-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pw-btn[aria-busy="true"] {
+  cursor: progress;
+}
+
+/* ------------------------------------------------------------------ status pills (five families) */
+.pw-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 8px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-chip);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pw-status--hold {
+  color: var(--hold);
+  background: var(--hold-tint);
+}
+.pw-status--allow {
+  color: var(--allow);
+  background: var(--allow-tint);
+}
+.pw-status--neutral {
+  color: var(--ink-3);
+  background: transparent;
+}
+.pw-status--marked {
+  color: var(--on-highlight);
+  background: var(--highlight);
+  border-color: var(--on-highlight);
+}
+/* block = sealed: ink on a hatch, like a redaction */
+.pw-status--block {
+  color: var(--ink);
+  background: repeating-linear-gradient(135deg, transparent 0 4px, var(--line-strong) 4px 5px), var(--sheet);
+}
+
+/* ------------------------------------------------------------------ id chips */
+.pw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--sheet);
+  font-size: var(--t-xs);
+  line-height: 18px;
+}
+.pw-chip__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.pw-chip__copy:hover {
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ sheets (documents) */
+.pw-sheet {
+  background: var(--sheet);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sheet);
+}
+.pw-sheet__title {
+  margin: 0;
+  padding: var(--s-2) var(--s-4);
+  border-bottom: 1px solid var(--line-strong);
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+.pw-sheet__body {
+  padding: var(--s-4);
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  line-height: 20px;
+}
+
+/* ------------------------------------------------------------------ notices, empty, error, skeleton */
+.pw-notice {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line-strong);
+  border-left-width: 4px;
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+}
+.pw-notice p {
+  margin: 0;
+}
+.pw-notice .pw-icon {
+  margin-top: 2px;
+}
+.pw-notice--consequence {
+  border-left-color: var(--ink);
+}
+.pw-notice--caveat {
+  border-left-color: var(--untrusted);
+}
+
+.pw-empty {
+  padding: var(--s-6);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-panel);
+  text-align: left;
+}
+
+.pw-error {
+  padding: var(--s-4) var(--s-5);
+  border: 1px solid var(--hold);
+  border-left-width: 4px;
+  border-radius: var(--radius-panel);
+  background: var(--hold-tint);
+}
+.pw-error__title {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-1);
+  font-size: var(--t-lg);
+}
+.pw-error__code {
+  margin: 0 0 var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-2);
+}
+.pw-error__recovery {
+  margin-top: var(--s-3);
+}
+
+.pw-skeleton {
+  display: grid;
+  gap: var(--s-2);
+}
+.pw-skeleton__line {
+  display: block;
+  background: var(--line);
+  border-radius: var(--radius-chip);
+}
+
+/* ------------------------------------------------------------------ figures */
+.pw-figure {
+  margin: 0;
+}
+.pw-figure__plate {
+  border: 1px solid var(--line-strong);
+  background: var(--sheet);
+  padding: var(--s-4);
+}
+.pw-figure figcaption {
+  margin-top: var(--s-2);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+.pw-figure__source {
+  color: var(--ink-3);
+}
+
+/* ------------------------------------------------------------------ segmented control */
+.pw-seg {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+.pw-seg__legend {
+  padding: 0;
+  margin-bottom: var(--s-1);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+.pw-seg__row {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-button);
+  overflow: hidden;
+}
+.pw-seg__opt {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 var(--s-4);
+  cursor: pointer;
+  background: var(--sheet);
+}
+.pw-seg__opt + .pw-seg__opt {
+  border-left: 1px solid var(--line-strong);
+}
+.pw-seg__opt--on {
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+.pw-seg__opt:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: -4px;
+}
+.pw-seg__opt:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pw-seg__hint {
+  margin: var(--s-1) 0 0;
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+.pw-seg:disabled {
+  opacity: 0.6;
+}
+
+/* ------------------------------------------------------------------ dialog and drawer (native <dialog>) */
+.pw-dialog {
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+  max-width: min(640px, calc(100vw - 32px));
+  width: 100%;
+}
+.pw-dialog::backdrop {
+  background: rgb(15 17 20 / 0.55);
+}
+.pw-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--line);
+}
+.pw-dialog__title {
+  margin: 0;
+  font-size: var(--t-lg);
+}
+.pw-dialog__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  background: transparent;
+  cursor: pointer;
+}
+.pw-dialog__close:hover {
+  border-color: var(--line-strong);
+}
+.pw-dialog__body {
+  padding: var(--s-4) var(--s-5);
+  max-height: 60vh;
+  overflow: auto;
+}
+.pw-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--s-2);
+  padding: var(--s-4) var(--s-5);
+  border-top: 1px solid var(--line);
+}
+.pw-dialog[open] {
+  animation: pw-dialog-in var(--dur-2) var(--ease-out);
+}
+@keyframes pw-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pw-dialog[open] {
+    animation: pw-fade-in var(--dur-1) linear;
+  }
+  @keyframes pw-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+/* drawer: right side on tablets and up, bottom sheet on phones */
+.pw-dialog--drawer {
+  margin: 0 0 0 auto;
+  height: 100dvh;
+  max-height: 100dvh;
+  max-width: min(480px, 100vw);
+  border-radius: 0;
+  border-width: 0 0 0 1px;
+}
+.pw-dialog--drawer[open] {
+  animation: pw-drawer-in var(--dur-3) var(--ease-out);
+}
+.pw-dialog--drawer .pw-dialog__panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.pw-dialog--drawer .pw-dialog__body {
+  flex: 1;
+  max-height: none;
+}
+@keyframes pw-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+@media (max-width: 767px) {
+  .pw-dialog--drawer {
+    margin: auto 0 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: auto;
+    max-height: 85dvh;
+    border-width: 1px 0 0;
+  }
+  .pw-dialog--drawer[open] {
+    animation-name: pw-sheet-in;
+  }
+  @keyframes pw-sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ code */
+.pw-code {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  background: var(--sheet);
+}
+.pw-code pre {
+  padding: var(--s-3) var(--s-4);
+  padding-right: 88px;
+  overflow-x: auto;
+  white-space: pre;
+  font-size: var(--t-sm);
+  line-height: 20px;
+}
+.pw-code__copy {
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 var(--s-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-chip);
+  background: var(--paper);
+  font-size: var(--t-xs);
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ Rule of Two letters */
+.pw-r2 {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+.pw-r2__letters {
+  display: inline-flex;
+  gap: 4px;
+}
+.pw-r2__letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+.pw-r2__letter--on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.pw-r2__letter--off {
+  border-style: dashed;
+  color: var(--ink-3);
+}
+.pw-r2__legend {
+  flex-basis: 100%;
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
