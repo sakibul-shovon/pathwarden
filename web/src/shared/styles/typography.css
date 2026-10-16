@@ -1,0 +1,82 @@
+/* Type roles (ui-redesign.md §16.4): display = Newsreader (landing and the evaluation report title only),
+   UI = IBM Plex Sans, evidence = IBM Plex Mono (ids, keys, queries, commands). */
+
+.pw-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.pw-mono {
+  font-family: var(--font-mono);
+}
+
+.pw-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.pw-muted {
+  color: var(--ink-3);
+}
+
+.pw-prose {
+  max-width: 72ch;
+}
+
+.pw-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* App scale */
+.pw-t-xs {
+  font-size: var(--t-xs);
+  line-height: 16px;
+}
+.pw-t-sm {
+  font-size: var(--t-sm);
+  line-height: 18px;
+}
+.pw-t-md {
+  font-size: var(--t-md);
+  line-height: 20px;
+}
+.pw-t-lg {
+  font-size: var(--t-lg);
+  line-height: 24px;
+}
+.pw-t-xl {
+  font-size: var(--t-xl);
+  line-height: 28px;
+}
+.pw-t-2xl {
+  font-size: var(--t-2xl);
+  line-height: 30px;
+}
+
+/* Landing scale: body 17/28 and fluid display sizes (ui-redesign.md §16.4). Applied under .pw-landing. */
+.pw-landing {
+  --t-sm: 15px;
+  --t-md: 17px;
+  --t-lg: 20px;
+  font-size: var(--t-md);
+  line-height: 28px;
+}
+.pw-landing .pw-h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-size: clamp(40px, 4.5vw + 1rem, 80px);
+  line-height: 1.04;
+}
+.pw-landing .pw-h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(26px, 2.2vw + 1rem, 36px);
+  line-height: 1.15;
+}

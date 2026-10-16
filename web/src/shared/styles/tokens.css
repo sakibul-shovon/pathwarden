@@ -1,0 +1,139 @@
+/* Design tokens (ui-redesign.md §16.3 colour, §16.5 spacing and shape, §17.3 motion).
+   The contrast ratios in the plan are enforced by tokens.test.ts, which reads this file. */
+
+:root {
+  color-scheme: light dark;
+
+  /* surfaces and ink */
+  --paper: #f5f5f2;
+  --sheet: #ffffff;
+  --ink: #15171c;
+  --ink-2: #4a4f5a;
+  --ink-3: #62677a;
+  --line: #d9d9d3; /* decorative separators only (1.4:1) */
+  --line-strong: #83878f; /* control borders (>= 3:1) */
+
+  /* data colours: lineage of untrusted / secret input */
+  --untrusted: #b4470b;
+  --untrusted-tint: #fbebdd;
+  --secret: #9c1f87;
+  --secret-tint: #f7e4f3;
+
+  /* verdict families */
+  --allow: #1b6e3c;
+  --allow-tint: #e2f2e7;
+  --hold: #b3261e;
+  --hold-tint: #fbe6e3;
+  --block: var(--ink); /* BLOCK and quarantined: ink plus hatch, never a colour on its own */
+
+  /* "look here" */
+  --highlight: #ffd23f;
+  --on-highlight: #15171c;
+
+  /* type */
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
+
+  --t-xs: 12px;
+  --t-sm: 13px;
+  --t-md: 14px;
+  --t-lg: 16px;
+  --t-xl: 20px;
+  --t-2xl: 24px;
+
+  /* spacing (4 px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-20: 80px;
+  --s-24: 96px;
+
+  /* shape: documents are square, controls slightly rounded */
+  --radius-sheet: 0;
+  --radius-chip: 2px;
+  --radius-button: 4px;
+  --radius-panel: 6px;
+
+  /* elevation: overlays only, no blur effects */
+  --shadow-1: 0 1px 2px rgb(21 23 28 / 0.08), 0 6px 16px rgb(21 23 28 / 0.1);
+  --shadow-2: 0 16px 40px rgb(21 23 28 / 0.22);
+
+  /* layout */
+  --rail-width: 240px;
+  --content-max: 1440px;
+  --prose-max: 880px;
+
+  /* motion (ui-redesign.md §17.3) */
+  --dur-0: 0ms;
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 260ms;
+  --dur-trace-step: 110ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-move: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1114;
+    --sheet: #171a1f;
+    --ink: #ecece7;
+    --ink-2: #b4b7bf;
+    --ink-3: #9095a0;
+    --line: #2a2e36;
+    --line-strong: #6b707b;
+    --untrusted: #f08a3e;
+    --untrusted-tint: #3a2414;
+    --secret: #e77bd3;
+    --secret-tint: #371a31;
+    --allow: #5bc98a;
+    --allow-tint: #14301f;
+    --hold: #ff8a7a;
+    --hold-tint: #3a1714;
+    --highlight: #ffd23f;
+    --on-highlight: #15171c;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px rgb(0 0 0 / 0.45);
+    --shadow-2: 0 16px 40px rgb(0 0 0 / 0.6);
+  }
+}
+
+/* Manual override (the theme switch). Must stay identical to the dark block above: tokens.test.ts checks it. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0f1114;
+  --sheet: #171a1f;
+  --ink: #ecece7;
+  --ink-2: #b4b7bf;
+  --ink-3: #9095a0;
+  --line: #2a2e36;
+  --line-strong: #6b707b;
+  --untrusted: #f08a3e;
+  --untrusted-tint: #3a2414;
+  --secret: #e77bd3;
+  --secret-tint: #371a31;
+  --allow: #5bc98a;
+  --allow-tint: #14301f;
+  --hold: #ff8a7a;
+  --hold-tint: #3a1714;
+  --highlight: #ffd23f;
+  --on-highlight: #15171c;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px rgb(0 0 0 / 0.45);
+  --shadow-2: 0 16px 40px rgb(0 0 0 / 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-2: 0ms;
+    --dur-3: 0ms;
+    --dur-trace-step: 0ms;
+  }
+}
