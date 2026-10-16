@@ -12,6 +12,7 @@ import type {
   ForensicReport,
   GraphAt,
   HealResult,
+  HealthStatus,
   MemoryEntry,
   PostedEntry,
   RunResult,
@@ -25,15 +26,59 @@ export const PUBLIC_PAGE_SINK = "sink:public_release_page";
 
 /** Hosted mode (PW_AUTH=on): the workspace key, from `?key=` (kept for the tab session) or
  *  VITE_API_KEY. Local mode needs none. It is sent only in the Authorization header. */
+const BUILT_IN_KEY = import.meta.env.VITE_API_KEY as string | undefined;
+
 function apiKey(): string | null {
-  const fromUrl = new URLSearchParams(window.location.search).get("key");
+  const url = new URL(window.location.href);
+  const fromUrl = url.searchParams.get("key");
+  if (fromUrl) {
+    // keep the key out of the address bar, history and screenshots once it is stored
+    url.searchParams.delete("key");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }
   try {
     if (fromUrl) window.sessionStorage.setItem("pw_key", fromUrl);
-    return window.sessionStorage.getItem("pw_key") ?? (import.meta.env.VITE_API_KEY as string | undefined) ?? null;
+    return window.sessionStorage.getItem("pw_key") ?? BUILT_IN_KEY ?? null;
   } catch {
-    return fromUrl ?? (import.meta.env.VITE_API_KEY as string | undefined) ?? null;
+    return fromUrl ?? BUILT_IN_KEY ?? null;
   }
 }
+
+// a key typed on the sign-in screen when sessionStorage is blocked lives here for the page's lifetime
+let memoryKey: string | null = null;
+
+/** The key the sign-in form saved (tab session only). */
+export function saveKey(key: string): void {
+  memoryKey = key;
+  try {
+    window.sessionStorage.setItem("pw_key", key);
+  } catch {
+    /* storage blocked: the in-memory copy still works until the tab is reloaded */
+  }
+}
+
+export function clearKey(): void {
+  memoryKey = null;
+  try {
+    window.sessionStorage.removeItem("pw_key");
+  } catch {
+    /* nothing to clear */
+  }
+}
+
+/** Where the current key (if any) comes from; the UI shows it, never the key itself. */
+export function keySource(): "session" | "built-in" | "none" {
+  let stored: string | null = null;
+  try {
+    stored = window.sessionStorage.getItem("pw_key");
+  } catch {
+    stored = null;
+  }
+  if (stored || memoryKey) return "session";
+  return BUILT_IN_KEY ? "built-in" : "none";
+}
+
+export const workspaceName = (): string => WS;
 
 /** An error answered by the API in the documented `{"error", "detail"}` shape. */
 export class ApiError extends Error {
@@ -56,7 +101,7 @@ async function request<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  const key = apiKey();
+  const key = memoryKey ?? apiKey();
   if (key) headers["Authorization"] = `Bearer ${key}`;
   // risk-increasing actions (approve, release, apply): a deliberate-action guard, not authentication
   if (human) headers["X-PW-Human"] = "true";
@@ -78,6 +123,7 @@ async function request<T>(
 const ws = (path: string): string => `/ws/${WS}${path}`;
 
 export const api = {
+  health: () => request<HealthStatus>("GET", "/health"),
   evalSummary: () => request<EvalSummary>("GET", "/eval/summary"),
   capState: (topology: string) => request<CapState>("GET", `/remediation/${topology}`),
   capReset: (topology: string) =>

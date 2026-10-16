@@ -1,5 +1,7 @@
 import cytoscape from "cytoscape";
 import { useEffect, useRef } from "react";
+import { reducedMotion } from "../gsap";
+import { Icon } from "../ui/Icon";
 import { useThemeTick } from "../hooks";
 import type { CapEdge, CapNode } from "../api/types";
 
@@ -18,13 +20,13 @@ function palette(): Record<string, string> {
   const css = getComputedStyle(document.documentElement);
   const read = (name: string, fallback: string): string => css.getPropertyValue(name).trim() || fallback;
   return {
-    fg: read("--fg", "#1d2330"),
-    card: read("--card", "#ffffff"),
-    edge: read("--edge", "#8b93a5"),
-    untrusted: read("--untrusted", "#d9730d"),
-    secret: read("--secret", "#c2185b"),
-    red: read("--red", "#b3261e"),
-    accent: read("--accent", "#2456d3"),
+    fg: read("--ink", "#0e1116"),
+    card: read("--surface", "#ffffff"),
+    edge: read("--graph-edge", "#6b7482"),
+    untrusted: read("--untrusted-line", "#c2620a"),
+    secret: read("--secret", "#b0175e"),
+    red: read("--hold", "#b42318"),
+    accent: read("--ink", "#0e1116"),
   };
 }
 
@@ -38,6 +40,7 @@ function label(n: CapNode): string {
  *  a revoked flow is dashed and faded, the previewed cut is thick. Colour is never the only cue. */
 export function CapabilityGraph({ nodes, edges, selected, cut, onSelect }: Props) {
   const container = useRef<HTMLDivElement>(null);
+  const cyRef = useRef<cytoscape.Core | null>(null);
   const select = useRef(onSelect);
   select.current = onSelect;
   const theme = useThemeTick();
@@ -67,14 +70,15 @@ export function CapabilityGraph({ nodes, edges, selected, cut, onSelect }: Props
           style: {
             label: "data(label)",
             "text-wrap": "wrap",
-            "text-max-width": "110px",
-            "font-size": 9,
+            "text-max-width": "124px",
+            "font-size": 12,
+            "font-family": "Atkinson Hyperlegible Next, system-ui, sans-serif",
             color: c.fg,
             "text-valign": "center",
             "text-halign": "center",
             shape: "round-rectangle",
-            width: 116,
-            height: 34,
+            width: 134,
+            height: 40,
             "background-color": c.card,
             "border-width": 2,
             "border-color": c.edge,
@@ -96,7 +100,8 @@ export function CapabilityGraph({ nodes, edges, selected, cut, onSelect }: Props
             "target-arrow-shape": "triangle",
             "curve-style": "bezier",
             label: "data(text)",
-            "font-size": 8,
+            "font-size": 11,
+            "font-family": "Atkinson Hyperlegible Next, system-ui, sans-serif",
             color: c.fg,
             "text-background-color": c.card,
             "text-background-opacity": 0.8,
@@ -107,12 +112,30 @@ export function CapabilityGraph({ nodes, edges, selected, cut, onSelect }: Props
       ],
     });
     cy.on("tap", "node.agent", (event) => select.current(event.target.id() as string));
-    return () => cy.destroy();
+    cyRef.current = cy;
+    return () => {
+      cyRef.current = null;
+      cy.destroy();
+    };
   }, [nodes, edges, selected, cut, theme]);
 
+  const zoom = (factor: number): void => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.animate({ zoom: { level: cy.zoom() * factor, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } } }, { duration: reducedMotion() ? 0 : 240 });
+  };
+  const toxic = nodes.filter((n) => n.toxic).length;
+
   return (
-    <div>
-      <div ref={container} className="graph cap-graph" role="img" aria-label="Capability graph" />
+    <div className="graph-wrap">
+      <div className="graph-toolbar" role="toolbar" aria-label="Graph controls">
+        <span className="graph-zoom">
+          <button type="button" className="icon-btn" onClick={() => zoom(1.25)} aria-label="Zoom in"><Icon name="plus" /></button>
+          <button type="button" className="icon-btn" onClick={() => zoom(0.8)} aria-label="Zoom out"><Icon name="minus" /></button>
+          <button type="button" className="icon-btn" onClick={() => cyRef.current?.animate({ fit: { eles: cyRef.current.elements(), padding: 16 } }, { duration: reducedMotion() ? 0 : 360 })} aria-label="Fit graph to view"><Icon name="fit" /></button>
+        </span>
+      </div>
+      <div ref={container} className="graph cap-graph" role="img" aria-label={`Capability graph: ${nodes.filter((n) => n.kind === "agent").length} agents, ${toxic} toxic. The agents are also listed as buttons above the graph.`} />
       <ul className="legend" aria-label="Capability graph legend">
         <li><span className="swatch sw-source" /> source: U untrusted, S secret, I internal</li>
         <li>⚠ toxic agent (double red border): reads untrusted and secret data and can reach outside</li>

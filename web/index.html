@@ -1,9 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Pathwarden: a lineage gate that holds an agent action when untrusted and secret data meet." />
+    <meta name="theme-color" content="#f4f5f7" />
     <title>Pathwarden</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script>
+      // before first paint: light by default, dark/system only when chosen (no flash)
+      (function () {
+        var theme = "light";
+        try {
+          var pref = localStorage.getItem("pw_theme");
+          if (pref === "dark") theme = "dark";
+          else if (pref === "system" && matchMedia("(prefers-color-scheme: dark)").matches) theme = "dark";
+        } catch (e) {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

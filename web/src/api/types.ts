@@ -156,6 +156,12 @@ export interface PostedEntry {
   content: string;
 }
 
+/** `GET /api/health`: `graphs` is omitted in hosted mode (tenant names are never listed). */
+export interface HealthStatus {
+  falkordb: string;
+  graphs?: string[];
+}
+
 export interface ApiErrorBody {
   error: string;
   detail: string;
