@@ -11,7 +11,7 @@ case "$first" in
   "Merge "*|"Revert "*) exit 0 ;;
 esac
 
-if printf '%s' "$first" | grep -Eq '^P([0-9]|1[0-2])[a-d]?: (feat|fix|test|refactor|docs|chore|ci|perf)(\([a-z0-9_.-]+\))?: .{3,}$'; then
+if printf '%s' "$first" | grep -Eq '^P([0-9]|1[0-3])[a-d]?: (feat|fix|test|refactor|docs|chore|ci|perf)(\([a-z0-9_.-]+\))?: .{3,}$'; then
   exit 0
 fi
 

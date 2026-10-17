@@ -1,0 +1,72 @@
+/* Design tokens. Light is the default; dark applies when <html data-theme="dark"> (set by theme.ts).
+ * Colours are literal hex on purpose: Cytoscape reads them through getComputedStyle, which returns
+ * custom properties unresolved. Contrast was computed (WCAG 2.x): text >= 4.5:1, UI lines >= 3:1. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #eceef1;
+  --line: #dfe2e7;
+  --control: #7f8794;
+  --ink: #0e1116;
+  --ink-2: #3b4350;
+  --ink-3: #5e6775;
+  --on-ink: #ffffff;
+  --focus: #0e1116;
+
+  --untrusted: #b45309;
+  --untrusted-line: #c2620a;
+  --untrusted-tint: #fff1e0;
+  --secret: #b0175e;
+  --secret-tint: #fce7f1;
+  --hold: #b42318;
+  --hold-tint: #fdecea;
+  --allow: #137a48;
+  --allow-tint: #e4f4ea;
+  --quarantine: #5b6472;
+  --quarantine-tint: #e9ebef;
+  --graph-edge: #6b7482;
+
+  --shadow: 0 1px 2px rgb(14 17 22 / 0.06), 0 8px 24px rgb(14 17 22 / 0.08);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0d10;
+  --surface: #13161b;
+  --surface-2: #1a1e24;
+  --line: #272c34;
+  --control: #636b78;
+  --ink: #eceff3;
+  --ink-2: #b4bbc6;
+  --ink-3: #8f98a5;
+  --on-ink: #0b0d10;
+  --focus: #eceff3;
+
+  --untrusted: #f5a142;
+  --untrusted-line: #f5a142;
+  --untrusted-tint: #2e1f0e;
+  --secret: #ff7ab6;
+  --secret-tint: #33121f;
+  --hold: #ff8a7a;
+  --hold-tint: #36140f;
+  --allow: #5ad394;
+  --allow-tint: #0f2a1c;
+  --quarantine: #9aa3b0;
+  --quarantine-tint: #1f242b;
+  --graph-edge: #7d8696;
+
+  --shadow: 0 0 0 1px var(--control);
+}
+
+:root {
+  --sans: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Atkinson Hyperlegible Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px;
+
+  --dur-1: 120ms; --dur-2: 180ms; --dur-3: 240ms; --dur-4: 400ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}

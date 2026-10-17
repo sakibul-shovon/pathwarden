@@ -281,6 +281,20 @@ Date format: `YYYY-MM-DD`. Setup entries below were written 2026-10-15 during bl
 - **`make setup` and `scripts/wait_for_db.py`** were added so the plan's quickstart `make up && make demo` works from a clean clone: without a virtualenv `make demo` had no dependencies, and `make up` returned before the database accepted commands. Both were found by running the clean-clone test, not by reading.
 - **Deployment is not done**: it needs the owner's accounts, and the FalkorDB capability probe must run against the chosen host first (A-15, `docs/DEPLOY.md`).
 
+## Part B15 — P13a UI redesign (2026-10-17)
+
+### D-032 — the owner ordered a UI redesign that departs from plan.md §6/§19 (needs the owner's confirmation in plan.md)
+- **Status:** Accepted on the owner's explicit instruction in chat ("ignore the plan.md conflict, use an animation library"); `plan.md` was **not** edited and now differs from the shipped UI: §19 says "plain CSS, light/dark via `prefers-color-scheme`, six tabs" and §6 lists only React, Vite, TypeScript and cytoscape.
+- **What changed (presentation only):** a Home page and a console shell; light theme by default with a Light/Dark/System switch (`localStorage.pw_theme`); a sign-in screen for `PW_AUTH=on`; every tab restyled with the same ids and labels. Plan: `ui-redesign.md`.
+- **Dependencies added with the owner's approval (rule 12):** `motion@14.3.0` (React state transitions, presence, springs), `gsap@3.15.0` + `@gsap/react@2.1.2` (SVG timelines: hero route, the agent pipeline packets, the witness-route trace), `@fontsource/atkinson-hyperlegible-next@5.3.0` and `-mono@5.3.0` (OFL-1.1). `npm audit --omit=dev`: 0 vulnerabilities.
+- **Behaviour changes, all deliberate:** tab clicks update the URL (`?tab=`, `ws` kept) and Back works; the one-shot parameters `autorun`, `autoforensics`, `autoheal` fire once and are removed from the URL, so leaving a tab and coming back (or pressing Back) never repeats a run or a human-only action; `?key=` is stored in `sessionStorage` and removed from the address bar; `window.confirm` was replaced by a native `<dialog>` for the two risk-increasing confirmations (release quarantine, apply cut), still explicit and cancellable; with no `?tab=` the Home opens unless the link carries `scenario`, `guard` or `autorun` (then Run, as before).
+- **Unchanged:** `request()` semantics (the `Authorization` bearer only when a key exists, `X-PW-Human` on exactly the four human calls, the same endpoints, bodies and polling intervals), `types.ts` except one additive `HealthStatus`, the graph encodings, the LEAK regex, every disabled-with-reason control.
+- **Additive reads:** `GET /api/health` every 15 s (status pill), one probe `GET /ws/{ws}/scenarios` when a console view opens (tells local from hosted mode), and the Investigate action poll now runs in the shell (inbox badge) while a console view is open.
+- **Honest limits:** the API answers a run only when it is finished, so the "agent activity" is a labelled replay of the recorded run (`useReplay`), not a live stream; the Forensic Agent plan is filled from one report. Both are stated in the UI.
+
+### D-033 — commit-msg hook allows phase 13
+- The hook regex accepted `P0`..`P12` only (its own header says `P<n>[a-d]`). It now accepts `P0`..`P13`. Nothing else in the hook changed; no hook was bypassed.
+
 ## Part C — Probe outcomes (P0, 2026-10-15; `make probe` = 35 PASS, 0 FAIL, 0 NOTE)
 
 Environment: FalkorDB image `falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a` (created 2026-10-14; graph module `ver 42201`, server `redis_version 8.10.2`) · `falkordb` Python client **1.8.0** · Python 3.11.9. D-012 is done: compose and CI pin that digest.

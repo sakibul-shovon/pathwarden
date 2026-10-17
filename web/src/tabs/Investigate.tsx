@@ -1,45 +1,36 @@
-import { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, m } from "motion/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { ActionDetail, Explain, ForensicReport, HealResult } from "../api/types";
 import { LineageGraph } from "../components/LineageGraph";
 import { RuleOfTwoBadge } from "../components/RuleOfTwo";
-import { errorText, usePoll } from "../hooks";
+import { errorText } from "../hooks";
+import { ResponsePlan } from "../investigate/ResponsePlan";
+import { useActions } from "../shell/actions";
+import { ViewHeader } from "../shell/AppShell";
+import { StatusChip } from "../ui/Chip";
+import { CodeBlock } from "../ui/CodeBlock";
+import { Icon } from "../ui/Icon";
+import { useNav } from "../nav";
 
 interface Loaded {
   action: ActionDetail;
   explain: Explain;
 }
 
-function VerdictCard({ action }: { action: ActionDetail }) {
-  const gate = action.gate;
-  const tone = gate.verdict === "ALLOW" ? "green" : gate.verdict === "HOLD" ? "red" : "dark";
+function PathList({ title, ids, kind }: { title: string; ids: string[]; kind: "u" | "s" }) {
+  if (ids.length === 0) return null;
   return (
-    <div className="card verdict">
-      <div className="row">
-        <span className={`badge ${tone}`}>{gate.verdict}</span>
-        <strong>{gate.reason}</strong>
-        <span className="muted">recorded status: {action.status}</span>
-      </div>
-      <dl className="facts">
-        <div><dt>Decision latency</dt><dd>{gate.latency_ms.toFixed(1)} ms</dd></div>
-        <div><dt>LLM calls</dt><dd>{gate.llm_calls}</dd></div>
-        <div><dt>Sink</dt><dd>{action.sink_id}{action.external ? " (external)" : " (internal)"}</dd></div>
-      </dl>
-      {gate.reason === "QUARANTINED_LINEAGE" && (
-        <p className="muted">
-          The payload&apos;s lineage is now quarantined, so the gate blocks it. The original verdict was
-          recorded as <strong>{action.status}</strong>; the witness paths below are still drawn on the graph.
-        </p>
-      )}
-      {gate.untrusted_witness.length > 0 && (
-        <p><span className="tag u">untrusted witness</span> <code>{gate.untrusted_witness.join(" → ")}</code></p>
-      )}
-      {gate.secret_witness.length > 0 && (
-        <p><span className="tag s">secret witness</span> <code>{gate.secret_witness.join(" → ")}</code></p>
-      )}
-      {gate.quarantined_ancestors.length > 0 && (
-        <p><span className="tag q">quarantined ancestors</span> <code>{gate.quarantined_ancestors.join(", ")}</code></p>
-      )}
+    <div className={`path path-${kind}`}>
+      <h3><span className={`tag ${kind}`}>{title}</span></h3>
+      <ol>
+        {ids.map((id, i) => (
+          <li key={`${id}-${i}`}>
+            <code>{id}</code>
+            {i === ids.length - 1 && <span className="muted"> · source</span>}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -53,50 +44,12 @@ function Diff({ held, healed }: { held: string; healed: string }) {
     <div className="diff">
       <div>
         <h4>Held payload (main graph)</h4>
-        <pre>{heldLines.map((l, i) => <span key={i} className={inHealed.has(l) ? undefined : "del"}>{l + "\n"}</span>)}</pre>
+        <pre>{heldLines.map((l, i) => <span key={i} className={inHealed.has(l) ? "ctx" : "del"}><i aria-hidden="true">{inHealed.has(l) ? " " : "−"}</i>{l + "\n"}</span>)}</pre>
       </div>
       <div>
         <h4>Healed payload (sandbox graph)</h4>
-        <pre>{healedLines.map((l, i) => <span key={i} className={inHeld.has(l) ? undefined : "add"}>{l + "\n"}</span>)}</pre>
+        <pre>{healedLines.map((l, i) => <span key={i} className={inHeld.has(l) ? "ctx" : "add"}><i aria-hidden="true">{inHeld.has(l) ? " " : "+"}</i>{l + "\n"}</span>)}</pre>
       </div>
-    </div>
-  );
-}
-
-function Report({ report }: { report: ForensicReport }) {
-  return (
-    <div className="card">
-      <h3>Forensic report</h3>
-      <dl className="facts">
-        <div><dt>Untrusted source</dt><dd><code>{report.untrusted_source || "(none found)"}</code></dd></div>
-        <div><dt>Quarantine</dt><dd>{report.quarantine_id ?? "nothing new to quarantine"}</dd></div>
-        <div><dt>Quarantined artifacts</dt><dd>{report.quarantined_artifacts.length}</dd></div>
-        <div><dt>Affected actions</dt><dd>{report.affected_actions.join(", ") || "—"}</dd></div>
-        <div>
-          <dt>Sandbox re-run</dt>
-          <dd>{report.sandbox ? `${report.sandbox.new_action_id}: ${report.sandbox.verdict} / ${report.sandbox.reason}` : "—"}</dd>
-        </div>
-        <div><dt>Mode</dt><dd>{report.mode} · LLM calls {report.llm_calls} · fallback {String(report.fallback_used)}</dd></div>
-      </dl>
-      <p>
-        Recommendation:{" "}
-        <span className={report.recommendation === "APPROVE_HEALED_RELEASE" ? "badge green" : "badge red"}>
-          {report.recommendation}
-        </span>
-      </p>
-      {report.laundering_memories.length > 0 && (
-        <table>
-          <thead><tr><th>poisoned memory</th><th>key</th><th>written by</th><th>session</th><th>day</th></tr></thead>
-          <tbody>
-            {report.laundering_memories.map((m) => (
-              <tr key={m.memory_id}>
-                <td><code>{m.memory_id}</code></td><td>{m.memory_key}</td><td>{m.written_by}</td>
-                <td><code>{m.written_in_session}</code></td><td>{m.written_on}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
     </div>
   );
 }
@@ -104,11 +57,14 @@ function Report({ report }: { report: ForensicReport }) {
 export function InvestigateTab({
   autoForensics,
   autoHeal,
+  onAutoConsumed,
 }: {
   autoForensics: boolean;
   autoHeal: boolean;
+  onAutoConsumed?: (name: "autoforensics" | "autoheal") => void;
 }) {
-  const actions = usePoll(api.actions, 3000);
+  const { go } = useNav();
+  const actions = useActions();
   const [selected, setSelected] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [report, setReport] = useState<ForensicReport | null>(null);
@@ -164,6 +120,7 @@ export function InvestigateTab({
     }
   }, []);
 
+  const reloadActions = actions.reload;
   const approveHeal = useCallback(
     async (id: string) => {
       setBusy("heal");
@@ -171,29 +128,31 @@ export function InvestigateTab({
       try {
         setHeal(await api.healApprove(id));
         setVersion((v) => v + 1);
-        actions.reload();
+        reloadActions();
       } catch (err) {
         setError(errorText(err));
       } finally {
         setBusy(null);
       }
     },
-    [actions],
+    [reloadActions],
   );
 
   useEffect(() => {
     if (autoForensics && !autoDone && loaded) {
       setAutoDone(true);
+      onAutoConsumed?.("autoforensics");
       void runForensics(loaded.action.id);
     }
-  }, [autoForensics, autoDone, loaded, runForensics]);
+  }, [autoForensics, autoDone, loaded, runForensics, onAutoConsumed]);
 
   // deep-link hook (?autoheal=1): approve the healed release once the report recommends it
   useEffect(() => {
     if (autoHeal && loaded && report?.recommendation === "APPROVE_HEALED_RELEASE" && !heal && busy === null) {
+      onAutoConsumed?.("autoheal");
       void approveHeal(loaded.action.id);
     }
-  }, [autoHeal, loaded, report, heal, busy, approveHeal]);
+  }, [autoHeal, loaded, report, heal, busy, approveHeal, onAutoConsumed]);
 
   const select = (id: string): void => {
     setSelected(id);
@@ -205,117 +164,199 @@ export function InvestigateTab({
   };
 
   const list = actions.data ?? [];
+  const needs = list.filter((a) => a.status === "held" || a.status === "blocked");
+  const resolved = list.filter((a) => !(a.status === "held" || a.status === "blocked"));
+  const gate = loaded?.explain.gate;
+  const summary = useMemo(
+    () =>
+      loaded && gate
+        ? `Lineage of ${loaded.action.payload_id}: ${loaded.explain.subgraph.nodes.length} nodes. Untrusted route of ${gate.untrusted_witness.length} steps, secret route of ${gate.secret_witness.length} steps. The routes are listed as text beside the graph.`
+        : undefined,
+    [loaded, gate],
+  );
+
+  const row = (a: (typeof list)[number]) => (
+    <li key={a.id}>
+      <button type="button" className={a.id === selected ? "inbox-item active" : "inbox-item"} aria-current={a.id === selected ? "true" : undefined} onClick={() => select(a.id)}>
+        <code>{a.id}</code>
+        <StatusChip status={a.status} />
+        <span className="muted inbox-payload">{a.payload_id}</span>
+      </button>
+    </li>
+  );
+
   return (
     <section aria-label="Investigate">
-      {error && <div className="banner red" role="alert">{error}</div>}
-      {actions.error && <div className="banner red" role="alert">{actions.error}</div>}
+      <ViewHeader id="investigate" />
+      {error && <div className="notice notice-hold" role="alert"><Icon name="alert" /> {error}</div>}
+      {actions.error && <div className="notice notice-hold" role="alert"><Icon name="alert" /> {actions.error}</div>}
+
       <div className="split">
-        <aside className="card">
-          <h3>Actions</h3>
+        <aside className="panel inbox" aria-label="Actions">
+          <h2>Inbox</h2>
           {list.length === 0 ? (
-            <p className="muted">No actions yet. Run a scenario in the Run tab first.</p>
+            <div className="empty-mini">
+              <p className="muted">No actions yet.</p>
+              <button type="button" className="btn btn-solid" onClick={() => go("run")}>Run a scenario</button>
+            </div>
           ) : (
-            <ul className="actions">
-              {list.map((a) => (
-                <li key={a.id}>
-                  <button type="button" className={a.id === selected ? "item active" : "item"} onClick={() => select(a.id)}>
-                    <code>{a.id}</code> <span className={`status ${a.status}`}>{a.status}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="inbox-caption">Needs review <span className="badge-count">{needs.length}</span></p>
+              <ul className="inbox-list">{needs.map(row)}</ul>
+              {needs.length === 0 && <p className="muted">Nothing needs review.</p>}
+              {resolved.length > 0 && (
+                <>
+                  <p className="inbox-caption">Resolved</p>
+                  <ul className="inbox-list">{resolved.map(row)}</ul>
+                </>
+              )}
+            </>
           )}
+          <p className="muted inbox-poll"><span className="pulse-dot" aria-hidden="true" /> Checks for new actions every 3 s</p>
         </aside>
 
-        <div className="main">
-          {!loaded && selected && <p className="muted">Loading {selected}…</p>}
-          {loaded && (
+        <div className="case">
+          {!loaded && selected && (
+            <div className="panel skeleton-panel" aria-busy="true">
+              <span className="skeleton sk-title" /><span className="skeleton sk-line" /><span className="skeleton sk-graph" />
+              <span className="sr-only">Loading {selected}…</span>
+            </div>
+          )}
+          {loaded && gate && (
             <>
-              <VerdictCard action={loaded.action} />
+              <m.div className={`panel verdict verdict-${gate.verdict}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.26 }}>
+                <div className="verdict-top">
+                  <StatusChip status={gate.verdict} />
+                  <strong className="verdict-reason">{gate.reason}</strong>
+                  <span className="muted">recorded status: <StatusChip status={loaded.action.status} /></span>
+                </div>
+                <dl className="facts">
+                  <div><dt>Decision latency</dt><dd className="mono">{gate.latency_ms.toFixed(1)} ms</dd></div>
+                  <div><dt>LLM calls</dt><dd className="mono">{gate.llm_calls}</dd></div>
+                  <div><dt>Sink</dt><dd>{loaded.action.sink_id}{loaded.action.external ? " (external)" : " (internal)"}</dd></div>
+                </dl>
+                {gate.reason === "QUARANTINED_LINEAGE" && (
+                  <p className="muted">
+                    The payload&apos;s lineage is now quarantined, so the gate blocks it. The original verdict was
+                    recorded as <strong>{loaded.action.status}</strong>; the witness paths below are still drawn on the graph.
+                  </p>
+                )}
+                {gate.quarantined_ancestors.length > 0 && (
+                  <p><span className="tag q">quarantined ancestors</span> <code>{gate.quarantined_ancestors.join(", ")}</code></p>
+                )}
+              </m.div>
 
-              <div className="card">
-                <h3>Lineage of the payload</h3>
-                <LineageGraph
-                  nodes={loaded.explain.subgraph.nodes}
-                  edges={loaded.explain.subgraph.edges}
-                  untrustedWitness={loaded.explain.gate.untrusted_witness}
-                  secretWitness={loaded.explain.gate.secret_witness}
-                />
+              <div className="panel">
+                <div className="panel-head"><h2>Lineage of the payload</h2><span className="muted">Why it was stopped</span></div>
+                <div className="lineage-grid">
+                  <LineageGraph
+                    nodes={loaded.explain.subgraph.nodes}
+                    edges={loaded.explain.subgraph.edges}
+                    untrustedWitness={gate.untrusted_witness}
+                    secretWitness={gate.secret_witness}
+                    summary={summary}
+                  />
+                  <div className="evidence">
+                    <h3>Evidence as text</h3>
+                    <PathList title="untrusted witness" ids={gate.untrusted_witness} kind="u" />
+                    <PathList title="secret witness" ids={gate.secret_witness} kind="s" />
+                    {gate.untrusted_witness.length === 0 && gate.secret_witness.length === 0 && <p className="muted">No witness paths for this verdict.</p>}
+                  </div>
+                </div>
                 {Object.entries(loaded.explain.queries).map(([name, text]) => (
-                  <details key={name}>
+                  <details key={name} className="disclosure">
                     <summary>{name} (read-only; exactly what the gate runs)</summary>
-                    <pre className="query">{text}</pre>
+                    <CodeBlock text={text} label={name} />
                   </details>
                 ))}
               </div>
 
               {loaded.explain.laundering.length > 0 && (
-                <div className="card">
-                  <h3>Memory laundering</h3>
-                  <p className="muted">
-                    Untrusted text reached this payload through shared team memory, written in an earlier session:
-                  </p>
-                  <table>
-                    <thead><tr><th>memory</th><th>key</th><th>written by</th><th>session</th><th>day</th><th>untrusted source</th></tr></thead>
-                    <tbody>
-                      {loaded.explain.laundering.map((m) => (
-                        <tr key={m.memory_id}>
-                          <td><code>{m.memory_id}</code></td><td>{m.memory_key}</td><td>{m.written_by}</td>
-                          <td><code>{m.written_in_session}</code></td><td>{m.written_on}</td><td><code>{m.untrusted_source}</code></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="panel">
+                  <h2>Memory laundering</h2>
+                  <p className="muted">Untrusted text reached this payload through shared team memory, written in an earlier session:</p>
+                  <div className="scroll">
+                    <table>
+                      <thead><tr><th>memory</th><th>key</th><th>written by</th><th>session</th><th>day</th><th>untrusted source</th></tr></thead>
+                      <tbody>
+                        {loaded.explain.laundering.map((mem) => (
+                          <tr key={mem.memory_id}>
+                            <td><code>{mem.memory_id}</code></td><td>{mem.memory_key}</td><td>{mem.written_by}</td>
+                            <td><code>{mem.written_in_session}</code></td><td>{mem.written_on}</td><td><code>{mem.untrusted_source}</code></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
-              <div className="card">
-                <h3>Forensics</h3>
+              <div className="panel">
+                <div className="panel-head">
+                  <h2>Forensic Agent</h2>
+                  <span className="muted">Mode: scripted (LLM mode arrives in P8)</span>
+                </div>
                 <p className="muted">
                   Finds the poisoned memory, quarantines everything derived from the untrusted source (reversible),
                   re-runs the work in a sandbox copy of the graph and gates the result. It never reads content.
                 </p>
-                <div className="row">
-                  <label>
-                    Mode
-                    <select disabled><option>scripted</option></select>
-                  </label>
-                  <button type="button" className="primary" disabled={busy !== null} onClick={() => void runForensics(loaded.action.id)}>
-                    {busy === "forensics" ? "Investigating…" : "Run forensics"}
+                <ResponsePlan report={report} busy={busy === "forensics"} heal={heal} />
+                <div className="plan-actions">
+                  <button type="button" className="btn btn-solid" disabled={busy !== null} onClick={() => void runForensics(loaded.action.id)}>
+                    <Icon name="bolt" /> {busy === "forensics" ? "Investigating…" : report ? "Run forensics again" : "Run forensics"}
                   </button>
-                  <span className="muted">(LLM mode arrives in P8)</span>
+                  {report && (
+                    <span className="muted">
+                      Mode {report.mode} · LLM calls {report.llm_calls} · fallback {String(report.fallback_used)} · affected actions {report.affected_actions.join(", ") || "—"}
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {report && <Report report={report} />}
               {report && diff && (
-                <div className="card">
-                  <h3>Held vs healed</h3>
+                <div className="panel">
+                  <h2>Held vs healed</h2>
                   <Diff held={diff.held} healed={diff.healed} />
                 </div>
               )}
 
-              {report?.recommendation === "APPROVE_HEALED_RELEASE" && !heal && (
-                <div className="card">
-                  <h3>Release</h3>
-                  <p>Releasing is a risk-increasing action, so it needs a human decision.</p>
-                  <button type="button" className="primary" disabled={busy !== null} onClick={() => void approveHeal(loaded.action.id)}>
-                    {busy === "heal" ? "Releasing…" : "Approve healed release"}
-                  </button>
-                </div>
-              )}
+              <AnimatePresence>
+                {report?.recommendation === "APPROVE_HEALED_RELEASE" && !heal && (
+                  <m.div className="panel approve" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.26 }}>
+                    <div className="approve-text">
+                      <h2><Icon name="user" /> Your decision</h2>
+                      <p>Releasing is a risk-increasing action, so it needs a person.</p>
+                      <p className="muted">
+                        It publishes the healed release from the sandbox run. The held action <code>{loaded.action.id}</code> becomes superseded only if the new release is executed.
+                      </p>
+                    </div>
+                    <button type="button" className="btn btn-solid" disabled={busy !== null} onClick={() => void approveHeal(loaded.action.id)}>
+                      {busy === "heal" ? "Releasing…" : "Approve healed release"}
+                    </button>
+                  </m.div>
+                )}
+              </AnimatePresence>
 
               {heal && (
-                <div className={heal.superseded ? "banner green" : "banner red"} role="status">
-                  {heal.superseded
-                    ? `Healed release ${heal.actions[0]?.id} executed; ${loaded.action.id} is superseded.`
-                    : `The healed run was not released (${heal.actions[0]?.status} / ${heal.actions[0]?.reason}).`}
+                <m.div className={heal.superseded ? "notice notice-allow" : "notice notice-hold"} role="status" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
+                  <Icon name={heal.superseded ? "check" : "alert"} />
                   <div>
-                    {heal.sessions.map((s) => (
-                      <span key={s.id} className="inline"><code>{s.id}</code> <RuleOfTwoBadge data={s.rule_of_two} /></span>
-                    ))}
+                    {heal.superseded
+                      ? `Healed release ${heal.actions[0]?.id} executed; ${loaded.action.id} is superseded.`
+                      : `The healed run was not released (${heal.actions[0]?.status} / ${heal.actions[0]?.reason}).`}
+                    <div className="notice-sessions">
+                      {heal.sessions.map((s) => (
+                        <span key={s.id} className="inline"><code>{s.id}</code> <RuleOfTwoBadge data={s.rule_of_two} /></span>
+                      ))}
+                    </div>
+                    {heal.superseded && (
+                      <div className="notice-next">
+                        <button type="button" className="btn btn-quiet" onClick={() => go("memory")}>Review team memory <Icon name="forward" /></button>
+                        <button type="button" className="btn btn-quiet" onClick={() => go("remediate")}>Prevent this class of leak <Icon name="forward" /></button>
+                      </div>
+                    )}
                   </div>
-                </div>
+                </m.div>
               )}
             </>
           )}
