@@ -2,7 +2,7 @@
 
 Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the real repository (git state, `make test`) before trusting it. Keep it factual; no history — that belongs in `PROGRESS.md`.
 
-## Header
+## Header (P8 live LLM, written 2026-10-17 evening: see the section at the end; the text below is the P13a handoff)
 - **Written:** 2026-10-17 (UI redesign, P13a) · **Agent / tool / model:** Claude Code / Opus 5.5 (plan) and Sonnet 5.5 (implementation)
 - **Takeover notes** (filled by the next agent: what differed from this file):
   -
@@ -39,3 +39,11 @@ Rules: `docs/WORKFLOW.md` §5. The next agent must **verify** this against the r
 
 ## Next action (exactly one)
 Ask the owner to review the redesign at `http://localhost:5173/` (real API on 8001 is running), then decide on merging `phase/p13a-homepage`. Then decide on pushing `main` (needs `PW_ALLOW_MAIN=1`, owner's call) and try hosted mode (`PW_AUTH=on`) against the real API.
+
+
+## P8 update (2026-10-17, evening) - supersedes "Next action" above where they differ
+- Branch `phase/p8-live-llm` (from `main` = the P13a merge). **Not merged, not pushed.** Built: LLM seam (`api/llm.py`, LiteLLM `1.100.3` pinned, D-035), live agents (`api/agents/live.py`, prompts verbatim in `api/agents/prompts/`), live mode and a visitor's own issue (`POST /scenarios/custom/run`), LLM forensic plan with hints and a scripted fallback, UI (Live radio, "Bring your own issue", LLM forensics), step limit configurable (A-18). Decisions D-035..D-037.
+- **Verified with a real model** `groq/qwen/qwen3.8-27b` (Groq free tier, 429s occur): see PROGRESS and D-037. gpt-oss models do not work with the plan's prompts. 573 backend tests pass in both auth modes.
+- **Secrets:** the owner pasted a Groq key in chat twice; the agent cannot write `.env` (settings deny), so the key was passed once as process environment to `docker compose up` (the API container currently runs with it). **The owner will revoke it.** After revoking: `docker compose ... up -d --force-recreate api` without the variables, or put a new key in `.env` yourself (`PW_LLM_MODEL`, `PW_LLM_API_KEY`, optional `PW_LLM_MAX_STEPS`, `PW_LLM_REASONING_EFFORT`); compose reads an optional `.env`.
+- Local setup that differs from the repo: port 8000 is taken by another project, so the API is published on 8001 through a compose override kept outside the repo, and Vite runs with `VITE_PROXY_TARGET=http://localhost:8001`.
+- **Open:** P8-T8 (B1/B3 judges, `eval/baselines/`), P8-T9 (live study, `make eval-live` is still a stub that exits 1; it spends tokens, so ask the owner first), owner decisions on A-18 and D-036 (own-issue endpoint is beyond plan §19), merge of `phase/p8-live-llm`.
