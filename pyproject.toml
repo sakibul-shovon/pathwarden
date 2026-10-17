@@ -22,6 +22,11 @@ dependencies = [
 mcp = [
   "mcp>=2,<3",  # P9; the 2.x API differs from 1.x (FastMCP renamed), see scripts/probe_mcp.py
 ]
+llm = [
+  # P8 (live agents, LLM forensics, judges). Pinned to one exact release: litellm 1.82.7 and 1.82.8
+  # on PyPI were malicious (March 2026); 1.100.3 (2026-09-25) is a stable release after that incident.
+  "litellm==1.100.3",
+]
 dev = [
   "pytest",
   "ruff",  # dev-only, approved in D-006

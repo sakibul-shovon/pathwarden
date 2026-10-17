@@ -9,7 +9,7 @@ else
 endif
 PY ?= $(if $(wildcard $(VENV_PY)),$(VENV_PY),python)
 
-.PHONY: setup up down probe probe-mcp test test-auth lint fmt hooks api demo demo-mcp eval eval-live web mcp-server gateway
+.PHONY: setup up down probe probe-llm probe-mcp test test-auth lint fmt hooks api demo demo-mcp eval eval-live web mcp-server gateway
 
 # One-time: a virtualenv with the pinned dependencies (no API key, no account needed).
 BOOT_PY ?= python
@@ -59,8 +59,12 @@ demo:
 eval:
 	$(PY) -m eval.run_eval
 
+# P8: needs the extra `llm` (pip install -e ".[llm]") and PW_LLM_MODEL / PW_LLM_API_KEY in .env
+probe-llm:
+	$(PY) scripts/probe_litellm.py
+
 eval-live:
-	@echo "make eval-live: not implemented until P8 (docs/phases/P8-live-llm.md)" && exit 1
+	@echo "make eval-live: not implemented yet (docs/phases/P8-live-llm.md, tasks T8-T9)" && exit 1
 
 web:
 	cd web && npm run dev

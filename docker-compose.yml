@@ -13,6 +13,11 @@ services:
     build: .
     depends_on:
       - falkordb
+    # optional local .env (gitignored): PW_LLM_MODEL / PW_LLM_API_KEY switch on live mode. The image
+    # never contains it (.dockerignore); compose hands it to the container as environment only.
+    env_file:
+      - path: .env
+        required: false
     environment:
       PW_FALKORDB_HOST: falkordb
     ports:
