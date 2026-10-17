@@ -53,6 +53,7 @@ class LiteLlm(Llm):
         temperature: float = 0.0,
         *,
         max_steps: int = 10,
+        reasoning_effort: str | None = None,
         timeout: float = 45.0,
         max_tokens: int = 900,
         retries: int = 3,
@@ -63,6 +64,7 @@ class LiteLlm(Llm):
         self._api_key = api_key
         self._temperature = temperature
         self.max_steps = max_steps
+        self._reasoning_effort = reasoning_effort
         self._timeout = timeout
         self._max_tokens = max_tokens
         self._retries = retries
@@ -74,6 +76,10 @@ class LiteLlm(Llm):
         except ImportError:
             raise LlmError("the 'llm' extra is not installed (pip install '.[llm]')") from None
         litellm.suppress_debug_info = True
+        extra: dict[str, object] = {}
+        if self._reasoning_effort:
+            # reasoning models (e.g. gpt-oss) spend the token budget on thinking; keep it short
+            extra["reasoning_effort"] = self._reasoning_effort
         for attempt in range(self._retries + 1):
             try:
                 response = litellm.completion(
@@ -83,6 +89,7 @@ class LiteLlm(Llm):
                     temperature=self._temperature,
                     max_tokens=self._max_tokens,
                     timeout=self._timeout,
+                    **extra,
                 )
             except Exception as exc:  # noqa: BLE001 - provider errors vary; never leak their text
                 name = type(exc).__name__
@@ -135,4 +142,5 @@ def build_llm(settings: object) -> Llm | None:
         settings.llm_api_key.get_secret_value(),
         settings.llm_temperature,
         max_steps=settings.llm_max_steps,
+        reasoning_effort=settings.llm_reasoning_effort,
     )

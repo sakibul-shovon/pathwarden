@@ -301,6 +301,23 @@ def test_provider_errors_never_contain_the_key_and_logs_stay_clean(caplog, monke
     assert "not-a-real-key" not in caplog.text
 
 
+def test_reasoning_effort_is_passed_only_when_set(monkeypatch):
+    seen: list[dict] = []
+    fake = types.ModuleType("litellm")
+    fake.suppress_debug_info = False  # type: ignore[attr-defined]
+
+    def completion(**kwargs):
+        seen.append(kwargs)
+        message = types.SimpleNamespace(content="{}")
+        return types.SimpleNamespace(choices=[types.SimpleNamespace(message=message)], usage=None)
+
+    fake.completion = completion  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "litellm", fake)
+    LiteLlm("groq/x", "k").complete([{"role": "user", "content": "hi"}])
+    LiteLlm("groq/x", "k", reasoning_effort="low").complete([{"role": "user", "content": "hi"}])
+    assert "reasoning_effort" not in seen[0] and seen[1]["reasoning_effort"] == "low"
+
+
 def test_rate_limits_are_retried_then_reported(monkeypatch):
     class RateLimitError(Exception):
         pass

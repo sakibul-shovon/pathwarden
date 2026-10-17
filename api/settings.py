@@ -28,6 +28,7 @@ class Settings(BaseModel):
     llm_model: str | None = None
     llm_api_key: SecretStr | None = None
     llm_temperature: float = 0.0
+    llm_reasoning_effort: str | None = None  # low | medium | high, for reasoning models only
     llm_max_steps: int = 10  # plan 12.3 says 6; its own attack needs 8 (DECISIONS A-18)
 
     @property
@@ -64,6 +65,8 @@ class Settings(BaseModel):
             values["llm_api_key"] = llm_key
         if (temperature := get("PW_LLM_TEMPERATURE")) is not None:
             values["llm_temperature"] = float(temperature)
+        if (effort := get("PW_LLM_REASONING_EFFORT")) is not None:
+            values["llm_reasoning_effort"] = effort
         if (steps := get("PW_LLM_MAX_STEPS")) is not None:
             values["llm_max_steps"] = int(steps)
         return cls(**values)

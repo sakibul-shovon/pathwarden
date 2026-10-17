@@ -30,9 +30,16 @@ class GoodForensicModel:
     calls = 0
     tokens = 0
 
-    def __init__(self, *, claim_quarantine_id: str | None = "unset", skip_replay: bool = False):
+    def __init__(
+        self,
+        *,
+        claim_quarantine_id: str | None = "unset",
+        skip_replay: bool = False,
+        typo_first: bool = False,
+    ):
         self.claim_quarantine_id = claim_quarantine_id
         self.skip_replay = skip_replay
+        self.typo_first = typo_first
         self.seen: list[list[dict[str, str]]] = []
 
     def complete(self, messages):
@@ -40,8 +47,13 @@ class GoodForensicModel:
         self.seen.append([dict(m) for m in messages])
         action = re.search(r"Held action: (\S+)", messages[0]["content"]).group(1)  # type: ignore[union-attr]
         step = sum(1 for m in messages if m["role"] == "assistant")
+        corrected = any("expected_args" in m["content"] for m in messages)
+        if corrected:
+            step -= 1  # the wrong call was answered with a hint, not with progress
+        if self.typo_first and step == 2 and not corrected:
+            return _call("preview_quarantine", action_id=action)  # the wrong argument name
         w = (_results(messages, "get_witnesses") or [{}])[0]
-        pv = (_results(messages, "preview_quarantine") or [{}])[0]
+        pv = next((r for r in _results(messages, "preview_quarantine") if "error" not in r), {})
         if step == 0:
             return _call("get_witnesses", action_id=action)
         if step == 1:
@@ -96,6 +108,112 @@ class GoodForensicModel:
         return json.dumps({"report": report})
 
 
+class SkipsQuarantineFirst(GoodForensicModel):
+    """Replays and gates before quarantining (like the real model did), then follows the hint."""
+
+    def complete(self, messages):
+        refused = any(m["content"].startswith("REPORT REFUSED") for m in messages)
+        sandbox = _results(messages, "sandbox_replay")
+        applied = _results(messages, "apply_quarantine")
+        if not refused:
+            action = re.search(r"Held action: (\S+)", messages[0]["content"]).group(1)  # type: ignore[union-attr]
+            w = (_results(messages, "get_witnesses") or [{}])[0]
+            pv = (_results(messages, "preview_quarantine") or [{}])[0]
+            script = [
+                _call("get_witnesses", action_id=action),
+                lambda: _call("preview_quarantine", source_id=w["untrusted_witness"][-1]),
+                lambda: _call(
+                    "sandbox_replay", task_ref=w["task_ref"], agents=["fixer", "release"]
+                ),
+                lambda: _call("gate_in_sandbox", action_id=sandbox[0]["new_action_id"]),
+            ]
+            step = sum(1 for m in messages if m["role"] == "assistant")
+            self.calls += 1
+            self.seen.append([dict(m) for m in messages])
+            if step < len(script):
+                item = script[step]
+                return item if isinstance(item, str) else item()
+            return json.dumps(
+                {
+                    "report": {
+                        "action_id": action,
+                        "untrusted_source": w["untrusted_witness"][-1],
+                        "laundering_memories": [],
+                        "quarantine_id": None,
+                        "quarantined_artifacts": pv["artifact_ids"],
+                        "affected_actions": [],
+                        "sandbox": None,
+                        "diff": None,
+                        "recommendation": "ESCALATE_TO_HUMAN",
+                    }
+                }
+            )
+        # after the refusal: do the missing steps in order, then report like the good model
+        step = sum(1 for m in messages if m["role"] == "assistant")
+        pv = (_results(messages, "preview_quarantine") or [{}])[0]
+        w = (_results(messages, "get_witnesses") or [{}])[0]
+        action = re.search(r"Held action: (\S+)", messages[0]["content"]).group(1)  # type: ignore[union-attr]
+        self.calls += 1
+        self.seen.append([dict(m) for m in messages])
+        if not applied:
+            return _call(
+                "apply_quarantine", source_id=pv["source_id"], artifact_ids=pv["artifact_ids"]
+            )
+        replays = _results(messages, "sandbox_replay")
+        later = [m for m in messages if m["content"].startswith("TOOL RESULT apply_quarantine")]
+        after_apply = messages.index(later[0]) if later else 0
+        replay_after = [
+            m
+            for m in messages[after_apply:]
+            if m["content"].startswith("TOOL RESULT sandbox_replay")
+        ]
+        if not replay_after:
+            return _call("sandbox_replay", task_ref=w["task_ref"], agents=["fixer", "release"])
+        new_action = json.loads(replay_after[-1]["content"][len("TOOL RESULT sandbox_replay: ") :])
+        gate_after = [
+            m
+            for m in messages[after_apply:]
+            if m["content"].startswith("TOOL RESULT gate_in_sandbox")
+        ]
+        if not gate_after:
+            return _call("gate_in_sandbox", action_id=new_action["new_action_id"])
+        verdict = json.loads(gate_after[-1]["content"][len("TOOL RESULT gate_in_sandbox: ") :])
+        del replays, step
+        return json.dumps(
+            {
+                "report": {
+                    "action_id": action,
+                    "untrusted_source": w["untrusted_witness"][-1],
+                    "laundering_memories": [],
+                    "quarantine_id": _results(messages, "apply_quarantine")[0]["quarantine_id"],
+                    "quarantined_artifacts": pv["artifact_ids"],
+                    "affected_actions": [a["action_id"] for a in pv["affected_actions"]],
+                    "sandbox": {
+                        "graph": new_action["graph"],
+                        "new_action_id": new_action["new_action_id"],
+                        "verdict": verdict["verdict"],
+                        "reason": verdict["reason"],
+                    },
+                    "diff": None,
+                    "recommendation": "APPROVE_HEALED_RELEASE"
+                    if verdict["verdict"] == "ALLOW"
+                    else "ESCALATE_TO_HUMAN",
+                }
+            }
+        )
+
+
+class BadShapeFirst(GoodForensicModel):
+    """Answers its first report with the wrong shape (a copy of the gate result)."""
+
+    def complete(self, messages):
+        refused = any(m["content"].startswith("REPORT REFUSED") for m in messages)
+        text = super().complete(messages)
+        if not refused and text.startswith('{"report"'):
+            return json.dumps({"report": {"verdict": "HOLD", "reason": "TRIFECTA"}})
+        return text
+
+
 @pytest.fixture
 def held_action(live):
     def make(model):
@@ -126,6 +244,35 @@ def test_a_sensible_model_drives_the_tools_and_gets_the_same_report_as_the_scrip
     assert llm_report.llm_calls == 7  # 6 tool calls and the final report
     assert comparable(llm_report) == comparable(scripted_report)
     assert llm_report.recommendation == "APPROVE_HEALED_RELEASE"
+
+
+def test_a_wrong_argument_name_gets_a_hint_and_a_second_chance_not_a_fallback(held_action):
+    model = GoodForensicModel(typo_first=True)
+    ws, action = held_action(model)
+    report = ws.forensics(action, "llm")
+    assert (report.mode, report.fallback_used) == ("llm", False)
+    assert report.llm_calls == 8  # 6 tool calls, the wrong one and the final report
+    hint = [m["content"] for m in model.seen[-1] if "expected_args" in m["content"]]
+    assert hint and "source_id" in hint[0]
+
+
+def test_a_model_that_skips_the_quarantine_is_told_and_can_finish_the_job(held_action):
+    model = SkipsQuarantineFirst()
+    ws, action = held_action(model)
+    report = ws.forensics(action, "llm")
+    assert (report.mode, report.fallback_used) == ("llm", False)
+    assert report.recommendation == "APPROVE_HEALED_RELEASE" and report.quarantine_id == "q-0001"
+    refused = [m["content"] for m in model.seen[-1] if m["content"].startswith("REPORT REFUSED")]
+    assert refused and "apply_quarantine" in refused[0]
+
+
+def test_an_invalid_report_is_refused_with_the_expected_shape_not_ended(held_action):
+    model = BadShapeFirst()
+    ws, action = held_action(model)
+    report = ws.forensics(action, "llm")
+    assert report.fallback_used is False
+    refused = [m["content"] for m in model.seen[-1] if m["content"].startswith("REPORT REFUSED")]
+    assert refused and "quarantine_id" in refused[0]
 
 
 def test_the_model_only_ever_sees_identifiers_and_metadata_never_content(held_action):

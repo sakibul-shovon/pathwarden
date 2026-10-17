@@ -48,18 +48,33 @@ def main() -> int:
         model=settings.llm_model,
         api_key=key,
         temperature=settings.llm_temperature,
-        max_tokens=100,
+        max_tokens=300,
+        **(
+            {"reasoning_effort": settings.llm_reasoning_effort}
+            if settings.llm_reasoning_effort
+            else {}
+        ),
         timeout=45,
         messages=[
             {"role": "system", "content": "Reply with JSON only."},
-            {"role": "user", "content": f"Reply exactly with this JSON and nothing else: {reply_shape}"},
+            {
+                "role": "user",
+                "content": f"Reply exactly with this JSON and nothing else: {reply_shape}",
+            },
         ],
     )
     message = response.choices[0].message
     print("response type:", type(response).__name__)
-    print("choice fields:", sorted(k for k in dir(response.choices[0]) if not k.startswith("_"))[:8])
+    print(
+        "choice fields:", sorted(k for k in dir(response.choices[0]) if not k.startswith("_"))[:8]
+    )
     print("finish_reason:", response.choices[0].finish_reason)
-    print("usage:", getattr(response.usage, "prompt_tokens", None), "+", getattr(response.usage, "completion_tokens", None))
+    print(
+        "usage:",
+        getattr(response.usage, "prompt_tokens", None),
+        "+",
+        getattr(response.usage, "completion_tokens", None),
+    )
     content = message.content or ""
     try:
         parsed = json.loads(content.strip())

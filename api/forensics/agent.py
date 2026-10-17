@@ -34,7 +34,8 @@ from api.runtime.errors import PathwardenError
 
 logger = logging.getLogger(__name__)
 
-MAX_TOOL_CALLS = 8
+MAX_TOOL_CALLS = 8  # executed tool calls (plan §13.3)
+MAX_HINTS = 8  # corrections the model may need (wrong arguments, a report that is refused)
 
 
 class LlmModeUnavailableError(Exception):
@@ -43,6 +44,35 @@ class LlmModeUnavailableError(Exception):
 
 class _PlanFailed(Exception):
     """The LLM plan cannot be trusted; run the scripted plan instead."""
+
+
+class _Retry(Exception):
+    """The final report cannot be accepted yet; the model is told why and may continue."""
+
+
+class _BadArgs(Exception):
+    """A tool was called with missing or wrong arguments: the model gets a hint and may retry."""
+
+
+# The prompt (verbatim from the plan) names the tools but neither their arguments nor the shape of
+# the report, so a wrong guess is answered with the expected shape instead of ending the plan.
+REPORT_SHAPE = (
+    '{"report": {"action_id": str, "untrusted_source": str, "laundering_memories": ['
+    '{"memory_id": str, "memory_key": str, "written_by": str, "written_in_session": str, '
+    '"written_on": str}], "quarantine_id": str | null, "quarantined_artifacts": [str], '
+    '"affected_actions": [str], "sandbox": {"graph": str, "new_action_id": str, '
+    '"verdict": str, "reason": str} | null, "diff": null, '
+    '"recommendation": "APPROVE_HEALED_RELEASE" | "ESCALATE_TO_HUMAN"}}'
+)
+TOOL_ARGS = {
+    "get_witnesses": '{"action_id": str}',
+    "trace_memory": '{"action_id": str}',
+    "preview_quarantine": '{"source_id": str}',
+    "apply_quarantine": '{"source_id": str, "artifact_ids": [str]}',
+    "sandbox_replay": '{"task_ref": str, "agents": ["fixer", "release"]}',
+    "gate_in_sandbox": '{"action_id": str}',
+    "list_memory_inventory": "{}",
+}
 
 
 class ForensicAgent:
@@ -180,24 +210,31 @@ class ForensicAgent:
             preview = state.get("preview")
             source_id = self._text(args, "source_id")
             ids = args.get("artifact_ids")
+            if not isinstance(ids, list) or not all(isinstance(i, str) for i in ids):
+                raise _BadArgs("artifact_ids must be a list of strings")
             if preview is None or preview["source_id"] != source_id:
                 raise _PlanFailed("apply_quarantine before preview_quarantine of that source")
-            if not isinstance(ids, list) or not set(ids) <= set(preview["artifact_ids"]):
+            if not set(ids) <= set(preview["artifact_ids"]):
                 raise _PlanFailed("apply_quarantine outside the previewed artifacts")
             state["applied"] = tools.apply_quarantine(source_id, ids)
+            # a replay made before the quarantine is stale: it must be run again
+            state.pop("replay", None)
+            state.pop("verdict", None)
             return state["applied"]
 
         def sandbox_replay(args: dict) -> dict:
             agents = args.get("agents")
             if not isinstance(agents, list):
-                raise _PlanFailed("agents must be a list")
+                raise _BadArgs("agents must be a list")
             state["replay"] = tools.sandbox_replay(self._text(args, "task_ref"), agents)
             return state["replay"]
 
         def gate_in_sandbox(args: dict) -> dict:
             replay = state.get("replay")
-            if replay is None or args.get("action_id") != replay["new_action_id"]:
-                raise _PlanFailed("gate_in_sandbox needs the action id of the replay")
+            if replay is None:
+                raise _PlanFailed("gate_in_sandbox before sandbox_replay")
+            if args.get("action_id") != replay["new_action_id"]:
+                raise _BadArgs("action_id must be the new action id of the replay")
             state["verdict"] = tools.gate_in_sandbox(replay["new_action_id"])
             return state["verdict"]
 
@@ -218,37 +255,55 @@ class ForensicAgent:
     def _text(args: dict, name: str) -> str:
         value = args.get(name)
         if not isinstance(value, str) or not value:
-            raise _PlanFailed(f"argument {name!r} must be a string")
+            raise _BadArgs(f"argument {name!r} must be a string")
         return value
 
     @classmethod
     def _same(cls, args: dict, name: str, expected: str) -> None:
         if cls._text(args, name) != expected:
-            raise _PlanFailed(f"{name} must be {expected!r}")
+            raise _BadArgs(f"{name} must be {expected!r}")
 
     def _drive(self, llm: Llm, action_id: str, state: dict[str, Any]) -> ForensicReport:
         table = self._dispatch_table(action_id, state)
         system = render(load_prompt("forensic"), action_id=action_id)
         messages = [{"role": "system", "content": system}, {"role": "user", "content": "Start."}]
         tool_calls = 0
+        hints = 0
         while True:
             reply = llm.complete(messages)
             parsed = parse_reply(reply)
             if parsed is None:
                 raise _PlanFailed("reply is not valid JSON")
             if "report" in parsed:
-                return self._accept(action_id, parsed["report"], state)
+                try:
+                    return self._accept(action_id, parsed["report"], state)
+                except _Retry as exc:
+                    hints += 1
+                    if hints > MAX_HINTS:
+                        raise _PlanFailed(f"report refused too often: {exc}") from None
+                    answer = f"REPORT REFUSED: {exc}"
+                    messages += [
+                        {"role": "assistant", "content": reply},
+                        {"role": "user", "content": answer},
+                    ]
+                    continue
             tool = parsed.get("tool")
             args = parsed.get("args") or {}
             if tool not in table or not isinstance(args, dict):
                 raise _PlanFailed(f"unknown tool {tool!r}")
-            tool_calls += 1
-            if tool_calls > MAX_TOOL_CALLS:
+            if tool_calls + 1 > MAX_TOOL_CALLS:
                 raise _PlanFailed("tool budget exceeded")
+            tool_calls += 1
             try:
                 result = table[tool](args)
             except _PlanFailed:
                 raise
+            except _BadArgs as exc:
+                tool_calls -= 1  # nothing was executed: it does not use the budget
+                hints += 1
+                if hints > MAX_HINTS:
+                    raise _PlanFailed(f"too many wrong calls: {exc}") from None
+                result = {"error": str(exc), "expected_args": TOOL_ARGS[tool]}
             except PathwardenError as exc:
                 result = {"error": type(exc).__name__}
             messages += [
@@ -261,19 +316,31 @@ class ForensicAgent:
         try:
             claim = ForensicReport.model_validate(claimed)
         except ValidationError:
-            raise _PlanFailed("the report is not a valid ForensicReport") from None
+            raise _Retry(f"not a valid ForensicReport; reply with {REPORT_SHAPE}") from None
         witnesses = state.get("witnesses")
         if witnesses is None:
-            raise _PlanFailed("get_witnesses was never called")
+            raise _Retry("call get_witnesses first")
         if not witnesses["untrusted_witness"]:
             report = self._escalate(action_id)
             if claim.recommendation != report.recommendation:
-                raise _PlanFailed("the report disagrees with the tools")
+                raise _Retry(
+                    "no untrusted witness exists, so the recommendation is ESCALATE_TO_HUMAN"
+                )
             return report
         preview, applied = state.get("preview"), state.get("applied")
         replay, verdict = state.get("replay"), state.get("verdict")
-        if not (preview and applied and replay and verdict):
-            raise _PlanFailed("a required step was skipped")
+        todo = [
+            name
+            for name, done in (
+                ("preview_quarantine", preview),
+                ("apply_quarantine", applied),
+                ("sandbox_replay (after the quarantine)", replay),
+                ("gate_in_sandbox", verdict),
+            )
+            if not done
+        ]
+        if todo:
+            raise _Retry("steps still to do, in this order: " + ", ".join(todo))
         laundering = state.get("laundering")
         if laundering is None:
             laundering = self._tools.trace_memory(action_id)  # read-only metadata
@@ -288,5 +355,8 @@ class ForensicAgent:
             or (claim.sandbox.new_action_id if claim.sandbox else None)
             != (report.sandbox.new_action_id if report.sandbox else None)
         ):
-            raise _PlanFailed("the report disagrees with the tools")
+            raise _Retry(
+                "the report disagrees with the tool results (untrusted_source, quarantine_id, "
+                "recommendation or sandbox.new_action_id): copy them from the tool results"
+            )
         return report
