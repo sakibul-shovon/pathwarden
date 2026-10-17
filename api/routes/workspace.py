@@ -5,10 +5,11 @@ from __future__ import annotations
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from api.api_errors import ApiError
 from api.auth import require_workspace_access
+from api.llm import LlmError
 from api.runtime.errors import NotFoundError
 from api.runtime.explain import rule_of_two
 from api.scenarios.demo import SCENARIOS
@@ -33,6 +34,16 @@ class RunRequest(BaseModel):
     reset: bool = True  # start from a clean workspace so verdicts are reproducible (see DECISIONS)
 
 
+class CustomRunRequest(BaseModel):
+    """A visitor's own issue text for the live agents. Short on purpose; fake secrets only."""
+
+    issue_text: str = Field(min_length=1, max_length=2000)
+    guard: bool = True
+
+
+_LIVE_OFF = "live mode needs PW_LLM_MODEL and PW_LLM_API_KEY (see .env.example)"
+
+
 @router.post("/reset")
 def reset(ws: Ws) -> dict:
     ws.reset()
@@ -51,15 +62,31 @@ def scenarios(ws: Ws) -> list[dict]:
     ]
 
 
+@router.post("/scenarios/custom/run")
+def run_custom(ws: Ws, body: CustomRunRequest) -> dict:
+    """Live agents handle the visitor's own issue text; the gate judges the path, not the words."""
+    text = body.issue_text.strip()
+    if not text or "\x00" in text:
+        raise ApiError(422, "validation_error", "issue_text must be non-empty text")
+    try:
+        return ws.run_custom(text, guard=body.guard)
+    except LiveModeUnavailableError:
+        raise ApiError(501, "live_not_available", _LIVE_OFF) from None
+    except LlmError as exc:
+        raise ApiError(502, "llm_error", str(exc)) from None
+
+
 @router.post("/scenarios/{name}/run")
 def run(ws: Ws, name: str, body: RunRequest | None = None) -> dict:
     body = body or RunRequest()
     try:
         return ws.run_scenario(name, guard=body.guard, mode=body.mode, reset=body.reset)
     except LiveModeUnavailableError:
-        raise ApiError(501, "live_not_available", "live LLM agents arrive in phase P8") from None
+        raise ApiError(501, "live_not_available", _LIVE_OFF) from None
     except NotFoundError:
         raise ApiError(404, "unknown_scenario", f"no scenario named {name!r}") from None
+    except LlmError as exc:
+        raise ApiError(502, "llm_error", str(exc)) from None
 
 
 @router.get("/artifacts/{artifact_id}")

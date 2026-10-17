@@ -56,9 +56,14 @@ def create_app(
                 status_code=503,
                 content={"error": "falkordb_unavailable", "detail": type(exc).__name__},
             )
-        if app.state.settings.auth == "on":  # hosted: never list graph (= tenant) names
-            return JSONResponse(content={"falkordb": "ok"})
-        return JSONResponse(content={"falkordb": "ok", "graphs": graphs})
+        settings = app.state.settings
+        # the key never leaves Settings; the model name is shown only in local mode
+        if settings.auth == "on":  # hosted: never list graph (= tenant) names or the model
+            return JSONResponse(
+                content={"falkordb": "ok", "llm": {"configured": settings.llm_configured}}
+            )
+        llm = {"configured": settings.llm_configured, "model": settings.llm_model}
+        return JSONResponse(content={"falkordb": "ok", "graphs": graphs, "llm": llm})
 
     return app
 

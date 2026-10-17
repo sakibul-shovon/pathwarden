@@ -25,8 +25,12 @@ class Fixtures:
 
     def __init__(self, root: Path) -> None:
         self.root = root
+        # issues typed by a visitor in live mode (P8); they never touch the fixture files
+        self.custom: dict[int, str] = {}
 
     def issue_text(self, n: int) -> str:
+        if n in self.custom:
+            return self.custom[n]
         return (self.root / "issues" / f"issue_{n}.md").read_text(encoding="utf-8")
 
     def env(self) -> dict[str, str]:

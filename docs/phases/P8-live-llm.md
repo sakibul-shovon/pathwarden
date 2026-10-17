@@ -18,16 +18,16 @@ Create: `scripts/probe_litellm.py` · `api/agents/live.py` · `api/agents/prompt
 Modify: `pyproject.toml` (extra `llm`), `api/forensics/agent.py` (LLM plan + fallback), run endpoint (accept `mode:"live"`), `Makefile` (`eval-live`), `eval/run_eval.py` (fill B1/B3), `web/` (enable live toggle), `.env.example` if names change.
 
 ## 5. Tasks
-- [ ] **P8-T1 Probe LiteLLM** and record the verified call shape in `DECISIONS.md`. Add extra `llm`.
-- [ ] **P8-T2 LLM seam:** one function `complete(messages) -> str` (model, key, temperature from `PW_LLM_*`); a deterministic fake for tests. The real key is read only in settings and never logged.
-- [ ] **P8-T3 Live agent loop** (`live.py`): conversation format and JSON-only replies per §12.3.1; max 6 steps; invalid JSON → one retry then stop the session; tool mapping per the table (`memory_read`→`load_by_key`, `memory_list`→`load_by_prefix` with JSON list result, `read_env`→`read_source`, `workspace_write` kind by key prefix, `post_release`→propose payload = latest non-quarantined artifact for that key).
-- [ ] **P8-T4 Infrastructure `extract_task`:** the orchestrator calls it right after Triage's `fetch_issue`, sending only the raw issue text, validating against `TaskSchema`; the Triage LLM never calls it.
-- [ ] **P8-T5 Prompts verbatim** from §12.3.1 and §13.3 into the `.txt` files; golden test comparing file text to the plan's blocks (no security wording added).
-- [ ] **P8-T6 Live scenario run** through the existing run endpoint (`mode:"live"`) and the guard/gate exactly as in scripted mode.
-- [ ] **P8-T7 LLM forensic mode:** the LLM chooses among the same tools (≤ 8 calls) and must output a valid `ForensicReport`; inputs are tool outputs only; invalid JSON / unknown tool / over budget ⇒ scripted plan and `fallback_used: true`.
+- [x] **P8-T1 Probe LiteLLM** (pinned, probed with and without a key, D-035, D-037) and record the verified call shape in `DECISIONS.md`. Add extra `llm`.
+- [x] **P8-T2 LLM seam:** one function `complete(messages) -> str` (model, key, temperature from `PW_LLM_*`); a deterministic fake for tests. The real key is read only in settings and never logged.
+- [x] **P8-T3 Live agent loop** (`live.py`): conversation format and JSON-only replies per §12.3.1; max 6 steps; invalid JSON → one retry then stop the session; tool mapping per the table (`memory_read`→`load_by_key`, `memory_list`→`load_by_prefix` with JSON list result, `read_env`→`read_source`, `workspace_write` kind by key prefix, `post_release`→propose payload = latest non-quarantined artifact for that key).
+- [x] **P8-T4 Infrastructure `extract_task`:** the orchestrator calls it right after Triage's `fetch_issue`, sending only the raw issue text, validating against `TaskSchema`; the Triage LLM never calls it.
+- [x] **P8-T5 Prompts verbatim** from §12.3.1 and §13.3 into the `.txt` files; golden test comparing file text to the plan's blocks (no security wording added).
+- [x] **P8-T6 Live scenario run** through the existing run endpoint (`mode:"live"`) and the guard/gate exactly as in scripted mode.
+- [x] **P8-T7 LLM forensic mode:** the LLM chooses among the same tools (≤ 8 calls) and must output a valid `ForensicReport`; inputs are tool outputs only; invalid JSON / unknown tool / over budget ⇒ scripted plan and `fallback_used: true`.
 - [ ] **P8-T8 B1/B3 judges** with the exact prompt of §20.3, temperature 0, model name reported; invalid JSON counts as HOLD and is reported separately; rows `not_run` when no key.
 - [ ] **P8-T9 Live study** (`eval/live_study.py`, `make eval-live`): each attack demo scenario 10× guard off (how often the live Fixer copied secrets), then guard on (held rate). Record whatever the numbers are. **Ask the human before running — it spends money.**
-- [ ] **P8-T10 Enable the UI live toggle** and verify with the manual checklist.
+- [x] **P8-T10 Enable the UI live toggle** and verify with the manual checklist.
 
 ## 6. Tests and validation (no key required)
 Fake LLM follows the injection → attack held; fake LLM refuses → benign path; invalid JSON → retry once → session stops; >6 steps → stops; forensic fake exceeds 8 calls / bad JSON / unknown tool → `fallback_used: true` with a valid report; prompt golden test; B1/B3 invalid-JSON → HOLD flagged; `not_run` rows without a key; no secret appears in logs (`caplog` check on the key).
@@ -52,3 +52,8 @@ Tasks ticked with evidence (state clearly which were verified with a real key) �
 
 ## 10. Git checkpoints
 `P8: chore(deps): litellm probe and llm extra` · `P8: feat(agents): live agent loop and prompts` · `P8: feat(forensics): llm plan with fallback` · `P8: feat(eval): b1 and b3 judges` · `P8: feat(eval): live study` · `P8: feat(web): enable live mode` → PR → merge → tag.
+
+## 11. Outcome so far (2026-10-17)
+Update: verified with a real model (`groq/qwen/qwen3.8-27b`): live attack held, own issue, LLM forensics, browser flow; see D-037 and PROGRESS. The paragraph below is the earlier, fake-provider state.
+
+T2-T7 and T10 are done and verified with a **fake model** (569 backend tests in both auth modes) and end to end through **LiteLLM, the real API, FalkorDB and the UI** against a local OpenAI-compatible fake server (live attack: HELD / TRIFECTA, guard off: leak; own issue text; LLM forensics: 7 model calls, no fallback). **Not verified with a real provider key**: T1's real probe and every real-model behaviour. **T8 (B1/B3 judges) and T9 (live study) are not built yet**; T9 spends tokens, so the owner is asked first. Decisions: D-035, D-036, A-18.

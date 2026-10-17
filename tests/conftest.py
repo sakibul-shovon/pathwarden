@@ -16,7 +16,7 @@ from api.main import create_app
 from api.runtime.registry import Registry
 from api.runtime.runtime import Runtime
 from api.settings import Settings
-from api.workspace import WorkspaceManager
+from api.workspace import Workspace, WorkspaceManager
 
 
 @pytest.fixture(scope="session")
@@ -120,6 +120,30 @@ def manager(db: FalkorDB, settings: Settings, tmp_path: Path) -> Iterator[Worksp
             db.select_graph(graph).delete()
         except Exception:  # noqa: BLE001
             pass
+
+
+@pytest.fixture
+def live(db: FalkorDB, settings: Settings, tmp_path: Path) -> Iterator[Callable[..., Workspace]]:
+    """Factory: a workspace on a throw-away graph with the given model (or none)."""
+    names: list[str] = []
+
+    def make(model) -> Workspace:
+        name = f"pw_test_{secrets.token_hex(4)}"
+        names.append(name)
+        manager = WorkspaceManager(
+            settings.model_copy(update={"state_dir": tmp_path}),
+            graph_names={"tinyqueue": name},
+            llm=model,
+        )
+        return manager.get("tinyqueue")
+
+    yield make
+    for name in names:
+        for graph in (name, name + "__sbx"):
+            try:
+                db.select_graph(graph).delete()
+            except Exception:  # noqa: BLE001
+                pass
 
 
 DEMO_KEY = "pwdemo-key-tinyqueue-0001"  # fixtures/api_keys.yaml -> workspace tinyqueue
