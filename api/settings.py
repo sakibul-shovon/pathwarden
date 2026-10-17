@@ -35,6 +35,14 @@ class Settings(BaseModel):
     def llm_configured(self) -> bool:
         return bool(self.llm_model and self.llm_api_key)
 
+    @property
+    def llm_api_keys(self) -> list[str]:
+        """List of API keys (from comma-separated PW_LLM_API_KEY)."""
+        if not self.llm_api_key:
+            return []
+        raw = self.llm_api_key.get_secret_value()
+        return [k.strip() for k in raw.split(",") if k.strip()]
+
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
         """Build settings from ``env`` (default: process environment); empty values are unset."""

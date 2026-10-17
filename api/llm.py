@@ -43,13 +43,14 @@ class LiteLlm(Llm):
     """LiteLLM-backed completion (``PW_LLM_MODEL`` is a LiteLLM model string, ``groq/<model>``).
 
     Rate limits are expected on free tiers: a limited call is retried with a growing pause before
-    giving up with ``LlmError``.
+    giving up with ``LlmError``. If multiple keys are given (or comma-separated), it rotates to the
+    next key on rate limit or auth failure.
     """
 
     def __init__(
         self,
         model: str,
-        api_key: str,
+        api_key: str | Sequence[str],
         temperature: float = 0.0,
         *,
         max_steps: int = 10,
@@ -61,7 +62,13 @@ class LiteLlm(Llm):
     ) -> None:
         super().__init__()
         self.model = model
-        self._api_key = api_key
+        if isinstance(api_key, str):
+            self._api_keys = [k.strip() for k in api_key.split(",") if k.strip()]
+        else:
+            self._api_keys = [k.strip() for k in api_key if k.strip()]
+        if not self._api_keys:
+            self._api_keys = [""]
+        self._key_index = 0
         self._temperature = temperature
         self.max_steps = max_steps
         self._reasoning_effort = reasoning_effort
@@ -69,6 +76,15 @@ class LiteLlm(Llm):
         self._max_tokens = max_tokens
         self._retries = retries
         self._sleep = sleep
+
+    @property
+    def current_api_key(self) -> str:
+        return self._api_keys[self._key_index % len(self._api_keys)]
+
+    def rotate_key(self) -> None:
+        if len(self._api_keys) > 1:
+            self._key_index = (self._key_index + 1) % len(self._api_keys)
+            logger.info("Rotated to API key %d of %d", self._key_index + 1, len(self._api_keys))
 
     def complete(self, messages: Sequence[Message]) -> str:
         try:
@@ -80,12 +96,14 @@ class LiteLlm(Llm):
         if self._reasoning_effort:
             # reasoning models (e.g. gpt-oss) spend the token budget on thinking; keep it short
             extra["reasoning_effort"] = self._reasoning_effort
-        for attempt in range(self._retries + 1):
+        total_attempts = (self._retries + 1) * max(1, len(self._api_keys))
+        for attempt in range(total_attempts):
+            key = self.current_api_key
             try:
                 response = litellm.completion(
                     model=self.model,
                     messages=list(messages),
-                    api_key=self._api_key,
+                    api_key=key,
                     temperature=self._temperature,
                     max_tokens=self._max_tokens,
                     timeout=self._timeout,
@@ -93,7 +111,20 @@ class LiteLlm(Llm):
                 )
             except Exception as exc:  # noqa: BLE001 - provider errors vary; never leak their text
                 name = type(exc).__name__
-                if "RateLimit" in name and attempt < self._retries:
+                is_rate_limit = "RateLimit" in name
+                is_auth_error = "Authentication" in name or "Auth" in name or "Permission" in name
+                if (is_rate_limit or is_auth_error) and len(self._api_keys) > 1:
+                    logger.warning(
+                        "LLM key %s (%s); rotating to next key",
+                        "rate limited" if is_rate_limit else "auth error",
+                        self.model,
+                    )
+                    self.rotate_key()
+                    if (attempt + 1) % len(self._api_keys) == 0 and attempt < total_attempts - 1:
+                        pause = min(4.0 * 2 ** (attempt // len(self._api_keys)), 30.0)
+                        self._sleep(pause)
+                    continue
+                if is_rate_limit and attempt < total_attempts - 1:
                     pause = min(4.0 * 2**attempt, 30.0)
                     logger.warning("LLM rate limited (%s); retrying in %.0f s", self.model, pause)
                     self._sleep(pause)
@@ -139,7 +170,7 @@ def build_llm(settings: object) -> Llm | None:
     assert settings.llm_model is not None and settings.llm_api_key is not None
     return LiteLlm(
         settings.llm_model,
-        settings.llm_api_key.get_secret_value(),
+        settings.llm_api_keys or settings.llm_api_key.get_secret_value(),
         settings.llm_temperature,
         max_steps=settings.llm_max_steps,
         reasoning_effort=settings.llm_reasoning_effort,
