@@ -36,7 +36,7 @@ Rules: `docs/WORKFLOW.md` §5. Keep it factual; no history — that belongs in `
 - Secret scanner (`bash scripts/scan_secrets.sh`): clean (exit 0).
 
 ## Blocked / open items for the owner (Human-only submission items)
-1. **LICENSE (P12-T6):** Add a LICENSE file (e.g. Apache 2.0 or MIT) to root.
-2. **Public Repo (P12-T6):** Switch GitHub repo visibility from private to public.
-3. **Demo Video (P12-T5):** Record a 3-minute demo video showing the running UI (Run scenario, Investigate TRIFECTA hold, Memory quarantine release, Time travel slider, Remediate topology cut, and Live LLM toggle).
+1. **LICENSE (P12-T6):** Done (Apache License 2.0 created and referenced in README.md).
+2. **Demo Video (P12-T5):** Done (https://www.youtube.com/watch?v=Sy9g-40IoUk added to README.md).
+3. **Public Repo (P12-T6):** Switch GitHub repo visibility from private to public.
 4. **Portal Submission (P12-T9):** Submit repository URL and video link before deadline (18 Oct 23:59 IST).

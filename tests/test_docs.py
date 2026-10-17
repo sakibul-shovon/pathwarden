@@ -64,7 +64,7 @@ def test_the_readme_states_the_things_that_are_not_done():
     for must_say in (
         "not_run",
         "not implemented",
-        "no license has been chosen",
+        "apache license, version 2.0",
         "no hosted demo is running yet",
         "not authentication",
     ):
