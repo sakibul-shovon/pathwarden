@@ -17,16 +17,16 @@
 
 *A deterministic graph-native data lineage security gate for multi-agent workflows, powered by FalkorDB.*
 
+<br/>
+
+[**Watch the 4-Minute Film (YouTube)**](https://www.youtube.com/watch?v=Sy9g-40IoUk) •
+[**Live Interactive Demo**](https://pathwarden.165.99.219.253.sslip.io/) •
+[**Quickstart**](#2-quickstart-and-running-locally) •
+[**Graph Model**](#4-graph-data-model) •
+[**Cypher Queries**](#5-queries-and-algorithms-the-product-depends-on) •
+[**Benchmarks**](#11-evaluation)
+
 </div>
-
----
-
-> **Live Demo (HTTPS Secured):** [https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/) *(Full live stack: React 19 UI, FalkorDB Graph & FastAPI backend with Groq LLM — no login required)*  
-> **Direct IP Access:** [http://165.99.219.253/](http://165.99.219.253/) *(auto-redirects to HTTPS)*  
-> **Backend API Health:** [https://pathwarden.165.99.219.253.sslip.io/api/health](https://pathwarden.165.99.219.253.sslip.io/api/health)  
-> **FalkorDB Graph Explorer:** [http://165.99.219.253/browser/](http://165.99.219.253/browser/)  
-> **Demo Video (4:09 Broadcast Film):** [https://www.youtube.com/watch?v=Sy9g-40IoUk](https://www.youtube.com/watch?v=Sy9g-40IoUk)  
-> **Graph Hacks Submission Tracks:** **Track 01** *(Agents That Act on Connected Data)* & **Track 02** *(Agent Memory and Coordination)*
 
 ---
 
