@@ -34,6 +34,8 @@ export interface RunResult {
   scenario: string;
   guard: boolean;
   mode: string;
+  /** live mode only: which model played the agents and what the run cost */
+  llm?: { model: string; calls: number; tokens: number };
   sessions: SessionView[];
   timeline: TimelineRow[];
   actions: ActionOutcome[];
@@ -160,6 +162,8 @@ export interface PostedEntry {
 export interface HealthStatus {
   falkordb: string;
   graphs?: string[];
+  /** whether live LLM mode is configured; the model name is shown in local mode only */
+  llm?: { configured: boolean; model?: string | null };
 }
 
 export interface ApiErrorBody {

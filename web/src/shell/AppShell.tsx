@@ -1,7 +1,6 @@
 import { m } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { api, workspaceName } from "../api/client";
-import { usePoll } from "../hooks";
+import { workspaceName } from "../api/client";
 import { useTheme, setThemePref, type ThemePref } from "../theme";
 import { JOURNEY, VIEWS, useNav, type TabId } from "../nav";
 import { Icon, type IconName } from "../ui/Icon";
@@ -9,6 +8,7 @@ import { Mark } from "../ui/Mark";
 import { Menu } from "../ui/Menu";
 import { useActions } from "./actions";
 import { useAuth } from "./auth";
+import { useHealth } from "./health";
 
 const GROUPS = ["Simulate", "Respond", "Replay", "Prevent", "Prove"];
 
@@ -50,7 +50,7 @@ function NavLinks({ onPick }: { onPick?: () => void }) {
 }
 
 function StatusPill() {
-  const health = usePoll(api.health, 15000);
+  const health = useHealth();
   useEffect(() => {
     window.addEventListener("focus", health.reload);
     return () => window.removeEventListener("focus", health.reload);

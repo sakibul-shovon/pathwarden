@@ -280,3 +280,16 @@
   .table-cards td { display: flex; justify-content: space-between; gap: 12px; border: 0; padding: 4px 0; }
   .table-cards td[data-label]::before { content: attr(data-label); color: var(--ink-3); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
 }
+
+/* Live mode (P8) */
+textarea { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--control); border-radius: var(--r-sm); padding: 10px 12px; width: 100%; min-height: 120px; resize: vertical; line-height: 1.5; }
+.command-live { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; padding: 8px 10px; background: var(--surface-2); border-radius: var(--r-sm); color: var(--ink-2); font-size: 0.875rem; }
+.command-live svg { flex: none; margin-top: 2px; }
+.custom { border-left: 4px solid var(--ink); }
+.examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+.custom-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.llm-line { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 0.8125rem; }
+.explain { border-left: 4px solid var(--untrusted-line); }
+.explain ol { counter-reset: e; display: grid; gap: 8px; margin: 10px 0; }
+.explain li { counter-increment: e; display: flex; gap: 10px; align-items: baseline; }
+.explain li::before { content: counter(e); display: inline-flex; flex: none; width: 22px; height: 22px; align-items: center; justify-content: center; border-radius: 50%; background: var(--surface-2); font: 700 0.75rem var(--mono); }

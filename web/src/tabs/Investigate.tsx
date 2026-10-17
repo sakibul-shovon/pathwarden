@@ -7,8 +7,9 @@ import { RuleOfTwoBadge } from "../components/RuleOfTwo";
 import { errorText } from "../hooks";
 import { ResponsePlan } from "../investigate/ResponsePlan";
 import { useActions } from "../shell/actions";
+import { useHealth } from "../shell/health";
 import { ViewHeader } from "../shell/AppShell";
-import { StatusChip } from "../ui/Chip";
+import { Chip, StatusChip } from "../ui/Chip";
 import { CodeBlock } from "../ui/CodeBlock";
 import { Icon } from "../ui/Icon";
 import { useNav } from "../nav";
@@ -74,6 +75,8 @@ export function InvestigateTab({
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [autoDone, setAutoDone] = useState(false);
+  const { liveReady, model } = useHealth();
+  const [fMode, setFMode] = useState<"scripted" | "llm">("scripted");
 
   // select the first action that needs attention
   useEffect(() => {
@@ -99,11 +102,11 @@ export function InvestigateTab({
     };
   }, [selected, version]);
 
-  const runForensics = useCallback(async (id: string) => {
+  const runForensics = useCallback(async (id: string, mode: "scripted" | "llm" = "scripted") => {
     setBusy("forensics");
     setError(null);
     try {
-      const result = await api.forensics(id);
+      const result = await api.forensics(id, mode);
       setReport(result);
       if (result.diff) {
         const [held, healed] = await Promise.all([
@@ -294,7 +297,13 @@ export function InvestigateTab({
               <div className="panel">
                 <div className="panel-head">
                   <h2>Forensic Agent</h2>
-                  <span className="muted">Mode: scripted (LLM mode arrives in P8)</span>
+                  <fieldset className="segmented" aria-label="Forensic mode">
+                    <label><input type="radio" name="fmode" checked={fMode === "scripted"} onChange={() => setFMode("scripted")} disabled={busy !== null} /> Scripted</label>
+                    <label title={liveReady ? "A real model chooses the tools (at most 8 calls)" : "Needs PW_LLM_MODEL and PW_LLM_API_KEY on the API"} className={liveReady ? undefined : "is-disabled"}>
+                      <input type="radio" name="fmode" checked={fMode === "llm"} onChange={() => setFMode("llm")} disabled={busy !== null || !liveReady} /> LLM{" "}
+                      <span className="muted">{liveReady ? `(${model ?? "model"})` : "(needs an LLM key)"}</span>
+                    </label>
+                  </fieldset>
                 </div>
                 <p className="muted">
                   Finds the poisoned memory, quarantines everything derived from the untrusted source (reversible),
@@ -302,9 +311,12 @@ export function InvestigateTab({
                 </p>
                 <ResponsePlan report={report} busy={busy === "forensics"} heal={heal} />
                 <div className="plan-actions">
-                  <button type="button" className="btn btn-solid" disabled={busy !== null} onClick={() => void runForensics(loaded.action.id)}>
+                  <button type="button" className="btn btn-solid" disabled={busy !== null} onClick={() => void runForensics(loaded.action.id, fMode)}>
                     <Icon name="bolt" /> {busy === "forensics" ? "Investigating…" : report ? "Run forensics again" : "Run forensics"}
                   </button>
+                  {report?.fallback_used && (
+                    <Chip tone="hold" icon="alert" title="The model's plan was rejected, so the scripted plan ran">Fallback: scripted plan used</Chip>
+                  )}
                   {report && (
                     <span className="muted">
                       Mode {report.mode} · LLM calls {report.llm_calls} · fallback {String(report.fallback_used)} · affected actions {report.affected_actions.join(", ") || "—"}

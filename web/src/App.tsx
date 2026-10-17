@@ -4,6 +4,7 @@ import { NavContext, VIEWS, type TabId } from "./nav";
 import { ActionsProvider } from "./shell/actions";
 import { AppShell } from "./shell/AppShell";
 import { AuthProvider, useAuth } from "./shell/auth";
+import { HealthProvider } from "./shell/health";
 import { SignIn } from "./shell/SignIn";
 import { Icon } from "./ui/Icon";
 import { ToastProvider } from "./ui/Toast";
@@ -105,9 +106,11 @@ function Console({ tab, url, consume }: { tab: Exclude<TabId, "home">; url: Retu
 function ConsoleFrame({ tab, url, consume }: { tab: Exclude<TabId, "home">; url: ReturnType<typeof readUrl>; consume: (name: string) => void }) {
   const auth = useAuth();
   return (
-    <ActionsProvider enabled={auth.status === "ok"}>
-      <Console tab={tab} url={url} consume={consume} />
-    </ActionsProvider>
+    <HealthProvider>
+      <ActionsProvider enabled={auth.status === "ok"}>
+        <Console tab={tab} url={url} consume={consume} />
+      </ActionsProvider>
+    </HealthProvider>
   );
 }
 

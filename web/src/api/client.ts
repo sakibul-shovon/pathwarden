@@ -137,12 +137,15 @@ export const api = {
   scenarios: () => request<ScenarioInfo[]>("GET", ws("/scenarios")),
   run: (name: string, guard: boolean, mode: "scripted" | "live") =>
     request<RunResult>("POST", ws(`/scenarios/${name}/run`), { guard, mode }),
+  /** live agents on a visitor's own issue text (needs live mode); the gate judges the path, not the words */
+  runCustom: (issueText: string, guard: boolean) =>
+    request<RunResult>("POST", ws("/scenarios/custom/run"), { issue_text: issueText, guard }),
   reset: () => request<{ reset: boolean }>("POST", ws("/reset")),
   actions: () => request<ActionListItem[]>("GET", ws("/actions")),
   action: (id: string) => request<ActionDetail>("GET", ws(`/actions/${id}`)),
   explain: (id: string) => request<Explain>("GET", ws(`/actions/${id}/explain`)),
-  forensics: (id: string) =>
-    request<ForensicReport>("POST", ws(`/forensics/${id}`), { mode: "scripted" }),
+  forensics: (id: string, mode: "scripted" | "llm" = "scripted") =>
+    request<ForensicReport>("POST", ws(`/forensics/${id}`), { mode }),
   healApprove: (id: string) =>
     request<HealResult>("POST", ws(`/heal/${id}/approve`), { approver: "maintainer" }, undefined, true),
   artifact: (id: string, graph: "main" | "sandbox") =>
