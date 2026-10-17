@@ -8,7 +8,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg?style=flat-square&logo=fastapi)](api/)
 [![React 19](https://img.shields.io/badge/React-19_SPA-61DAFB.svg?style=flat-square&logo=react)](web/)
 [![Tests: 578 Passed](https://img.shields.io/badge/Tests-578_Passed-success.svg?style=flat-square)](tests/)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-165.99.219.253-success.svg?style=flat-square&logo=googlechrome)](http://165.99.219.253/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-HTTPS_Active-success.svg?style=flat-square&logo=googlechrome)](https://pathwarden.165.99.219.253.sslip.io/)
 [![Graph Hacks](https://img.shields.io/badge/WeMakeDevs_×_FalkorDB-Graph_Hacks_2026-purple.svg?style=flat-square)](https://www.wemakedevs.org/hackathons/falkordb)
 
 <br/>
@@ -20,7 +20,7 @@
 <br/>
 
 [**Watch the 4-Minute Film (YouTube)**](https://www.youtube.com/watch?v=Sy9g-40IoUk) •
-[**Live Interactive Demo**](http://165.99.219.253/) •
+[**Live Interactive Demo**](https://pathwarden.165.99.219.253.sslip.io/) •
 [**Quickstart**](#2-quickstart-and-running-locally) •
 [**Graph Model**](#4-graph-data-model) •
 [**Cypher Queries**](#5-queries-and-algorithms-the-product-depends-on) •
@@ -30,8 +30,8 @@
 
 ---
 
-> **Live Demo (Interactive Web UI):** [http://165.99.219.253/](http://165.99.219.253/) *(Full live stack: React 19 UI, FalkorDB Graph & FastAPI backend with Groq LLM — no login or account required)*  
-> **Backend API Health:** [http://165.99.219.253/api/health](http://165.99.219.253/api/health)  
+> **Live Demo (Interactive Web UI):** [https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/) *(Full live stack: React 19 UI, FalkorDB Graph & FastAPI backend with Groq LLM — SSL secured, no login required)*  
+> **Backend API Health:** [https://pathwarden.165.99.219.253.sslip.io/api/health](https://pathwarden.165.99.219.253.sslip.io/api/health)  
 > **FalkorDB Graph Explorer:** [http://165.99.219.253/browser/](http://165.99.219.253/browser/)  
 > **Demo Video (4:09 Broadcast Film):** [https://www.youtube.com/watch?v=Sy9g-40IoUk](https://www.youtube.com/watch?v=Sy9g-40IoUk)  
 > **Graph Hacks Submission Tracks:** **Track 01** *(Agents That Act on Connected Data)* & **Track 02** *(Agent Memory and Coordination)*
@@ -71,7 +71,7 @@ Evidence that the class of problem is real:
 
 ## 2. Quickstart (no API key, no account)
 
-> **Try without installing:** You can interact with the live deployed app directly in your browser right now at [**http://165.99.219.253/**](http://165.99.219.253/) (no setup or login needed).
+> **Try without installing:** You can interact with the live deployed app directly in your browser right now at [**https://pathwarden.165.99.219.253.sslip.io/**](https://pathwarden.165.99.219.253.sslip.io/) (SSL secured, no setup or login needed).
 
 You can also clone and run Pathwarden locally in under 2 minutes. All core scenarios, graph queries, and evaluation suites run completely offline with **zero API keys** and **no paid subscriptions**.
 
@@ -278,7 +278,7 @@ The requirements, graph model, queries, gate semantics and evaluation design are
 
 ## 16. Deployment
 
-Local is the primary path ([section 2](#2-quickstart-no-api-key-no-account)). A live community demo instance is deployed and running on a VPS at [http://165.99.219.253/](http://165.99.219.253/) (open access, no login required). Hosted configuration (FalkorDB Cloud or Railway, API on Railway/Render, UI on Vercel, `PW_AUTH=on`) is written down in [`docs/DEPLOY.md`](docs/DEPLOY.md). **No hosted demo is running yet**: creating the cloud provider accounts and deploying is a human task (P12-T4); until then the local run, the live VPS instance, and the screenshots are the demonstration.
+Local is the primary path ([section 2](#2-quickstart-no-api-key-no-account)). A live community demo instance is deployed and running with Let's Encrypt HTTPS at [https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/) (open access, no login required). Hosted configuration (FalkorDB Cloud or Railway, API on Railway/Render, UI on Vercel, `PW_AUTH=on`) is written down in [`docs/DEPLOY.md`](docs/DEPLOY.md). **No hosted demo is running yet**: creating the cloud provider accounts and deploying is a human task (P12-T4); until then the local run, the live VPS instance, and the screenshots are the demonstration.
 
 ---
 
