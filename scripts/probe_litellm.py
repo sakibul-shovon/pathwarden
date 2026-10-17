@@ -30,7 +30,8 @@ def main() -> int:
         print("NOT CONFIGURED: set PW_LLM_MODEL (e.g. groq/<model>) and PW_LLM_API_KEY in .env")
         return 2
     assert settings.llm_model and settings.llm_api_key
-    key = settings.llm_api_key.get_secret_value()
+    keys = settings.llm_api_keys
+    key = keys[0] if keys else settings.llm_api_key.get_secret_value()
 
     if "--list-models" in sys.argv:
         response = httpx.get(GROQ_MODELS, headers={"Authorization": f"Bearer {key}"}, timeout=30)

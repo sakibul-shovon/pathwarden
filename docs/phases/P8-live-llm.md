@@ -53,7 +53,10 @@ Tasks ticked with evidence (state clearly which were verified with a real key) �
 ## 10. Git checkpoints
 `P8: chore(deps): litellm probe and llm extra` · `P8: feat(agents): live agent loop and prompts` · `P8: feat(forensics): llm plan with fallback` · `P8: feat(eval): b1 and b3 judges` · `P8: feat(eval): live study` · `P8: feat(web): enable live mode` → PR → merge → tag.
 
-## 11. Outcome so far (2026-10-17)
-Update: verified with a real model (`groq/qwen/qwen3.8-27b`): live attack held, own issue, LLM forensics, browser flow; see D-037 and PROGRESS. The paragraph below is the earlier, fake-provider state.
+## 11. Outcome (2026-10-17)
+Full Phase P8 completed and verified with real provider keys (`groq/qwen/qwen3.8-27b` with 3-key auto-rotation):
+- **T1-T7 & T10:** Probe verified, live agent loop, verbatim prompts, live run endpoint, LLM forensics, and UI live toggle verified.
+- **T8:** B1 and B3 LLM judges implemented per plan §20.3 verbatim, tested for prompt format, JSON parsing, invalid-JSON fallback (HOLD), and multi-key rotation.
+- **T9:** Live-agent empirical study (`make eval-live`) executed across 60 runs (3 scenarios × 10 runs guard off, 10 runs guard on): guard off 30/30 (100%) leaked, guard on 30/30 (100%) held (`TRIFECTA`). Results saved in `eval/results/live_study.md` and `.json`.
+- All 578 backend tests pass in both local and hosted modes (`PW_AUTH=on`). All static invariants, ruff lint, ruff format, and secret scanner pass cleanly.
 
-T2-T7 and T10 are done and verified with a **fake model** (569 backend tests in both auth modes) and end to end through **LiteLLM, the real API, FalkorDB and the UI** against a local OpenAI-compatible fake server (live attack: HELD / TRIFECTA, guard off: leak; own issue text; LLM forensics: 7 model calls, no fallback). **Not verified with a real provider key**: T1's real probe and every real-model behaviour. **T8 (B1/B3 judges) and T9 (live study) are not built yet**; T9 spends tokens, so the owner is asked first. Decisions: D-035, D-036, A-18.

@@ -56,8 +56,8 @@ class LiteLlm(Llm):
         max_steps: int = 10,
         reasoning_effort: str | None = None,
         timeout: float = 45.0,
-        max_tokens: int = 900,
-        retries: int = 3,
+        max_tokens: int = 400,
+        retries: int = 4,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         super().__init__()
@@ -121,11 +121,15 @@ class LiteLlm(Llm):
                     )
                     self.rotate_key()
                     if (attempt + 1) % len(self._api_keys) == 0 and attempt < total_attempts - 1:
-                        pause = min(4.0 * 2 ** (attempt // len(self._api_keys)), 30.0)
+                        cycle = attempt // len(self._api_keys)
+                        pause = min(15.0 * (1 + cycle), 60.0)
+                        logger.info(
+                            "All LLM keys rate limited; pausing %.0f s for quota reset", pause
+                        )
                         self._sleep(pause)
                     continue
                 if is_rate_limit and attempt < total_attempts - 1:
-                    pause = min(4.0 * 2**attempt, 30.0)
+                    pause = min(10.0 * (1 + attempt), 60.0)
                     logger.warning("LLM rate limited (%s); retrying in %.0f s", self.model, pause)
                     self._sleep(pause)
                     continue

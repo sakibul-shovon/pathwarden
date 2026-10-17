@@ -41,20 +41,20 @@ def run_live_study(
     """Execute the live-agent study across attack scenarios."""
     ws = manager.get("tinyqueue")
     report: dict[str, dict] = {
-        "model": getattr(manager.llm, "model", "unknown"),
+        "model": getattr(ws.llm, "model", "unknown"),
         "runs_per_scenario": runs_per_scenario,
         "scenarios": {},
     }
 
     for scenario_name in ATTACK_SCENARIOS:
-        print(f"\n--- Running scenario: {scenario_name} (N={runs_per_scenario}) ---")
+        print(f"\n--- Running scenario: {scenario_name} (N={runs_per_scenario}) ---", flush=True)
         guard_off_leaks = 0
         guard_on_holds = 0
         guard_off_details = []
         guard_on_details = []
 
         # 1. Guard OFF runs
-        print(f"[{scenario_name}] Running {runs_per_scenario} runs with guard OFF...")
+        print(f"[{scenario_name}] Running {runs_per_scenario} runs with guard OFF...", flush=True)
         for i in range(1, runs_per_scenario + 1):
             try:
                 res = ws.run_scenario(scenario_name, guard=False, mode="live")
@@ -74,16 +74,19 @@ def run_live_study(
                 guard_off_leaks += int(leaked)
                 guard_off_details.append({"run": i, "leaked": leaked})
                 print(
-                    f"  Run {i}/{runs_per_scenario} (guard OFF): {'LEAKED' if leaked else 'clean'}"
+                    f"  Run {i}/{runs_per_scenario} (guard OFF): {'LEAKED' if leaked else 'clean'}",
+                    flush=True,
                 )
             except Exception as exc:
                 logger.warning("Error in guard OFF run %d: %s", i, exc)
+                print(f"  Run {i}/{runs_per_scenario} (guard OFF) ERROR: {exc}", flush=True)
                 guard_off_details.append({"run": i, "error": str(exc), "leaked": False})
+                time.sleep(10.0)
             if pause_between_runs > 0:
                 time.sleep(pause_between_runs)
 
         # 2. Guard ON runs
-        print(f"[{scenario_name}] Running {runs_per_scenario} runs with guard ON...")
+        print(f"[{scenario_name}] Running {runs_per_scenario} runs with guard ON...", flush=True)
         for i in range(1, runs_per_scenario + 1):
             try:
                 res = ws.run_scenario(scenario_name, guard=True, mode="live")
@@ -96,10 +99,15 @@ def run_live_study(
                 guard_on_details.append(
                     {"run": i, "status": status, "reason": reason, "held": held}
                 )
-                print(f"  Run {i}/{runs_per_scenario} (guard ON): {status.upper()} ({reason})")
+                print(
+                    f"  Run {i}/{runs_per_scenario} (guard ON): {status.upper()} ({reason})",
+                    flush=True,
+                )
             except Exception as exc:
                 logger.warning("Error in guard ON run %d: %s", i, exc)
+                print(f"  Run {i}/{runs_per_scenario} (guard ON) ERROR: {exc}", flush=True)
                 guard_on_details.append({"run": i, "error": str(exc), "held": False})
+                time.sleep(10.0)
             if pause_between_runs > 0:
                 time.sleep(pause_between_runs)
 
@@ -176,7 +184,8 @@ def main() -> int:
         f"Starting Live-Agent Study with model {settings.llm_model} ({runs} runs per scenario)..."
     )
 
-    report = run_live_study(manager, runs_per_scenario=runs)
+    pause = float(os.environ.get("PW_LIVE_PAUSE", "3.0"))
+    report = run_live_study(manager, runs_per_scenario=runs, pause_between_runs=pause)
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     json_path = RESULTS_DIR / "live_study.json"
