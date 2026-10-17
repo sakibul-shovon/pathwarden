@@ -156,11 +156,13 @@ class Workspace:
             graph=self.graph,
             mode=mode,
         )
-        if mode == "live" and self.llm is not None:
+        if mode == "live" and self.llm is not None and isinstance(agents, LiveAgents):
             result["llm"] = {
                 "model": self.llm.model,
                 "calls": self.llm.calls - before[0],
                 "tokens": self.llm.tokens - before[1],
+                "max_steps": self.llm.max_steps,
+                "step_limit_hit": agents.exhausted,
             }
         return result
 

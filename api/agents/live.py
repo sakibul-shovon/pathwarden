@@ -32,7 +32,7 @@ from api.runtime.runtime import Runtime
 logger = logging.getLogger(__name__)
 
 PROMPTS = Path(__file__).parent / "prompts"
-MAX_STEPS = 6
+DEFAULT_MAX_STEPS = 10  # the plan says 6, but its own attack needs 8 tool calls (DECISIONS A-18)
 MAX_TOOL_TEXT = 4000  # a tool result is cut here so one huge artifact cannot flood the context
 
 TOOL_MENUS = {
@@ -100,6 +100,8 @@ class LiveAgents:
         self._rt = runtime
         self._fx = fixtures
         self._llm = llm
+        # agents that were cut at the step limit while still working (the UI says so)
+        self.exhausted: list[str] = []
 
     # ------------------------------------------------------------------ the loop
     def _converse(
@@ -112,13 +114,16 @@ class LiveAgents:
         messages = [{"role": "system", "content": system}, {"role": "user", "content": "Start."}]
         outcome = _Outcome()
         retried = False
+        finished = False
         steps = 0
-        while steps < MAX_STEPS and not outcome.stop:
+        limit = self._llm.max_steps
+        while steps < limit and not outcome.stop:
             reply = self._llm.complete(messages)
             parsed = parse_reply(reply)
             if parsed is None:
                 if retried:
                     logger.info("%s: invalid JSON twice, session stopped", agent)
+                    finished = True
                     break
                 retried = True
                 messages += [
@@ -127,6 +132,7 @@ class LiveAgents:
                 ]
                 continue
             if parsed.get("done") is True:
+                finished = True
                 break
             steps += 1
             tool = parsed.get("tool")
@@ -142,6 +148,8 @@ class LiveAgents:
                 {"role": "assistant", "content": reply},
                 {"role": "user", "content": f"TOOL RESULT {tool}: {_clip(result)}"},
             ]
+        if not finished and not outcome.stop:
+            self.exhausted.append(agent)
         return outcome
 
     @staticmethod
@@ -177,7 +185,7 @@ class LiveAgents:
 
     def _extract_task(self, sid: str, raw_artifact: str, number: int, text: str) -> None:
         """Live ``extract_task``: only the raw issue text goes to the model; the answer must
-        validate against ``TaskSchema``, and the sanitized artifact derives from the raw one alone."""
+        validate against ``TaskSchema``; the sanitized artifact derives from the raw one alone."""
         prompt = render(load_prompt("extractor"), number=str(number), issue_text=text)
         reply = self._llm.complete([{"role": "user", "content": prompt}])
         parsed = parse_reply(reply)

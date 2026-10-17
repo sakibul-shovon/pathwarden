@@ -29,6 +29,7 @@ class Llm:
     """Base class: counts calls and tokens so reports can say what a run cost."""
 
     model: str = "unknown"
+    max_steps = 10  # tool steps one live agent may take (plan 12.3 says 6; DECISIONS A-18)
 
     def __init__(self) -> None:
         self.calls = 0
@@ -51,6 +52,7 @@ class LiteLlm(Llm):
         api_key: str,
         temperature: float = 0.0,
         *,
+        max_steps: int = 10,
         timeout: float = 45.0,
         max_tokens: int = 900,
         retries: int = 3,
@@ -60,6 +62,7 @@ class LiteLlm(Llm):
         self.model = model
         self._api_key = api_key
         self._temperature = temperature
+        self.max_steps = max_steps
         self._timeout = timeout
         self._max_tokens = max_tokens
         self._retries = retries
@@ -131,4 +134,5 @@ def build_llm(settings: object) -> Llm | None:
         settings.llm_model,
         settings.llm_api_key.get_secret_value(),
         settings.llm_temperature,
+        max_steps=settings.llm_max_steps,
     )

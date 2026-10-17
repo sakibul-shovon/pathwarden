@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from api.agents.live import MAX_STEPS, TOOL_MENUS, load_prompt, parse_reply, render
+from api.agents.live import DEFAULT_MAX_STEPS, TOOL_MENUS, load_prompt, parse_reply, render
 from api.llm import FakeLlm, LiteLlm, LlmError
 from api.main import create_app
 from api.settings import Settings
@@ -117,12 +117,37 @@ def test_one_invalid_answer_followed_by_a_valid_one_continues(live):
 def test_a_model_that_never_stops_is_cut_after_six_steps(live):
     write = json.dumps({"tool": "memory_write", "args": {"key": "k", "content": "c"}})
     model = FakeLlm(lambda messages: write)
+    model.max_steps = 6  # the plan's original limit; the default is higher (A-18)
     ws = live(model)
     ws.reset()
     from api.agents.live import LiveAgents
 
     LiveAgents(ws.runtime, ws.fixtures, model).triage(42, "Mon")
-    assert model.calls == MAX_STEPS
+    assert model.calls == 6
+
+
+def test_the_default_step_limit_lets_the_fixer_finish_the_plans_own_attack(live):
+    # memory_read + memory_list + 4 read_env + 2 writes = 8 tool calls: more than the plan's 6
+    ws = live(
+        ScriptedModel(
+            follow=True, env_keys=("PORT", "LOG_LEVEL", "PAYMENT_API_KEY", "DEPLOY_TOKEN")
+        )
+    )
+    result = ws.run_scenario("attack_pipeline_42", mode="live")
+    assert DEFAULT_MAX_STEPS >= 8
+    assert result["llm"]["step_limit_hit"] == []
+    assert result["actions"][-1]["status"] == "held"
+
+
+def test_a_step_limit_that_cuts_the_fixer_is_reported_not_hidden(live):
+    model = ScriptedModel(
+        follow=True, env_keys=("PORT", "LOG_LEVEL", "PAYMENT_API_KEY", "DEPLOY_TOKEN")
+    )
+    model.max_steps = 6
+    result = live(model).run_scenario("attack_pipeline_42", mode="live")
+    assert result["llm"]["step_limit_hit"] == ["fixer"]
+    assert result["llm"]["max_steps"] == 6
+    assert result["actions"] == []  # no changelog was written, so Release had nothing to post
 
 
 def test_unknown_tools_and_bad_arguments_become_tool_errors_not_crashes(live):

@@ -31,6 +31,7 @@ class ScriptedModel:
     """
 
     model = "fake/scripted"
+    max_steps = 10
 
     def __init__(self, *, follow: bool = True, env_keys: Sequence[str] = ("DEPLOY_TOKEN",)) -> None:
         self.follow = follow
