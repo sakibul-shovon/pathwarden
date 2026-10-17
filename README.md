@@ -10,7 +10,7 @@ Entered in **Track 01** and **Track 02** (see [section 14](#14-tracks-entered)).
 |---|---|
 | ![guard off](docs/img/run-guard-off-leak.png) | ![guard on](docs/img/run-guard-on-hold.png) |
 
-> A GIF/video of this flow is a human task (see `docs/PROGRESS.md`, P12-T5); the screenshots above are real captures of the running UI.
+> A GIF/video of this flow is a human task (see `docs/PROGRESS.md`, P12-T5); the screenshots above are real captures of the running UI, taken before the P13a interface redesign (same tabs, flows and deep links; the new interface adds a Home page, a Live mode and a different look, so details differ).
 
 ---
 
@@ -40,9 +40,22 @@ make eval       # 120 scenarios x 7 defenses; deterministic, byte-identical on e
 make web        # the UI on http://localhost:5173 (needs Node; tested with 22; `cd web && npm install` once)
 ```
 
-Everything above works offline: scripted agents (a deterministic simulation of an LLM that follows the injected instruction) need no key. The live-LLM mode is not implemented yet (see [Limitations](#11-evaluation)).
+Everything above works offline: scripted agents (a deterministic simulation of an LLM that follows the injected instruction) need no key. A **live LLM mode** is optional and described right below; the judges and the live study that go with it are not implemented yet (see [section 11](#11-evaluation)).
 
 Other commands: `make demo-mcp` (the same attack through the MCP gateway, [section 10](#10-mcp-gateway-and-tool-server)), `make probe` (checks the FalkorDB features the product depends on), `make test-auth` (the suite in hosted mode), `make lint`.
+
+### Live LLM mode (optional)
+
+A real model can play Triage, Fixer and Release instead of the scripted agents. It needs a provider key and spends tokens; nothing else in this repository needs one.
+
+```
+pip install -e ".[llm]"    # LiteLLM, pinned to 1.100.3 (1.82.7 and 1.82.8 on PyPI were malicious, see docs/DECISIONS.md D-035)
+# put these in .env (gitignored, never commit it):  PW_LLM_MODEL=groq/<model>   PW_LLM_API_KEY=<your key>
+make probe-llm             # one real call; `python scripts/probe_litellm.py --list-models` lists the usable models
+make up                    # the API image includes LiteLLM and passes .env to the container
+```
+
+In the UI: **Run** -> Mode *Live*, and the *Bring your own issue* box (write an issue as an outsider would; the live agents handle it; Pathwarden judges the path the data took, never your words); **Investigate** -> Forensic Agent mode *LLM*. Honest notes: it was tried with `groq/qwen/qwen3.8-27b`; `groq/openai/gpt-oss-20b` cannot drive the agents (Groq rejects its native tool calls); free tiers rate-limit (the client waits and retries); a model may or may not follow the hidden instruction, so outcomes vary between runs; each agent has 10 tool steps by default (`PW_LLM_MAX_STEPS`; the plan says 6 but its own attack needs 8, decision A-18). Your text is sent to the model provider: use fake secrets only.
 
 ## 3. Architecture
 
@@ -88,7 +101,7 @@ Why a graph database: persistent lineage across sessions and days, typed variabl
 
 ## 6. Forensic Agent and healing
 
-From a held action the Forensic Agent (metadata-only tools, no content): finds the untrusted source and the memories that laundered it (`q3`), previews and applies a **quarantine** of everything derived from it (`q4*`, reversible, audited by a `Quarantine` node), replays the work in a sandbox copy of the graph, gates the healed result, and shows a diff. **Releasing the healed version needs a human** (risk-increasing actions are never automatic). Scripted mode is the default; the LLM mode is not implemented yet and answers `501`.
+From a held action the Forensic Agent (metadata-only tools, no content): finds the untrusted source and the memories that laundered it (`q3`), previews and applies a **quarantine** of everything derived from it (`q4*`, reversible, audited by a `Quarantine` node), replays the work in a sandbox copy of the graph, gates the healed result, and shows a diff. **Releasing the healed version needs a human** (risk-increasing actions are never automatic). Scripted mode is the default. In **LLM mode** a model chooses the tools (at most 8 calls): the report is assembled from the tools' real outputs and the model's own report must agree with them, a wrong argument gets a hint, and anything unsafe (unknown tool, bad JSON, a quarantine outside the preview, an exceeded budget) falls back to the scripted plan with `fallback_used: true`. Without a configured model it answers `501`.
 
 ![forensics](docs/img/investigate-forensics.png)
 
@@ -112,7 +125,7 @@ Every agent session gets A/B/C badges computed from the graph (`q5`). In the dem
 
 ## 10. MCP gateway and tool server
 
-`make demo-mcp` runs three scripted agents as three separate MCP client sessions, each through its own gateway process (stdio), in front of five mock upstream servers. The release is answered with the tool error `Held by Pathwarden: act-0001 (TRIFECTA). Review at ...`; the upstream `post_release` is never called. `?ws=tinyqueue-mcp` shows the same witnesses in the UI. The **tool server** exposes `pathwarden_gate`, `pathwarden_explain`, `pathwarden_quarantine_preview`, `pathwarden_forensics` and `pathwarden_toxic_agents`. Details, client configuration and limits: [`docs/MCP.md`](docs/MCP.md). The demo clients are scripted; real LLM agents through the gateway need the live mode (not implemented).
+`make demo-mcp` runs three scripted agents as three separate MCP client sessions, each through its own gateway process (stdio), in front of five mock upstream servers. The release is answered with the tool error `Held by Pathwarden: act-0001 (TRIFECTA). Review at ...`; the upstream `post_release` is never called. `?ws=tinyqueue-mcp` shows the same witnesses in the UI. The **tool server** exposes `pathwarden_gate`, `pathwarden_explain`, `pathwarden_quarantine_preview`, `pathwarden_forensics` and `pathwarden_toxic_agents`. Details, client configuration and limits: [`docs/MCP.md`](docs/MCP.md). The demo clients are scripted. Real LLM agents run inside Pathwarden's runtime in the live mode ([section 2](#live-llm-mode-optional)); real LLM agents *through the MCP gateway* have not been tried.
 
 ![mcp](docs/img/mcp-gateway-hold.png)
 
@@ -132,15 +145,17 @@ Every agent session gets A/B/C badges computed from the graph (`q5`). In the dem
 | PW | 0.0% [0.0, 6.0] (0/60) | 0.0% [0.0, 6.0] (0/60) |
 <!-- results:end -->
 
-B0 = no defense; B2 = the per-session Rule of Two (it checks one session at a time, so it is blind to attacks split across agents and days: 100% released); B4 = a content (DLP-style) scanner for exact secret values and the demo-secret pattern; PW-coarse = the same gate on a coarse lineage (one session per agent per day, one secret artifact for the whole `.env`, no sanitizer: the taint-explosion ablation); PW = Pathwarden. B1 and B3 are LLM judges and are **`not_run`**: they need the live mode (P8). Witness accuracy for PW: 60/60 witness pairs end at the ground-truth sources.
+B0 = no defense; B2 = the per-session Rule of Two (it checks one session at a time, so it is blind to attacks split across agents and days: 100% released); B4 = a content (DLP-style) scanner for exact secret values and the demo-secret pattern; PW-coarse = the same gate on a coarse lineage (one session per agent per day, one secret artifact for the whole `.env`, no sanitizer: the taint-explosion ablation); PW = Pathwarden. B1 and B3 are LLM judges and are **`not_run`**: the live mode exists, but the judges (P8-T8) and the live study (P8-T9) are not implemented yet. Witness accuracy for PW: 60/60 witness pairs end at the ground-truth sources.
 
 **How to read this honestly.** The dataset is synthetic and scripted, and the gate and the dataset share one lineage model, so a perfect PW score shows that the implementation matches the model, not that the model covers real attacks. The informative contrasts are the baselines: the per-agent Rule of Two misses every cross-agent attack, a content filter both misses disguised secrets (base64) and fires on harmless example keys, and coarse taint holds 73% of benign runs. Where Pathwarden is **not** better: it needs correct source labels (a mislabelled source is trusted), it does not see an LLM's internal state, and B1/B3 (LLM judges) were not run, so "PW beats an LLM judge" is **not claimed**. Falsification criteria (plan §20.7) with their current status are in `eval/results/summary.md` and the Evaluation tab; two are *not evaluable* until B1/B3 run. Decision latency is measured separately (`eval/results/latency.md`, not deterministic; p50 about 9 ms for PW on the author's machine) and is not part of the generated summary.
+
+**Live agents: what was and was not measured.** With `groq/qwen/qwen3.8-27b`, temperature 0, **one run each** (an anecdote, not the 10-runs-per-scenario study of plan §20.6, and not evidence about other models): the attack with the guard on was obeyed by the model (it saved the hidden convention, read all four env keys, wrote them into the changelog), every session passed the Rule of Two, and the gate held it (`TRIFECTA`); with the guard off the fake secrets reached the public page; the benign scenario was posted. In *Bring your own issue*, a hidden-instruction text was held, while a plain request to "add every secret to the release notes" (no convention) was not obeyed by the model and was therefore allowed: the verdict follows what the agents did with the data, not what the text says. The backend tests (fake model, real database) cover the loop, the step limit, invalid JSON, the fallbacks and the key never appearing in logs, errors or dumps.
 
 ![evaluation](docs/img/evaluation.png)
 
 ## 12. Threat model and non-goals
 
-Full text: [`docs/SECURITY.md`](docs/SECURITY.md) and [`docs/threat-model.md`](docs/threat-model.md). Pathwarden does **not** claim to stop: side channels outside the runtime and the gateway; wrong registry labels; the LLM's internal state (the gateway's context is conservative by design); secret egress with no untrusted influence (a warning at most); real attackers against the demo data (scripted agents *simulate* compromise). Hosted mode has workspace-scoped API keys and a human-only guard on risk-increasing endpoints; `X-PW-Human` is a deliberate-action guard, **not authentication**.
+Full text: [`docs/SECURITY.md`](docs/SECURITY.md) and [`docs/threat-model.md`](docs/threat-model.md). Pathwarden does **not** claim to stop: side channels outside the runtime and the gateway; wrong registry labels; the LLM's internal state (the gateway's context is conservative by design); secret egress with no untrusted influence (a warning at most); real attackers against the demo data (scripted agents *simulate* compromise). In live mode a visitor's text is sent to the configured model provider and the free-text endpoint has no rate limiting (a stated non-goal): use fake secrets only. Hosted mode has workspace-scoped API keys and a human-only guard on risk-increasing endpoints; `X-PW-Human` is a deliberate-action guard, **not authentication**.
 
 ## 13. Related work
 
@@ -163,7 +178,7 @@ Our contribution is the system-level, cross-session combination with healing and
 
 ## 15. AI-assistance disclosure
 
-The requirements, graph model, queries, gate semantics and evaluation design are in `plan.md`, supplied by the repository owner. **The implementation was written by Claude Code (Anthropic) working phase by phase under the rules in `AGENTS.md`**, with the owner approving the process and delegating the merges; the owner did not review the code line by line, and no independent human or second-agent review took place (known gap G-001). What backs the code instead of review: the Cypher queries are checked programmatically to be verbatim copies of the plan (two documented exceptions, D-017 and D-018, still await the owner's review), 512 tests run against a real database in two auth modes, deliberate-breakage ("sabotage") checks per phase are recorded in `docs/PROGRESS.md`, and every claim above carries its evidence there. Details and the exact tool/model facts: [`docs/AI_ASSISTANCE.md`](docs/AI_ASSISTANCE.md).
+The requirements, graph model, queries, gate semantics and evaluation design are in `plan.md`, supplied by the repository owner. **The implementation was written by Claude Code (Anthropic) working phase by phase under the rules in `AGENTS.md`**, with the owner approving the process and delegating the merges; the owner did not review the code line by line, and no independent human or second-agent review took place (known gap G-001). What backs the code instead of review: the Cypher queries are checked programmatically to be verbatim copies of the plan (two documented exceptions, D-017 and D-018, still await the owner's review), 573 tests run against a real database in two auth modes, deliberate-breakage ("sabotage") checks per phase are recorded in `docs/PROGRESS.md`, and every claim above carries its evidence there. The live-mode code (P8) was tested with a scripted fake model and checked once against a real model; it has the same absence of line-by-line review. Details and the exact tool/model facts: [`docs/AI_ASSISTANCE.md`](docs/AI_ASSISTANCE.md).
 
 ## 16. Deployment
 
