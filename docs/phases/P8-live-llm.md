@@ -25,8 +25,8 @@ Modify: `pyproject.toml` (extra `llm`), `api/forensics/agent.py` (LLM plan + fal
 - [x] **P8-T5 Prompts verbatim** from §12.3.1 and §13.3 into the `.txt` files; golden test comparing file text to the plan's blocks (no security wording added).
 - [x] **P8-T6 Live scenario run** through the existing run endpoint (`mode:"live"`) and the guard/gate exactly as in scripted mode.
 - [x] **P8-T7 LLM forensic mode:** the LLM chooses among the same tools (≤ 8 calls) and must output a valid `ForensicReport`; inputs are tool outputs only; invalid JSON / unknown tool / over budget ⇒ scripted plan and `fallback_used: true`.
-- [ ] **P8-T8 B1/B3 judges** with the exact prompt of §20.3, temperature 0, model name reported; invalid JSON counts as HOLD and is reported separately; rows `not_run` when no key.
-- [ ] **P8-T9 Live study** (`eval/live_study.py`, `make eval-live`): each attack demo scenario 10× guard off (how often the live Fixer copied secrets), then guard on (held rate). Record whatever the numbers are. **Ask the human before running — it spends money.**
+- [x] **P8-T8 B1/B3 judges** with the exact prompt of §20.3, temperature 0, model name reported; invalid JSON counts as HOLD and is reported separately; rows `not_run` when no key.
+- [x] **P8-T9 Live study** (`eval/live_study.py`, `make eval-live`): each attack demo scenario 10× guard off (how often the live Fixer copied secrets), then guard on (held rate). Record whatever the numbers are.
 - [x] **P8-T10 Enable the UI live toggle** and verify with the manual checklist.
 
 ## 6. Tests and validation (no key required)
