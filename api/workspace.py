@@ -12,12 +12,14 @@ from pathlib import Path
 
 from falkordb import FalkorDB
 
+from api.agents.live import LiveAgents
 from api.agents.scripted import Fixtures, ScriptedAgents
 from api.forensics.agent import ForensicAgent, LlmModeUnavailableError
 from api.forensics.report import ForensicReport
 from api.forensics.tools import ForensicTools, Sandbox
 from api.graph.client import NamedGraph, connect
 from api.graph.schema import main_graph_name, mcp_graph_name, reset_graph
+from api.llm import Llm, build_llm
 from api.runtime.errors import ActionStateError, NotFoundError, ProvenanceError
 from api.runtime.events import EventLog
 from api.runtime.gate import Gate
@@ -25,7 +27,13 @@ from api.runtime.orchestrator import Orchestrator
 from api.runtime.registry import Registry, load_policy, policy_version
 from api.runtime.runtime import Runtime
 from api.runtime.sinks import SinkWriter
-from api.scenarios.demo import SCENARIOS, build_result, run_scenario
+from api.scenarios.demo import (
+    CUSTOM_ISSUE,
+    SCENARIOS,
+    build_result,
+    custom_scenario,
+    run_scenario,
+)
 from api.settings import Settings
 
 FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
@@ -36,7 +44,7 @@ __all__ = ["LiveModeUnavailableError", "LlmModeUnavailableError", "Workspace", "
 
 
 class LiveModeUnavailableError(Exception):
-    """``mode="live"`` was requested before live agents exist (P8)."""
+    """``mode="live"`` was requested but no LLM is configured (PW_LLM_MODEL / PW_LLM_API_KEY)."""
 
 
 class Workspace:
@@ -49,8 +57,10 @@ class Workspace:
         graph_name: str | None = None,
         registry_workspace: str | None = None,
         tenant: bool = False,
+        llm: Llm | None = None,
     ):
         self.name = name
+        self.llm = llm  # None = scripted only
         self._db = db
         self.fixtures = Fixtures(fixtures_dir)
         self.registry = Registry.load(fixtures_dir / "registry.yaml")
@@ -120,19 +130,52 @@ class Workspace:
         scenario = SCENARIOS.get(name)
         if scenario is None:
             raise NotFoundError(f"scenario {name!r}")
-        if mode != "scripted":
+        if mode == "live":
+            if self.llm is None:
+                raise LiveModeUnavailableError(mode)
+        elif mode != "scripted":
             raise LiveModeUnavailableError(mode)
         with self.lock:
             if reset:
                 self.reset()
-            runtime = self.runtime
-            return run_scenario(
-                scenario,
-                runtime=runtime,
-                agents=ScriptedAgents(runtime, self.fixtures),
-                orchestrator=self.orchestrator(guard=guard),
-                graph=self.graph,
+            return self._run(scenario, guard=guard, mode=mode)
+
+    def _run(self, scenario, *, guard: bool, mode: str) -> dict:
+        runtime = self.runtime
+        before = (self.llm.calls, self.llm.tokens) if self.llm else (0, 0)
+        agents: ScriptedAgents | LiveAgents
+        if mode == "live" and self.llm is not None:
+            agents = LiveAgents(runtime, self.fixtures, self.llm)
+        else:
+            agents = ScriptedAgents(runtime, self.fixtures)
+        result = run_scenario(
+            scenario,
+            runtime=runtime,
+            agents=agents,
+            orchestrator=self.orchestrator(guard=guard),
+            graph=self.graph,
+            mode=mode,
+        )
+        if mode == "live" and self.llm is not None:
+            result["llm"] = {
+                "model": self.llm.model,
+                "calls": self.llm.calls - before[0],
+                "tokens": self.llm.tokens - before[1],
+            }
+        return result
+
+    def run_custom(self, issue_text: str, *, guard: bool = True) -> dict:
+        """Live agents handle a visitor's own issue text. The text is data: the gate never reads it
+        (rule 3); it only sees that the issue is an untrusted source (rule 5: a registry fact)."""
+        if self.llm is None:
+            raise LiveModeUnavailableError("live")
+        with self.lock:
+            self.fixtures.custom[CUSTOM_ISSUE] = f"Title: Custom issue\nLabels: bug\n\n{issue_text}"
+            self.reset()
+            self.runtime.add_source(
+                f"src:issue:{CUSTOM_ISSUE}", "github_issue", "untrusted", "Custom issue (public)"
             )
+            return self._run(custom_scenario(), guard=guard, mode="live")
 
     # ------------------------------------------------------------------ forensics and healing
     def make_sandbox(self) -> Sandbox:
@@ -160,7 +203,7 @@ class Workspace:
         """Investigate a held/blocked action, quarantine its source, replay in the sandbox."""
         with self.lock:
             self.runtime.get_action(action_id)  # NotFoundError for unknown actions
-            report = ForensicAgent(self._tools()).run(action_id, mode)
+            report = ForensicAgent(self._tools(), self.llm).run(action_id, mode)
             if report.quarantine_id:
                 self._quarantines[report.quarantine_id] = list(report.quarantined_artifacts)
             return report
@@ -258,8 +301,11 @@ class WorkspaceManager:
         settings: Settings,
         graph_names: dict[str, str] | None = None,
         tenants: frozenset[str] = frozenset(),
+        llm: Llm | None = None,
     ) -> None:
         self._settings = settings
+        # one client for every workspace (it only counts calls); tests inject a FakeLlm
+        self._llm = llm if llm is not None else build_llm(settings)
         self._tenants = tenants
         self._graph_names = graph_names or {}
         self._db: FalkorDB | None = None
@@ -281,5 +327,6 @@ class WorkspaceManager:
                     graph_name=self._graph_names.get(name) or default_graph,
                     registry_workspace=base,
                     tenant=base in self._tenants,
+                    llm=self._llm,
                 )
             return self._workspaces[name]

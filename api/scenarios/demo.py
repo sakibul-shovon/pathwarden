@@ -9,6 +9,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass, field
 
+from api.agents.live import LiveAgents
 from api.agents.scripted import ScriptedAgents, SessionInfo
 from api.graph.client import NamedGraph
 from api.runtime.explain import rule_of_two
@@ -94,6 +95,21 @@ SCENARIOS: dict[str, Scenario] = {
 }
 
 
+CUSTOM_ISSUE = 900  # issue number used for a visitor's own text (live mode only)
+
+
+def custom_scenario() -> Scenario:
+    """The visitor's own issue handled by the live agents. The expected result is a placeholder:
+    nobody can predict what a model does with free text, and the gate does not read the text."""
+    return Scenario(
+        "custom_issue",
+        "Your own issue text, handled by live LLM agents.",
+        _chain(CUSTOM_ISSUE, "Mon"),
+        "held",
+        "TRIFECTA",
+    )
+
+
 def _detail(event: dict) -> str:
     op = event["op"]
     if op == "start_session":
@@ -117,11 +133,14 @@ def run_scenario(
     scenario: Scenario,
     *,
     runtime: Runtime,
-    agents: ScriptedAgents,
+    agents: ScriptedAgents | LiveAgents,
     orchestrator: Orchestrator,
     graph: NamedGraph,
+    mode: str = "scripted",
 ) -> dict:
-    """Execute ``scenario`` against a (normally freshly reset) workspace; return a ``RunResult``."""
+    """Execute ``scenario`` against a (normally freshly reset) workspace; return a ``RunResult``.
+
+    With live agents the model may never post a release: then there is no action to gate."""
     first_event = len(runtime.events.events)
     sessions: list[SessionInfo] = []
     actions: list[dict] = []
@@ -135,6 +154,8 @@ def run_scenario(
         elif step.agent == "release":
             info, action_id = agents.release(step.issue, step.day)
             sessions.append(info)
+            if action_id is None:
+                continue
             outcome = orchestrator.submit(action_id)
             actions.append({"id": action_id, "status": outcome.status, "reason": outcome.reason})
             detail = f"{action_id} {outcome.status} {outcome.reason}"
@@ -156,6 +177,7 @@ def run_scenario(
         actions=actions,
         first_event=first_event,
         gate_entries=gate_entries,
+        mode=mode,
     )
 
 
@@ -169,6 +191,7 @@ def build_result(
     actions: list[dict],
     first_event: int,
     gate_entries: list[tuple[int, dict]],
+    mode: str = "scripted",
 ) -> dict:
     """Assemble a ``RunResult`` (plan §18): sessions with badges, a timeline, the actions."""
     agent_of: dict[str, str] = {}
@@ -195,7 +218,7 @@ def build_result(
     return {
         "scenario": name,
         "guard": guard,
-        "mode": "scripted",
+        "mode": mode,
         "sessions": [
             {"id": s.id, "agent": s.agent, "day": s.day, "rule_of_two": rule_of_two(graph, s.id)}
             for s in sessions

@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 
 
 class Settings(BaseModel):
@@ -23,6 +23,15 @@ class Settings(BaseModel):
     # PW_API_KEYS, "key=workspace,key2=workspace2") wins over the file; neither is ever logged.
     api_keys_file: Path | None = None
     api_keys: str | None = None
+    # live LLM mode (P8, plan §12.3): a LiteLLM model string and the provider key. The key is a
+    # SecretStr (never shown by repr or model_dump) and is only passed to the provider client.
+    llm_model: str | None = None
+    llm_api_key: SecretStr | None = None
+    llm_temperature: float = 0.0
+
+    @property
+    def llm_configured(self) -> bool:
+        return bool(self.llm_model and self.llm_api_key)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -48,6 +57,12 @@ class Settings(BaseModel):
             values["api_keys_file"] = Path(keys_file)
         if (keys := get("PW_API_KEYS")) is not None:
             values["api_keys"] = keys
+        if (model := get("PW_LLM_MODEL")) is not None:
+            values["llm_model"] = model
+        if (llm_key := get("PW_LLM_API_KEY")) is not None:
+            values["llm_api_key"] = llm_key
+        if (temperature := get("PW_LLM_TEMPERATURE")) is not None:
+            values["llm_temperature"] = float(temperature)
         return cls(**values)
 
 

@@ -31,7 +31,7 @@ The list is fixed and checked by `tests/test_invariants.py` (a new mutating rout
 | `POST /api/ws/{ws}/quarantine/{qid}/release` | same |
 | `POST /api/remediation/{topology}/apply`, `/reset` | any valid key (the topology is global demo data) + `X-PW-Human: true` |
 
-Not human-only (workspace key only): `forensics` (it only reduces risk: quarantine and sandbox replay), `reset` and `scenarios/{name}/run` of a workspace (they rebuild the tenant's own demo graph), `remediation/.../suggest` (a computation on a temporary copy). Read endpoints of `remediation` and `eval` are global, public demo data.
+Not human-only (workspace key only): `forensics` (it only reduces risk: quarantine and sandbox replay), `reset`, `scenarios/{name}/run` and `scenarios/custom/run` of a workspace (they rebuild the tenant's own demo graph; the last one hands a visitor's text to the live LLM agents), `remediation/.../suggest` (a computation on a temporary copy). Read endpoints of `remediation` and `eval` are global, public demo data.
 
 **`X-PW-Human` is a deliberate-action guard, not authentication.** It is a header any client can set; it stops accidental or scripted calls (a script that "approves" must say so explicitly) and it makes the UI's human actions visible in the code. In hosted mode the real approval authority rests on the workspace key.
 

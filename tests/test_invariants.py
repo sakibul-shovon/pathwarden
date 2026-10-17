@@ -201,6 +201,7 @@ HUMAN_ONLY_ROUTES = {
 OTHER_MUTATING_ROUTES = {
     "POST /api/ws/{ws}/reset",
     "POST /api/ws/{ws}/scenarios/{name}/run",
+    "POST /api/ws/{ws}/scenarios/custom/run",  # live agents on a visitor's text (P8)
     "POST /api/ws/{ws}/forensics/{action_id}",
     "POST /api/remediation/{topology}/suggest",
 }
