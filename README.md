@@ -19,7 +19,7 @@
 <br/>
 
 [**Watch the 4-Minute Film (YouTube)**](https://www.youtube.com/watch?v=Sy9g-40IoUk) •
-[**Live Demo (Placeholder)**](#16-deployment) •
+[**Live VPS Demo**](http://165.99.219.253/) •
 [**Quickstart**](#2-quickstart-and-running-locally) •
 [**Graph Model**](#4-graph-data-model) •
 [**Cypher Queries**](#5-queries-and-algorithms-the-product-depends-on) •
@@ -30,7 +30,7 @@
 ---
 
 > **Demo Video (4:09 Broadcast Film):** [https://www.youtube.com/watch?v=Sy9g-40IoUk](https://www.youtube.com/watch?v=Sy9g-40IoUk)  
-> **Live Demo URL (Hosted Platform):** `https://pathwarden-demo.vercel.app` *(see [Section 16](#16-deployment) for hosted setup; full local setup below)*  
+> **Live Demo URL (VPS Instance):** [http://165.99.219.253/](http://165.99.219.253/) *(Full live stack: React 19 UI, FalkorDB Graph & FastAPI backend with Groq LLM)*  
 > **Graph Hacks Submission Tracks:** **Track 01** *(Agents That Act on Connected Data)* & **Track 02** *(Agent Memory and Coordination)*
 
 ---
@@ -273,7 +273,7 @@ The requirements, graph model, queries, gate semantics and evaluation design are
 
 ## 16. Deployment
 
-Local is the primary path ([section 2](#2-quickstart-no-api-key-no-account)). Hosted configuration (FalkorDB Cloud or Railway, API on Railway/Render, UI on Vercel, `PW_AUTH=on`) is written down in [`docs/DEPLOY.md`](docs/DEPLOY.md). **No hosted demo is running yet**: creating the accounts and deploying is a human task (P12-T4); until then the local run and the screenshots are the demonstration.
+Local is the primary path ([section 2](#2-quickstart-no-api-key-no-account)). A live community demo instance is deployed and running on a VPS at [http://165.99.219.253/](http://165.99.219.253/) (open access, no login required). Hosted configuration (FalkorDB Cloud or Railway, API on Railway/Render, UI on Vercel, `PW_AUTH=on`) is written down in [`docs/DEPLOY.md`](docs/DEPLOY.md). **No hosted demo is running yet**: creating the cloud provider accounts and deploying is a human task (P12-T4); until then the local run, the live VPS instance, and the screenshots are the demonstration.
 
 ---
 
