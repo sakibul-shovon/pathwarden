@@ -8,7 +8,7 @@ Each item with its evidence, run on 2026-10-16 against the branch that becomes `
 | 2 | README with setup and graph data model; queries linked | Done | `README.md` (17 sections in the plan's order, queries linked to `api/graph/queries/`), `docs/graph-model.md`; `tests/test_docs.py` checks the section order, that every local link resolves, and that the numbers equal `eval/results/summary.*` |
 | 3 | `make up && make demo` works on a clean machine with no key | Done (on a fresh clone of this branch, Windows + Docker Desktop; no `.env`) | `make setup` exit 0, `make up` exit 0 (waits for the database), `make demo` exit 0 with the six scenarios as expected (3 held, 3 clean, and the three leaks with the guard off), `make test` 517 passed, `make eval` byte-identical to the committed results; the clone and its containers were removed afterwards |
 | 4 | `make test` green; `make eval` reproducible | Done | `make test` and `make test-auth`: all passed in both modes; `make eval` run twice, `results.csv`, `summary.json`, `summary.md` byte-identical (sha256 compared); `make probe` 36/36, `make probe-mcp` 7/7 |
-| 5 | Demo video public | **[human], open** | shot list in plan §24.2; screenshots of every shot are in `docs/img/` |
+| 5 | Demo video public | Done | YouTube: https://www.youtube.com/watch?v=Sy9g-40IoUk (4:09 broadcast film) |
 | 6 | Live URL and local instructions | Local: done. **Live URL: [human], open** (not deployed) | `docs/DEPLOY.md` is the recipe incl. the FalkorDB capability probe (A-15); README section 16 says "no hosted demo is running yet" |
 | 7 | Tracks named: Track 01, Track 02 | Done | README header and section 14 |
 | 8 | AI assistance disclosed | Done, **two statements need the owner's confirmation** | README section 15, `docs/AI_ASSISTANCE.md` (how `plan.md` was produced; any code review the owner did) |
@@ -17,9 +17,9 @@ Each item with its evidence, run on 2026-10-16 against the branch that becomes `
 
 ## Open items for the owner, in the order they block submission
 
-1. Choose and add a `LICENSE`; make the repository public; confirm GitHub secret scanning and push protection (P12-T6).
-2. Record the demo video and add its link to the README (P12-T5).
+1. Make the repository public on GitHub; confirm secret scanning and push protection (LICENSE file added, Apache 2.0).
+2. Demo video: Done (https://www.youtube.com/watch?v=Sy9g-40IoUk).
 3. Deploy (P12-T4): accounts, then `docs/DEPLOY.md`; or accept the local-only demo and say so (the README already does).
 4. Confirm the two statements in `docs/AI_ASSISTANCE.md`; confirm or reject D-017, D-018, D-019, D-023.
-5. Optional: give the Groq model name to unblock P8 (live agents, LLM judges); until then B1/B3 stay `not_run`.
+5. P8 live study & judges: Done (evaluated with `groq/qwen/qwen3.8-27b`).
 6. Submit and save the confirmation.

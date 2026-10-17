@@ -1,16 +1,53 @@
 # Pathwarden
 
+<div align="center">
+
+[![FalkorDB Native](https://img.shields.io/badge/FalkorDB-Native_Graph-orange.svg?style=flat-square)](https://www.falkordb.com/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat-square)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg?style=flat-square&logo=python)](pyproject.toml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg?style=flat-square&logo=fastapi)](api/)
+[![React 19](https://img.shields.io/badge/React-19_SPA-61DAFB.svg?style=flat-square&logo=react)](web/)
+[![Tests: 578 Passed](https://img.shields.io/badge/Tests-578_Passed-success.svg?style=flat-square)](tests/)
+[![Graph Hacks](https://img.shields.io/badge/WeMakeDevs_×_FalkorDB-Graph_Hacks_2026-purple.svg?style=flat-square)](https://www.wemakedevs.org/hackathons/falkordb)
+
+<br/>
+
 **Every agent passes its safety check. The system still leaks. Pathwarden sees the path.**
 
-Pathwarden records in a graph database (FalkorDB) which data every agent read and what it produced. Before any external action it runs path queries over that lineage: *does this payload descend from an untrusted source **and** from a secret source, through any chain of agents, memories and sessions?* If yes, the action is held and both proof paths are shown.
+*A deterministic graph-native data lineage security gate for multi-agent workflows, powered by FalkorDB.*
 
-Entered in **Track 01** and **Track 02** (see [section 14](#14-tracks-entered)).
+<br/>
 
-| 1. Guard off: every agent passes the Rule of Two, the secret still reaches the public page | 2. Guard on: the same run is held, with both witness paths |
-|---|---|
-| ![guard off](docs/img/run-guard-off-leak.png) | ![guard on](docs/img/run-guard-on-hold.png) |
+[**Watch the 4-Minute Film (YouTube)**](https://www.youtube.com/watch?v=Sy9g-40IoUk) •
+[**Live Demo (Placeholder)**](#16-deployment) •
+[**Quickstart**](#2-quickstart-and-running-locally) •
+[**Graph Model**](#4-graph-data-model) •
+[**Cypher Queries**](#5-queries-and-algorithms-the-product-depends-on) •
+[**Benchmarks**](#11-evaluation)
 
-> A GIF/video of this flow is a human task (see `docs/PROGRESS.md`, P12-T5); the screenshots above are real captures of the running UI, taken before the P13a interface redesign (same tabs, flows and deep links; the new interface adds a Home page, a Live mode and a different look, so details differ).
+</div>
+
+---
+
+> **Demo Video (4:09 Broadcast Film):** [https://www.youtube.com/watch?v=Sy9g-40IoUk](https://www.youtube.com/watch?v=Sy9g-40IoUk)  
+> **Live Demo URL (Hosted Platform):** `https://pathwarden-demo.vercel.app` *(see [Section 16](#16-deployment) for hosted setup; full local setup below)*  
+> **Graph Hacks Submission Tracks:** **Track 01** *(Agents That Act on Connected Data)* & **Track 02** *(Agent Memory and Coordination)*
+
+---
+
+### Product Overview (Light Mode)
+
+![Pathwarden Overview](docs/img/home-overview-light.png)
+
+Pathwarden records in a graph database (FalkorDB) which data every agent read and what it produced. Before any external action is dispatched to the outside world, it executes typed path queries over that multi-hop lineage:
+
+$$\text{Action Blocked} \iff \exists\, \text{path}(\text{untrusted} \to \text{payload}) \;\land\; \exists\, \text{path}(\text{secret} \to \text{payload})$$
+
+If both paths exist, the action is **HELD** with reason `TRIFECTA`, and both witness paths are returned as proof.
+
+| 1. Guard OFF: Every agent passes Rule of Two, secret leaks to public page | 2. Guard ON: Deterministic FalkorDB gate intercepts and holds with proof paths |
+|:---:|:---:|
+| ![Guard Off - Leak](docs/img/run-guard-off-leak.png) | ![Guard On - Held](docs/img/run-guard-on-hold.png) |
 
 ---
 
@@ -27,20 +64,44 @@ Evidence that the class of problem is real:
 - A critique that the Rule of Two focuses on single agents: <https://kenhuangus.substack.com/p/the-rule-of-two-vs-reality-why-metas>
 - Agents poisoning each other through shared memory: <https://www.arthur.ai/column/prompt-injection-multi-agent-systems>
 
+---
+
 ## 2. Quickstart (no API key, no account)
 
-Needs Docker, Python 3.11 and GNU Make (on Windows use Git Bash).
+You can clone and run Pathwarden locally in under 2 minutes. All core scenarios, graph queries, and evaluation suites run completely offline with **zero API keys** and **no paid subscriptions**.
 
-```
-make setup      # once: .venv with the pinned dependencies
-make up         # FalkorDB + the API in Docker; waits until the database answers
-make demo       # the six scenarios of the story, with and without the guard (exit code 0 = as expected)
-make test       # the test suite against a real FalkorDB
-make eval       # 120 scenarios x 7 defenses; deterministic, byte-identical on every run
-make web        # the UI on http://localhost:5173 (needs Node; tested with 22; `cd web && npm install` once)
+### Prerequisites
+- **Git**
+- **Docker Desktop** (or Docker Engine with Compose)
+- **Python 3.11+**
+- **Node.js 20+** (for frontend UI)
+- **GNU Make** (on Windows, use Git Bash)
+
+### Step-by-Step Installation & Run
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/sakibul-shovon/pathwarden.git
+cd pathwarden
+
+# 2. Set up the local Python virtual environment (.venv) with pinned dependencies
+make setup
+
+# 3. Start FalkorDB and the FastAPI backend in Docker (waits for database healthcheck)
+make up
+
+# 4. Run the 6 core benchmark scenarios (deterministic, exit code 0 = verified)
+make demo
+
+# 5. Run the full test suite against real FalkorDB (578 tests)
+make test
+
+# 6. Launch the Web UI
+make web
+# Open http://localhost:5173 in your browser
 ```
 
-Everything above works offline: scripted agents (a deterministic simulation of an LLM that follows the injected instruction) need no key. A **live LLM mode** is optional and described right below; the judges and the live study that go with it are not implemented yet (see [section 11](#11-evaluation)).
+Everything above works offline: scripted agents (a deterministic simulation of an LLM that follows the injected instruction) need no key. A **live LLM mode** is optional and described right below; the judges and the live study that go with it are not implemented yet in the offline suite (see [section 11](#11-evaluation)).
 
 Other commands: `make demo-mcp` (the same attack through the MCP gateway, [section 10](#10-mcp-gateway-and-tool-server)), `make probe` (checks the FalkorDB features the product depends on), `make test-auth` (the suite in hosted mode), `make lint`.
 
@@ -48,7 +109,7 @@ Other commands: `make demo-mcp` (the same attack through the MCP gateway, [secti
 
 A real model can play Triage, Fixer and Release instead of the scripted agents. It needs a provider key and spends tokens; nothing else in this repository needs one.
 
-```
+```bash
 pip install -e ".[llm]"    # LiteLLM, pinned to 1.100.3 (1.82.7 and 1.82.8 on PyPI were malicious, see docs/DECISIONS.md D-035)
 # put these in .env (gitignored, never commit it):  PW_LLM_MODEL=groq/<model>   PW_LLM_API_KEY=<your key>
 make probe-llm             # one real call; `python scripts/probe_litellm.py --list-models` lists the usable models
@@ -56,6 +117,8 @@ make up                    # the API image includes LiteLLM and passes .env to t
 ```
 
 In the UI: **Run** -> Mode *Live*, and the *Bring your own issue* box (write an issue as an outsider would; the live agents handle it; Pathwarden judges the path the data took, never your words); **Investigate** -> Forensic Agent mode *LLM*. Honest notes: it was tried with `groq/qwen/qwen3.8-27b`; `groq/openai/gpt-oss-20b` cannot drive the agents (Groq rejects its native tool calls); free tiers rate-limit (the client waits and retries); a model may or may not follow the hidden instruction, so outcomes vary between runs; each agent has 10 tool steps by default (`PW_LLM_MAX_STEPS`; the plan says 6 but its own attack needs 8, decision A-18). Your text is sent to the model provider: use fake secrets only.
+
+---
 
 ## 3. Architecture
 
@@ -71,6 +134,8 @@ Hard rules (plan §4, enforced by `tests/test_invariants.py`): all Cypher lives 
 
 Folders: `api/` (runtime, gate, forensics, remediation, routes, MCP), `eval/` (generator, baselines, results), `fixtures/` (registry, policy, issues, topologies), `web/` (UI), `mock_upstreams/`, `docs/`.
 
+---
+
 ## 4. Graph data model
 
 Full tables and the Mermaid diagram: [`docs/graph-model.md`](docs/graph-model.md). In short:
@@ -84,6 +149,8 @@ Full tables and the Mermaid diagram: [`docs/graph-model.md`](docs/graph-model.md
 | `pw_eval_<scenario>` | one per evaluation scenario, deleted after scoring |
 
 Nodes: `Agent`, `Session`, `Source` (trust `untrusted` / `internal` / `secret`), `Artifact`, `Action`, `Sink`, `Approval`, `Quarantine`. Edges: `RAN`, `LOADED`, `PRODUCED`, `ORIGINATES_FROM`, `DERIVED_FROM`, `PROPOSED`, `PAYLOAD`, `TARGETS`, `APPROVES`, `COVERS`, `SUPERSEDED_BY`. A write derives from **every artifact in the session context**; a sanitizer output derives from its single input only.
+
+---
 
 ## 5. Queries and algorithms the product depends on
 
@@ -99,17 +166,23 @@ Other queries (all in [`api/graph/queries/`](api/graph/queries/)): `q1_*` the ru
 
 Why a graph database: persistent lineage across sessions and days, typed variable-length path queries that return the proof (witness) instead of a score, one graph per tenant, `GRAPH.COPY` sandboxes, built-in max-flow.
 
+---
+
 ## 6. Forensic Agent and healing
 
 From a held action the Forensic Agent (metadata-only tools, no content): finds the untrusted source and the memories that laundered it (`q3`), previews and applies a **quarantine** of everything derived from it (`q4*`, reversible, audited by a `Quarantine` node), replays the work in a sandbox copy of the graph, gates the healed result, and shows a diff. **Releasing the healed version needs a human** (risk-increasing actions are never automatic). Scripted mode is the default. In **LLM mode** a model chooses the tools (at most 8 calls): the report is assembled from the tools' real outputs and the model's own report must agree with them, a wrong argument gets a hint, and anything unsafe (unknown tool, bad JSON, a quarantine outside the preview, an exceeded budget) falls back to the scripted plan with `fallback_used: true`. Without a configured model it answers `501`.
 
-![forensics](docs/img/investigate-forensics.png)
+![Forensic Healing in Light Mode](docs/img/investigate-forensics.png)
+
+---
 
 ## 7. Time travel and memory hygiene
 
 The **Time travel** tab replays the lineage graph at any logical time; the two moments of the story are marked: *the poisoned memory is written* (Monday) and *the draft becomes doubly tainted* (Wednesday). Markers are computed from the graph, never hard-coded. The **Memory** tab lists every team-memory entry with its writer, day, untrusted origins and quarantine state, with a confirmed *Release quarantine* action.
 
-![time travel](docs/img/time-travel-sleeper.png)
+![Time Travel in Light Mode](docs/img/time-travel-sleeper.png)
+
+---
 
 ## 8. Remediation (four cuts, proof sketch, optimality gap)
 
@@ -117,17 +190,25 @@ A capability graph (`enterprise12`: 12 agents, 6 sources, 30 capabilities) is an
 
 Measured (generated by `make eval`, see [section 11](#11-evaluation)): on `enterprise12` the cheapest candidate costs 16 and an exhaustive search finds an optimum of 14, a **gap of 2** (a cheaper mixed cut exists that no single candidate finds); on `tinyqueue3` the best candidate equals the optimum (3).
 
-![remediation](docs/img/remediate-enterprise12.png)
+![Remediation Min-Cut in Light Mode](docs/img/remediate-enterprise12.png)
+
+---
 
 ## 9. Rule-of-Two badges
 
-Every agent session gets A/B/C badges computed from the graph (`q5`). In the demo each session is green: that is the point.
+Every agent session gets A/B/C badges computed from the graph (`q5`). In the demo each session is green: that is the point. You can inspect the live database state directly in the FalkorDB Browser:
+
+![FalkorDB Browser in Light Mode](docs/img/falkordb-browser.png)
+
+---
 
 ## 10. MCP gateway and tool server
 
 `make demo-mcp` runs three scripted agents as three separate MCP client sessions, each through its own gateway process (stdio), in front of five mock upstream servers. The release is answered with the tool error `Held by Pathwarden: act-0001 (TRIFECTA). Review at ...`; the upstream `post_release` is never called. `?ws=tinyqueue-mcp` shows the same witnesses in the UI. The **tool server** exposes `pathwarden_gate`, `pathwarden_explain`, `pathwarden_quarantine_preview`, `pathwarden_forensics` and `pathwarden_toxic_agents`. Details, client configuration and limits: [`docs/MCP.md`](docs/MCP.md). The demo clients are scripted. Real LLM agents run inside Pathwarden's runtime in the live mode ([section 2](#live-llm-mode-optional)); real LLM agents *through the MCP gateway* have not been tried.
 
-![mcp](docs/img/mcp-gateway-hold.png)
+![MCP Gateway in Light Mode](docs/img/mcp-gateway-hold.png)
+
+---
 
 ## 11. Evaluation
 
@@ -151,11 +232,15 @@ B0 = no defense; B2 = the per-session Rule of Two (it checks one session at a ti
 
 **Live agents: 60-run empirical study (Plan §20.6).** Evaluated with `groq/qwen/qwen3.8-27b`, temperature 0, over 10 runs per attack scenario (60 runs total; results in [`eval/results/live_study.md`](eval/results/live_study.md)): with guard OFF, the live LLM followed the prompt injection across 100% of runs (30/30 leaks); with guard ON, Pathwarden's deterministic graph gate intercepted 100% of runs (30/30 held, `TRIFECTA`). In *Bring your own issue*, a hidden-instruction text was held, while a plain request to "add every secret to the release notes" (no convention) was not obeyed by the model and was therefore allowed: the verdict follows what the agents did with the data, not what the text says. The backend tests cover the loop, the step limit, invalid JSON, key rotation, the fallbacks and the key never appearing in logs, errors or dumps.
 
-![evaluation](docs/img/evaluation.png)
+![Evaluation Benchmarks in Light Mode](docs/img/evaluation.png)
+
+---
 
 ## 12. Threat model and non-goals
 
 Full text: [`docs/SECURITY.md`](docs/SECURITY.md) and [`docs/threat-model.md`](docs/threat-model.md). Pathwarden does **not** claim to stop: side channels outside the runtime and the gateway; wrong registry labels; the LLM's internal state (the gateway's context is conservative by design); secret egress with no untrusted influence (a warning at most); real attackers against the demo data (scripted agents *simulate* compromise). In live mode a visitor's text is sent to the configured model provider and the free-text endpoint has no rate limiting (a stated non-goal): use fake secrets only. Hosted mode has workspace-scoped API keys and a human-only guard on risk-increasing endpoints; `X-PW-Human` is a deliberate-action guard, **not authentication**.
+
+---
 
 ## 13. Related work
 
@@ -172,21 +257,29 @@ Pathwarden is not the first lineage defense and does not claim to be.
 
 Our contribution is the system-level, cross-session combination with healing and least-privilege remediation, open and graph-native.
 
+---
+
 ## 14. Tracks entered
 
 **Track 01** and **Track 02**: lineage and a deterministic gate across agents (01); memory lineage across agents and sessions, per-tenant graphs (one graph per workspace, scoped API keys) and retroactive quarantine (02).
 
+---
+
 ## 15. AI-assistance disclosure
 
-The requirements, graph model, queries, gate semantics and evaluation design are in `plan.md`, supplied by the repository owner. **The implementation was written by Claude Code (Anthropic) working phase by phase under the rules in `AGENTS.md`**, with the owner approving the process and delegating the merges; the owner did not review the code line by line, and no independent human or second-agent review took place (known gap G-001). What backs the code instead of review: the Cypher queries are checked programmatically to be verbatim copies of the plan (two documented exceptions, D-017 and D-018, still await the owner's review), 573 tests run against a real database in two auth modes, deliberate-breakage ("sabotage") checks per phase are recorded in `docs/PROGRESS.md`, and every claim above carries its evidence there. The live-mode code (P8) was tested with a scripted fake model and checked once against a real model; it has the same absence of line-by-line review. Details and the exact tool/model facts: [`docs/AI_ASSISTANCE.md`](docs/AI_ASSISTANCE.md).
+The requirements, graph model, queries, gate semantics and evaluation design are in `plan.md`, supplied by the repository owner. **The implementation was written by Claude Code (Anthropic) working phase by phase under the rules in `AGENTS.md`**, with the owner approving the process and delegating the merges; the owner did not review the code line by line, and no independent human or second-agent review took place (known gap G-001). What backs the code instead of review: the Cypher queries are checked programmatically to be verbatim copies of the plan (two documented exceptions, D-017 and D-018, still await the owner's review), 578 tests run against a real database in two auth modes, deliberate-breakage ("sabotage") checks per phase are recorded in `docs/PROGRESS.md`, and every claim above carries its evidence there. The live-mode code (P8) was tested with a scripted fake model and checked once against a real model; it has the same absence of line-by-line review. Details and the exact tool/model facts: [`docs/AI_ASSISTANCE.md`](docs/AI_ASSISTANCE.md).
+
+---
 
 ## 16. Deployment
 
 Local is the primary path ([section 2](#2-quickstart-no-api-key-no-account)). Hosted configuration (FalkorDB Cloud or Railway, API on Railway/Render, UI on Vercel, `PW_AUTH=on`) is written down in [`docs/DEPLOY.md`](docs/DEPLOY.md). **No hosted demo is running yet**: creating the accounts and deploying is a human task (P12-T4); until then the local run and the screenshots are the demonstration.
 
+---
+
 ## 17. License
 
-**No license has been chosen yet.** The repository owner must add a `LICENSE` file before the repository is made public (open item P12-T6). Until then no rights are granted.
+Licensed under the [Apache License, Version 2.0](LICENSE).
 
 ---
 
