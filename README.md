@@ -30,7 +30,8 @@
 
 ---
 
-> **Live Demo (Interactive Web UI):** [https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/) *(Full live stack: React 19 UI, FalkorDB Graph & FastAPI backend with Groq LLM — SSL secured, no login required)*  
+> **Live Demo (HTTPS Secured):** [https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/) *(Full live stack: React 19 UI, FalkorDB Graph & FastAPI backend with Groq LLM — no login required)*  
+> **Direct IP Access:** [http://165.99.219.253/](http://165.99.219.253/) *(auto-redirects to HTTPS)*  
 > **Backend API Health:** [https://pathwarden.165.99.219.253.sslip.io/api/health](https://pathwarden.165.99.219.253.sslip.io/api/health)  
 > **FalkorDB Graph Explorer:** [http://165.99.219.253/browser/](http://165.99.219.253/browser/)  
 > **Demo Video (4:09 Broadcast Film):** [https://www.youtube.com/watch?v=Sy9g-40IoUk](https://www.youtube.com/watch?v=Sy9g-40IoUk)  
