@@ -35,6 +35,7 @@ if [ -f .env ]; then
     line=$(printf '%s' "$line" | tr -d '\r')
     case "$line" in ''|'#'*) continue ;; esac
     key=${line%%=*}
+    case "$key" in *MODEL*|*HOST*|*PORT*|*DIR*|*AUTH*) continue ;; esac
     val=${line#*=}
     val=$(printf '%s' "$val" | sed -e 's/[[:space:]]*#.*$//' -e "s/^[\"']//" -e "s/[\"']\$//")
     [ "${#val}" -ge 12 ] || continue

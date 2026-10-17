@@ -27,3 +27,6 @@ class Context:
     proposer_session: str
     payload_content: str  # only content-reading baselines (B4, later the LLM judges) use this
     secret_values: tuple[str, ...]  # exact secret values from fixtures/env.yaml (DLP)
+    scenario: dict | None = None
+    llm: object | None = None
+    proposing_sid: str | None = None

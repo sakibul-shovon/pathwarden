@@ -64,7 +64,7 @@ probe-llm:
 	$(PY) scripts/probe_litellm.py
 
 eval-live:
-	@echo "make eval-live: not implemented yet (docs/phases/P8-live-llm.md, tasks T8-T9)" && exit 1
+	$(PY) -m eval.live_study
 
 web:
 	cd web && npm run dev
