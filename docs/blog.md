@@ -161,7 +161,7 @@ If both paths exist simultaneously in the graph, the action forms a **Lethal Tri
                                  │
                              [:PAYLOAD]
                                  ▼
-                    [Action: Post to Public Web] ──► [HELD by Pathwarden]
+                    [Action: Post to Public Web] ──> [HELD by Pathwarden]
 ```
 
 ### Why We Built Pathwarden on FalkorDB
@@ -339,17 +339,17 @@ Building Pathwarden during the Graph Hacks hackathon taught us lessons that fund
 
 We believe developer tools should be proven with working software, not vaporware slides.
 
-### 🌐 1. Test the Live Demo
+### 1. Test the Live Demo
 You can interact with the live Pathwarden deployment right now—no login, no API key required:
-👉 **[https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/)**
+**[https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/)**
 
 Try toggling the Guard ON and OFF in the interactive scenario runner, inspect the real-time Cytoscape graph visualization, trigger forensic memory quarantine, and explore the time-travel replay.
 
-### 🎬 2. Watch the 4-Minute Film
+### 2. Watch the 4-Minute Film
 Prefer a narrated walkthrough? Watch the complete architecture and live attack demo:
-👉 **[YouTube: Pathwarden Demo (4:09)](https://www.youtube.com/watch?v=Sy9g-40IoUk)**
+**[YouTube: Pathwarden Demo (4:09)](https://www.youtube.com/watch?v=Sy9g-40IoUk)**
 
-### 💻 3. Run It Locally in 2 Minutes
+### 3. Run It Locally in 2 Minutes
 Clone the repository and run the full stack with Docker:
 ```bash
 git clone https://github.com/sakibul-shovon/pathwarden.git
@@ -364,11 +364,11 @@ This runs FalkorDB, starts the FastAPI backend and React frontend, executes the 
 
 ## Summary Links & Resources
 
-* 🔗 **Live Demo:** [https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/)
-* 📺 **Video Demonstration:** [https://www.youtube.com/watch?v=Sy9g-40IoUk](https://www.youtube.com/watch?v=Sy9g-40IoUk)
-* 🐙 **GitHub Repository:** [https://github.com/sakibul-shovon/pathwarden](https://github.com/sakibul-shovon/pathwarden)
-* ⚡ **Powered by FalkorDB:** [https://www.falkordb.com/](https://www.falkordb.com/)
-* 🏆 **Submitted to:** [WeMakeDevs × FalkorDB Graph Hacks (Oct 2026)](https://www.wemakedevs.org/hackathons/falkordb)
-* 📜 **License:** [Apache 2.0](https://github.com/sakibul-shovon/pathwarden/blob/main/LICENSE)
+* **Live Demo:** [https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/)
+* **Video Demonstration:** [https://www.youtube.com/watch?v=Sy9g-40IoUk](https://www.youtube.com/watch?v=Sy9g-40IoUk)
+* **GitHub Repository:** [https://github.com/sakibul-shovon/pathwarden](https://github.com/sakibul-shovon/pathwarden)
+* **Powered by FalkorDB:** [https://www.falkordb.com/](https://www.falkordb.com/)
+* **Submitted to:** [WeMakeDevs × FalkorDB Graph Hacks (Oct 2026)](https://www.wemakedevs.org/hackathons/falkordb)
+* **License:** [Apache 2.0](https://github.com/sakibul-shovon/pathwarden/blob/main/LICENSE)
 
 *Every agent passes its safety check. The system still leaks. **Pathwarden sees the path.***
