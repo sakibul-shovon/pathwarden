@@ -2,18 +2,14 @@
 
 *A deep-dive into multi-agent data lineage, the flaw in single-agent security boundaries, and how deterministic graph traversal stops toxic agent flows in milliseconds.*
 
-<div align="center">
-
-[![Live Interactive Demo](https://img.shields.io/badge/Live_Demo-HTTPS_Active-success.svg?style=for-the-badge&logo=googlechrome)](https://pathwarden.165.99.219.253.sslip.io/)
-[![Watch the Film](https://img.shields.io/badge/YouTube-4--Minute_Film-red.svg?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=Sy9g-40IoUk)
-[![GitHub Repository](https://img.shields.io/badge/GitHub-Open_Source_Repo-181717.svg?style=for-the-badge&logo=github)](https://github.com/sakibul-shovon/pathwarden)
-[![FalkorDB Native](https://img.shields.io/badge/FalkorDB-GraphBLAS_Native-orange.svg?style=for-the-badge)](https://www.falkordb.com/)
-
-[**Interactive Demo**](https://pathwarden.165.99.219.253.sslip.io/) • [**4-Minute Video Film**](https://www.youtube.com/watch?v=Sy9g-40IoUk) • [**GitHub Source Code**](https://github.com/sakibul-shovon/pathwarden)
-
-</div>
+> **Project Quick Links:**
+> * **Live Interactive Demo (HTTPS):** [https://pathwarden.165.99.219.253.sslip.io/](https://pathwarden.165.99.219.253.sslip.io/)
+> * **4-Minute Film (YouTube):** [https://www.youtube.com/watch?v=Sy9g-40IoUk](https://www.youtube.com/watch?v=Sy9g-40IoUk)
+> * **Source Code (GitHub):** [https://github.com/sakibul-shovon/pathwarden](https://github.com/sakibul-shovon/pathwarden)
+> * **Graph Database:** [Powered by FalkorDB](https://www.falkordb.com/)
 
 ---
+
 
 ## 1. The Incident: Three Green Badges, One Leaked Secret
 
@@ -71,30 +67,31 @@ Minutes later, the Release Agent takes the draft and broadcasts it to the public
 
 **The production secret is out in the wild.**
 
-```mermaid
-flowchart LR
-    subgraph Day1 [Day 1: Issue Ingestion]
-        U[Public Issue #42<br/><i>Hidden Injection</i>] -->|READS| A1[Triage Agent]
-        A1 -->|PRODUCES| M[(Shared Team Memory<br/><i>Poisoned Convention</i>)]
-    end
-
-    subgraph Day3 [Day 3: Development]
-        M -->|READS| A2[Fixer Agent]
-        S[(Deploy .env<br/><i>PAYMENT_API_KEY</i>)] -->|READS| A2
-        A2 -->|PRODUCES| D[Changelog Draft<br/><i>Contains Secret</i>]
-    end
-
-    subgraph Day4 [Day 4: Deployment]
-        D -->|READS| A3[Release Agent]
-        A3 -->|DISPATCHES| E([Public Status Page<br/><b>LEAK OCCURRED</b>])
-    end
-
-    classDef danger fill:#fee2e2,stroke:#ef4444,stroke-width:2px;
-    classDef safe fill:#f0fdf4,stroke:#22c55e,stroke-width:2px;
-    classDef memory fill:#fef3c7,stroke:#f59e0b,stroke-width:2px;
-    class U,E danger;
-    class S,D memory;
 ```
+DAY 1: INGESTION               DAY 3: DEVELOPMENT               DAY 4: DEPLOYMENT
+┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
+│   Public Issue #42     │      │   Shared Team Memory   │      │ Changelog Draft        │
+│   (Hidden Injection)   │      │   (Poisoned Policy)    │      │ (Contains Secret)      │
+└───────────┬────────────┘      └───────────┬────────────┘      └───────────┬────────────┘
+            │ READS                         │ READS                         │ READS
+            ▼                               ▼                               ▼
+┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
+│     Triage Agent       │      │      Fixer Agent       │      │     Release Agent      │
+└───────────┬────────────┘      └───────────┬────────────┘      └───────────┬────────────┘
+            │ PRODUCES                      │ PRODUCES                      │ DISPATCHES
+            ▼                               ▼                               ▼
+┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
+│   Shared Team Memory   │      │ Changelog Draft        │      │   Public Status Page   │
+│   (Poisoned Policy)    ├────> │ (Contains Secret)      ├────> │   *** LEAK OCCURRED ***│
+└────────────────────────┘      └────────────────────────┘      └────────────────────────┘
+                                            ▲
+                                            │ READS
+                                ┌───────────┴────────────┐
+                                │ Production Deploy .env │
+                                │ (PAYMENT_API_KEY)      │
+                                └────────────────────────┘
+```
+
 
 How did this happen when every agent followed the security rules?
 
@@ -138,7 +135,11 @@ In reality, provenance in a multi-agent system is a **mathematical graph**:
 Before an action executes, the security question is not *"What does this text look like?"*
 The security question is purely topological:
 
-$$\text{Action Blocked} \iff \exists\, \text{path}(\text{untrusted} \to \text{payload}) \;\land\; \exists\, \text{path}(\text{secret} \to \text{payload})$$
+```text
+Action Blocked <===> Path(Untrusted Source -> Action Payload)
+                     AND
+                     Path(Secret Source -> Action Payload)
+```
 
 If both paths exist simultaneously in the graph, the action forms a **Lethal Trifecta** and must be held.
 
